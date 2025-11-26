@@ -110,13 +110,10 @@ export default function Home() {
         </div>
       </div>
 
-      <header className="bg-card border-b border-card-border px-6 py-8">
+      <header className="bg-card border-b border-card-border px-6 py-6">
         <h1 className="text-4xl font-bold text-center text-foreground">
           Judy's Family
         </h1>
-        <p className="text-xl text-center text-muted-foreground mt-2">
-          Tap to see your family and friends
-        </p>
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-8">
