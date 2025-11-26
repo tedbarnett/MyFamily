@@ -97,6 +97,23 @@ export default function Home() {
     return allPeople.filter((person) => person.category === categoryId);
   };
 
+  // Get dynamic label for children category based on gender
+  const getChildrenLabel = (): string => {
+    const children = getPeopleByCategory("children");
+    if (children.length === 0) return "Children";
+    
+    const allSons = children.every(child => 
+      child.relationship?.toLowerCase() === "son"
+    );
+    const allDaughters = children.every(child => 
+      child.relationship?.toLowerCase() === "daughter"
+    );
+    
+    if (allSons) return "Sons";
+    if (allDaughters) return "Daughters";
+    return "Children";
+  };
+
   const handleClearSearch = () => {
     setSearchQuery("");
   };
@@ -223,7 +240,7 @@ export default function Home() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <h2 className="text-2xl font-bold text-foreground mb-1">
-                          {category.label}
+                          {category.id === "children" ? getChildrenLabel() : category.label}
                         </h2>
                         <p className="text-lg text-muted-foreground">
                           {category.description}

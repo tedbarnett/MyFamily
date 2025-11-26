@@ -34,6 +34,24 @@ export default function Category() {
     queryKey: [`/api/people/${category}`],
   });
 
+  // Get dynamic label for children category based on gender
+  const getCategoryLabel = (): string => {
+    if (category !== "children" || !people || people.length === 0) {
+      return categoryLabels[category] || "Family";
+    }
+    
+    const allSons = people.every(child => 
+      child.relationship?.toLowerCase() === "son"
+    );
+    const allDaughters = people.every(child => 
+      child.relationship?.toLowerCase() === "daughter"
+    );
+    
+    if (allSons) return "Sons";
+    if (allDaughters) return "Daughters";
+    return "Children";
+  };
+
   const getInitials = (name: string) => {
     const parts = name.split(" ");
     if (parts.length >= 2) {
@@ -57,7 +75,7 @@ export default function Category() {
             </Button>
           </Link>
           <h1 className="text-3xl font-bold text-foreground flex-1">
-            {categoryLabels[category] || "Family"}
+            {getCategoryLabel()}
           </h1>
         </div>
       </header>
