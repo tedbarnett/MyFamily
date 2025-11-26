@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Heart, Baby, UserCircle, Stethoscope, Search, X, Calendar } from "lucide-react";
+import { Users, Heart, Baby, UserCircle, Stethoscope, Search, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { PersonCategory, Person } from "@shared/schema";
 
@@ -101,12 +101,9 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-card border-b border-card-border px-6 py-6">
-        <div className="flex items-center justify-center gap-3">
-          <Calendar className="w-8 h-8 text-primary flex-shrink-0" />
-          <h1 className="text-3xl font-bold text-foreground" data-testid="text-today-date">
-            Judy: Today is {formatTodayDate()}
-          </h1>
-        </div>
+        <h1 className="text-3xl font-bold text-center text-foreground" data-testid="text-today-date">
+          Judy: Today is {formatTodayDate()}
+        </h1>
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-8">
