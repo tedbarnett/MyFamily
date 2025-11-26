@@ -102,7 +102,7 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       <header className="bg-card border-b border-card-border px-6 py-6">
         <h1 className="text-3xl font-bold text-center text-foreground" data-testid="text-today-date">
-          Judy: Today is {formatTodayDate()}
+          Today is {formatTodayDate()}
         </h1>
       </header>
 
@@ -113,7 +113,7 @@ export default function Home() {
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-8 h-8 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Search for someone..."
+              placeholder="Search family..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-16 pr-20 text-4xl font-bold h-20 placeholder:text-2xl placeholder:font-normal"
