@@ -120,13 +120,13 @@ export default function Home() {
         {/* Search Section */}
         <div className="mb-8">
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-muted-foreground" />
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-8 h-8 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Search for someone..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-14 pr-16 text-2xl font-bold h-16"
+              className="pl-16 pr-20 text-4xl font-bold h-20"
               data-testid="input-search"
             />
             {searchQuery && (
