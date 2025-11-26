@@ -53,7 +53,6 @@ export default function PersonDetail() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith("image/")) {
       toast({
         title: "Invalid File",
@@ -63,7 +62,6 @@ export default function PersonDetail() {
       return;
     }
 
-    // Validate file size (max 15MB to stay safely under 20MB server limit after base64 encoding)
     if (file.size > 15 * 1024 * 1024) {
       toast({
         title: "File Too Large",
@@ -73,7 +71,6 @@ export default function PersonDetail() {
       return;
     }
 
-    // Convert to base64
     const reader = new FileReader();
     reader.onload = (e) => {
       const base64 = e.target?.result as string;
