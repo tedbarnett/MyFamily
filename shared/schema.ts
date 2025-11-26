@@ -18,6 +18,7 @@ export const people = pgTable("people", {
   category: text("category").notNull(),
   relationship: text("relationship").notNull(), // e.g., "Husband", "Son", "Granddaughter"
   photoUrl: text("photo_url"),
+  photoData: text("photo_data"), // Base64 encoded photo for uploads
   born: text("born"),
   age: integer("age"),
   passed: text("passed"),
@@ -26,6 +27,8 @@ export const people = pgTable("people", {
   children: text("children").array(),
   summary: text("summary"),
   sortOrder: integer("sort_order").notNull().default(0),
+  lastVisit: text("last_visit"), // ISO date string of last visit
+  visitHistory: text("visit_history").array(), // Array of ISO date strings
 });
 
 export const insertPersonSchema = createInsertSchema(people).omit({

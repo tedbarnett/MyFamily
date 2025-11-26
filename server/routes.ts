@@ -50,6 +50,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Search people
+  app.get("/api/search", async (req, res) => {
+    try {
+      const query = req.query.q as string;
+      if (!query || query.trim().length === 0) {
+        return res.json([]);
+      }
+
+      const results = await storage.searchPeople(query);
+      res.json(results);
+    } catch (error) {
+      console.error("Error searching people:", error);
+      res.status(500).json({ error: "Failed to search people" });
+    }
+  });
+
+  // Update person photo
+  app.post("/api/person/:id/photo", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { photoData } = req.body;
+
+      if (!photoData) {
+        return res.status(400).json({ error: "Photo data required" });
+      }
+
+      const person = await storage.updatePerson(id, { photoData });
+      if (!person) {
+        return res.status(404).json({ error: "Person not found" });
+      }
+
+      res.json(person);
+    } catch (error) {
+      console.error("Error updating photo:", error);
+      res.status(500).json({ error: "Failed to update photo" });
+    }
+  });
+
+  // Record visit
+  app.post("/api/person/:id/visit", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { visitDate } = req.body;
+
+      const date = visitDate || new Date().toISOString();
+      const person = await storage.recordVisit(id, date);
+
+      if (!person) {
+        return res.status(404).json({ error: "Person not found" });
+      }
+
+      res.json(person);
+    } catch (error) {
+      console.error("Error recording visit:", error);
+      res.status(500).json({ error: "Failed to record visit" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
