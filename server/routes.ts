@@ -126,6 +126,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete person
+  app.delete("/api/person/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deletePerson(id);
+
+      if (!deleted) {
+        return res.status(404).json({ error: "Person not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting person:", error);
+      res.status(500).json({ error: "Failed to delete person" });
+    }
+  });
+
   // Record visit
   app.post("/api/person/:id/visit", async (req, res) => {
     try {

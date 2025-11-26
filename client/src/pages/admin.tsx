@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Home, Camera, Loader2, Save, X, Pencil, Plus } from "lucide-react";
+import { Home, Camera, Loader2, Save, X, Pencil, Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { PhotoCropper } from "@/components/photo-cropper";
@@ -109,6 +109,29 @@ export default function Admin() {
       toast({
         title: "Error",
         description: error.message || "Failed to add person.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiRequest("DELETE", `/api/person/${id}`);
+      return response.json();
+    },
+    onSuccess: async () => {
+      setEditingPerson(null);
+      setEditForm({});
+      await queryClient.refetchQueries({ queryKey: ["/api/people"] });
+      toast({
+        title: "Person Deleted",
+        description: "Entry has been removed.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete person.",
         variant: "destructive",
       });
     },
@@ -449,6 +472,26 @@ export default function Admin() {
                 data-testid="input-edit-summary"
               />
             </div>
+          </div>
+          <div className="border-t border-border pt-4 mt-4">
+            <Button
+              variant="outline"
+              className="w-full text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-950"
+              onClick={() => {
+                if (editingPerson && confirm(`Are you sure you want to delete ${editingPerson.name}? This cannot be undone.`)) {
+                  deleteMutation.mutate(editingPerson.id);
+                }
+              }}
+              disabled={deleteMutation.isPending}
+              data-testid="button-delete-person"
+            >
+              {deleteMutation.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4 mr-2" />
+              )}
+              Delete Entry
+            </Button>
           </div>
           <div className="flex gap-3 justify-end">
             <Button

@@ -8,6 +8,7 @@ export interface IStorage {
   getPersonById(id: string): Promise<Person | undefined>;
   createPerson(person: InsertPerson): Promise<Person>;
   updatePerson(id: string, updates: Partial<Person>): Promise<Person | undefined>;
+  deletePerson(id: string): Promise<boolean>;
   searchPeople(query: string): Promise<Person[]>;
   recordVisit(id: string, visitDate: string): Promise<Person | undefined>;
 }
@@ -44,6 +45,11 @@ export class DatabaseStorage implements IStorage {
       .where(eq(people.id, id))
       .returning();
     return updated || undefined;
+  }
+
+  async deletePerson(id: string): Promise<boolean> {
+    const result = await db.delete(people).where(eq(people.id, id)).returning();
+    return result.length > 0;
   }
 
   async searchPeople(query: string): Promise<Person[]> {
