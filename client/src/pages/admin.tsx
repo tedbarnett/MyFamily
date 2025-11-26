@@ -152,21 +152,31 @@ export default function Admin() {
 
   const handleAddClick = (category: PersonCategory) => {
     setAddingToCategory(category);
+    const defaultRelationship = 
+      category === "husband" ? "Husband" : 
+      category === "children" ? "Son" :
+      category === "grandchildren" ? "Grandchild" :
+      category === "daughters_in_law" ? "Daughter in Law" :
+      category === "friends" ? "Friend" :
+      category === "caregivers" ? "Caregiver" : 
+      "Family Member";
     setAddForm({
       category,
       name: "",
-      relationship: categoryLabels[category] === "Husband" ? "Husband" : 
-                    categoryLabels[category] === "Children" ? "Son" :
-                    categoryLabels[category] === "Grandchildren" ? "Grandchild" :
-                    categoryLabels[category] === "Daughters in Law" ? "Daughter in Law" :
-                    categoryLabels[category] === "Friends" ? "Friend" :
-                    categoryLabels[category] === "Caregivers" ? "Caregiver" : "",
+      relationship: defaultRelationship,
       summary: "",
     });
   };
 
   const handleAddSave = () => {
-    if (!addingToCategory || !addForm.name) return;
+    if (!addingToCategory || !addForm.name || !addForm.relationship) {
+      toast({
+        title: "Required Fields",
+        description: "Please fill in both name and relationship.",
+        variant: "destructive",
+      });
+      return;
+    }
     createMutation.mutate({
       ...addForm,
       category: addingToCategory,
