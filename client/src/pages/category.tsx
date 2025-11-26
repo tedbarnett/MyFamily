@@ -47,7 +47,7 @@ export default function Category() {
           <Link href="/">
             <Button
               variant="ghost"
-              className="flex-shrink-0 h-auto py-2 px-3 flex flex-col items-center gap-1"
+              className="flex-shrink-0 h-auto py-2 px-3 flex flex-col items-center gap-1 text-primary"
               data-testid="button-back"
             >
               <ArrowLeft className="w-12 h-12" strokeWidth={3} />
