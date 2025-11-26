@@ -73,6 +73,16 @@ export default function Home() {
     enabled: searchQuery.trim().length > 0,
   });
 
+  // Fetch all people to display photos in category cards
+  const { data: allPeople = [] } = useQuery<Person[]>({
+    queryKey: ["/api/people"],
+  });
+
+  // Group people by category for photo display
+  const getPeopleByCategory = (categoryId: PersonCategory): Person[] => {
+    return allPeople.filter((person) => person.category === categoryId);
+  };
+
   const handleClearSearch = () => {
     setSearchQuery("");
   };
@@ -195,6 +205,7 @@ export default function Home() {
           <div className="grid grid-cols-1 gap-6">
             {categories.map((category) => {
               const Icon = category.icon;
+              const categoryPeople = getPeopleByCategory(category.id);
               return (
                 <Link
                   key={category.id}
@@ -202,18 +213,49 @@ export default function Home() {
                   data-testid={`link-category-${category.id}`}
                 >
                   <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all">
-                    <div className="p-8 flex items-center gap-6">
+                    <div className="p-6 flex items-center gap-4">
                       <div className={`${category.color} flex-shrink-0`}>
-                        <Icon className="w-16 h-16" strokeWidth={1.5} />
+                        <Icon className="w-14 h-14" strokeWidth={1.5} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h2 className="text-3xl font-bold text-foreground mb-1">
+                        <h2 className="text-2xl font-bold text-foreground mb-1">
                           {category.label}
                         </h2>
-                        <p className="text-xl text-muted-foreground">
+                        <p className="text-lg text-muted-foreground">
                           {category.description}
                         </p>
                       </div>
+                      {/* Photo Collage */}
+                      {categoryPeople.length > 0 && (
+                        <div className="flex -space-x-3 flex-shrink-0">
+                          {categoryPeople.slice(0, 4).map((person, index) => (
+                            <Avatar
+                              key={person.id}
+                              className="w-12 h-12 border-2 border-card"
+                              style={{ zIndex: categoryPeople.length - index }}
+                              data-testid={`avatar-category-${category.id}-${person.id}`}
+                            >
+                              {(person.photoData || person.photoUrl) && (
+                                <AvatarImage
+                                  src={person.photoData || person.photoUrl || undefined}
+                                  alt={person.name}
+                                />
+                              )}
+                              <AvatarFallback className="text-sm bg-muted">
+                                {getInitials(person.name)}
+                              </AvatarFallback>
+                            </Avatar>
+                          ))}
+                          {categoryPeople.length > 4 && (
+                            <div
+                              className="w-12 h-12 rounded-full bg-muted border-2 border-card flex items-center justify-center text-sm font-medium text-muted-foreground"
+                              style={{ zIndex: 0 }}
+                            >
+                              +{categoryPeople.length - 4}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </Card>
                 </Link>
