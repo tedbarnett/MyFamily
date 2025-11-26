@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { Link } from "wouter";
+import { useState, useRef } from "react";
+import { Link, useLocation } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Users, Heart, Baby, UserCircle, Stethoscope, Search, X, HeartHandshake } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { PersonCategory, Person } from "@shared/schema";
@@ -70,6 +71,9 @@ const categories: CategoryCard[] = [
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [showAdminDialog, setShowAdminDialog] = useState(false);
+  const [, setLocation] = useLocation();
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
 
   const formatTodayDate = () => {
     const today = new Date();
@@ -116,6 +120,24 @@ export default function Home() {
 
   const handleClearSearch = () => {
     setSearchQuery("");
+  };
+
+  const handleAdminPressStart = () => {
+    longPressTimer.current = setTimeout(() => {
+      setShowAdminDialog(true);
+    }, 3000);
+  };
+
+  const handleAdminPressEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  const handleAdminProceed = () => {
+    setShowAdminDialog(false);
+    setLocation("/admin");
   };
 
   const getInitials = (name: string) => {
@@ -286,11 +308,48 @@ export default function Home() {
         )}
 
         <div className="mt-8 text-center">
-          <Link href="/admin" className="text-xs text-muted-foreground hover:text-primary" data-testid="link-admin">
+          <button
+            className="text-xs text-muted-foreground hover:text-primary select-none"
+            onMouseDown={handleAdminPressStart}
+            onMouseUp={handleAdminPressEnd}
+            onMouseLeave={handleAdminPressEnd}
+            onTouchStart={handleAdminPressStart}
+            onTouchEnd={handleAdminPressEnd}
+            onTouchCancel={handleAdminPressEnd}
+            data-testid="button-admin"
+          >
             Admin view
-          </Link>
+          </button>
         </div>
       </main>
+
+      <Dialog open={showAdminDialog} onOpenChange={setShowAdminDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-2xl text-center">Admin edits?</DialogTitle>
+            <DialogDescription className="text-center text-lg">
+              This will open the admin page where you can edit people and photos.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-col sm:flex-row gap-3 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowAdminDialog(false)}
+              className="flex-1 h-14 text-lg"
+              data-testid="button-admin-cancel"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAdminProceed}
+              className="flex-1 h-14 text-lg"
+              data-testid="button-admin-proceed"
+            >
+              Proceed
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
