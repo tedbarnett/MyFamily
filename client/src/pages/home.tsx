@@ -224,11 +224,11 @@ export default function Home() {
                       </div>
                       {/* Photo Collage */}
                       {categoryPeople.length > 0 && (
-                        <div className="flex -space-x-3 flex-shrink-0">
+                        <div className="flex -space-x-6 flex-shrink-0">
                           {categoryPeople.slice(0, 4).map((person, index) => (
                             <Avatar
                               key={person.id}
-                              className="w-12 h-12 border-2 border-card"
+                              className="w-20 h-20 border-2 border-card"
                               style={{ zIndex: categoryPeople.length - index }}
                               data-testid={`avatar-category-${category.id}-${person.id}`}
                             >
@@ -238,14 +238,14 @@ export default function Home() {
                                   alt={person.name}
                                 />
                               )}
-                              <AvatarFallback className="text-sm bg-muted">
+                              <AvatarFallback className="text-xl bg-muted">
                                 {getInitials(person.name)}
                               </AvatarFallback>
                             </Avatar>
                           ))}
                           {categoryPeople.length > 4 && (
                             <div
-                              className="w-12 h-12 rounded-full bg-muted border-2 border-card flex items-center justify-center text-sm font-medium text-muted-foreground"
+                              className="w-20 h-20 rounded-full bg-muted border-2 border-card flex items-center justify-center text-lg font-medium text-muted-foreground"
                               style={{ zIndex: 0 }}
                             >
                               +{categoryPeople.length - 4}
