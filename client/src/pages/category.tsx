@@ -68,7 +68,7 @@ export default function Category() {
             <Loader2 className="w-12 h-12 animate-spin text-primary" />
           </div>
         ) : people && people.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6">
+          <div className="grid grid-cols-2 gap-3">
             {people.map((person) => {
               const photoSrc = person.photoData || person.photoUrl;
               return (
@@ -92,24 +92,22 @@ export default function Category() {
                         />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-8xl font-bold text-primary/40">
+                          <span className="text-5xl font-bold text-primary/40">
                             {getInitials(person.name)}
                           </span>
                         </div>
                       )}
-                      {/* Dark gradient overlay for text readability */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                      {/* Text overlay */}
-                      <div className="absolute bottom-0 left-0 right-0 p-6">
+                      <div className="absolute bottom-0 left-0 right-0 p-3 text-center">
                         <h2 
-                          className="text-4xl font-bold text-white mb-1 break-words"
+                          className="text-xl font-bold text-white mb-0.5 break-words leading-tight"
                           style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}
                           data-testid={`text-person-name-${person.id}`}
                         >
                           {person.name}
                         </h2>
                         <p 
-                          className="text-2xl text-white/90 break-words"
+                          className="text-sm text-white/90 break-words"
                           style={{ textShadow: '1px 1px 3px rgba(0,0,0,0.8)' }}
                           data-testid={`text-person-relationship-${person.id}`}
                         >
