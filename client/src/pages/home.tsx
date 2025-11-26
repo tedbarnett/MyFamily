@@ -131,13 +131,13 @@ export default function Home() {
             />
             {searchQuery && (
               <Button
-                variant="ghost"
+                variant="secondary"
                 size="icon"
                 onClick={handleClearSearch}
-                className="absolute right-2 top-1/2 -translate-y-1/2"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-12 w-12"
                 data-testid="button-clear-search"
               >
-                <X className="w-6 h-6" />
+                <X className="w-8 h-8" />
               </Button>
             )}
           </div>
