@@ -156,15 +156,15 @@ export default function PersonDetail() {
               <Button
                 size="icon"
                 variant="default"
-                className="absolute bottom-0 right-0 rounded-full h-14 w-14 shadow-lg"
+                className="absolute bottom-1 right-1 rounded-full h-10 w-10 shadow-lg"
                 onClick={handlePhotoClick}
                 disabled={photoMutation.isPending}
                 data-testid="button-change-photo"
               >
                 {photoMutation.isPending ? (
-                  <Loader2 className="w-6 h-6 animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <Camera className="w-6 h-6" />
+                  <Camera className="w-4 h-4" />
                 )}
               </Button>
               <input
