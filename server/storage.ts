@@ -49,7 +49,8 @@ export class DatabaseStorage implements IStorage {
         or(
           sql`LOWER(${people.name}) LIKE ${searchTerm}`,
           sql`LOWER(${people.relationship}) LIKE ${searchTerm}`,
-          sql`LOWER(${people.location}) LIKE ${searchTerm}`
+          sql`LOWER(${people.location}) LIKE ${searchTerm}`,
+          sql`LOWER(${people.summary}) LIKE ${searchTerm}`
         )
       )
       .orderBy(people.category, people.sortOrder);
