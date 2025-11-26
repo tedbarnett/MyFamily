@@ -314,7 +314,6 @@ export default function Home() {
           </DialogHeader>
           <DialogFooter className="flex flex-col sm:flex-row gap-3 mt-4">
             <Button
-              variant="outline"
               onClick={() => setShowAdminDialog(false)}
               className="flex-1 h-14 text-lg"
               data-testid="button-admin-cancel"
@@ -322,8 +321,9 @@ export default function Home() {
               Cancel
             </Button>
             <Button
+              variant="outline"
               onClick={handleAdminProceed}
-              className="flex-1 h-14 text-lg"
+              className="flex-1 h-14 text-lg bg-red-800 hover:bg-red-900 text-white border-red-800"
               data-testid="button-admin-proceed"
             >
               Proceed
