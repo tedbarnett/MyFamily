@@ -295,7 +295,7 @@ export default function Home() {
 
         <div className="mt-8 text-center">
           <button
-            className="text-xs text-muted-foreground hover:text-primary"
+            className="text-xs text-gray-400"
             onClick={() => setShowAdminDialog(true)}
             data-testid="button-admin"
           >
