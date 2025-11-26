@@ -1,22 +1,13 @@
-import { useRef, useState } from "react";
 import { useRoute, Link } from "wouter";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, MapPin, Calendar, Briefcase, Heart, Camera } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { queryClient, apiRequest } from "@/lib/queryClient";
-import { PhotoCropper } from "@/components/photo-cropper";
+import { ArrowLeft, Loader2, MapPin, Calendar, Briefcase, Heart } from "lucide-react";
 import type { Person } from "@shared/schema";
 
 export default function PersonDetail() {
   const [, params] = useRoute("/person/:id");
   const personId = params?.id;
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const { toast } = useToast();
-  const [cropperImage, setCropperImage] = useState<string | null>(null);
-  const [showCropper, setShowCropper] = useState(false);
 
   const { data: person, isLoading } = useQuery<Person>({
     queryKey: [`/api/person/${personId}`],
@@ -53,80 +44,6 @@ export default function PersonDetail() {
     }
     
     return found?.id || null;
-  };
-
-  const photoMutation = useMutation({
-    mutationFn: async (photoData: string) => {
-      const response = await apiRequest(
-        "POST",
-        `/api/person/${personId}/photo`,
-        { photoData }
-      );
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/person/${personId}`] });
-      toast({
-        title: "Photo Updated",
-        description: "The photo has been successfully updated.",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Upload Failed",
-        description: error.message || "Failed to upload photo. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handlePhotoClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      toast({
-        title: "Invalid File",
-        description: "Please select an image file.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (file.size > 15 * 1024 * 1024) {
-      toast({
-        title: "File Too Large",
-        description: "Please select an image smaller than 15MB.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const base64 = e.target?.result as string;
-      setCropperImage(base64);
-      setShowCropper(true);
-    };
-    reader.readAsDataURL(file);
-    
-    // Reset the input so the same file can be selected again
-    event.target.value = "";
-  };
-
-  const handleCropperClose = () => {
-    setShowCropper(false);
-    setCropperImage(null);
-  };
-
-  const handleCropperSave = (croppedImage: string) => {
-    photoMutation.mutate(croppedImage);
-    setShowCropper(false);
-    setCropperImage(null);
   };
 
   const getInitials = (name: string) => {
@@ -191,7 +108,7 @@ export default function PersonDetail() {
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 p-6">
+        <div className="absolute bottom-0 left-0 right-0 p-6 text-center">
           <h2 
             className="text-4xl font-bold text-white mb-2"
             style={{ textShadow: "2px 2px 4px rgba(0,0,0,0.8)" }}
@@ -207,28 +124,6 @@ export default function PersonDetail() {
             {person.relationship}
           </p>
         </div>
-        <Button
-          size="icon"
-          variant="default"
-          className="absolute bottom-4 right-4 rounded-full h-10 w-10 shadow-lg"
-          onClick={handlePhotoClick}
-          disabled={photoMutation.isPending}
-          data-testid="button-change-photo"
-        >
-          {photoMutation.isPending ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Camera className="w-4 h-4" />
-          )}
-        </Button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          className="hidden"
-          data-testid="input-photo-upload"
-        />
       </div>
 
       <main className="max-w-2xl mx-auto px-4 py-8">
@@ -362,15 +257,6 @@ export default function PersonDetail() {
           )}
         </div>
       </main>
-
-      {cropperImage && (
-        <PhotoCropper
-          imageSrc={cropperImage}
-          open={showCropper}
-          onClose={handleCropperClose}
-          onSave={handleCropperSave}
-        />
-      )}
     </div>
   );
 }
