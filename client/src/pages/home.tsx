@@ -48,7 +48,7 @@ const categories: CategoryCard[] = [
   {
     id: "caregivers",
     label: "Caregivers",
-    description: "6 Caregivers",
+    description: "",
     icon: Stethoscope,
     color: "text-orange-600",
   },
