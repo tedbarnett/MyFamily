@@ -8,6 +8,7 @@ export type PersonCategory =
   | "husband" 
   | "children" 
   | "grandchildren" 
+  | "daughters_in_law"
   | "friends" 
   | "caregivers";
 

@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Heart, Baby, UserCircle, Stethoscope, Search, X } from "lucide-react";
+import { Users, Heart, Baby, UserCircle, Stethoscope, Search, X, HeartHandshake } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { PersonCategory, Person } from "@shared/schema";
 
@@ -37,6 +37,13 @@ const categories: CategoryCard[] = [
     description: "8 Grandchildren",
     icon: Baby,
     color: "text-purple-600",
+  },
+  {
+    id: "daughters_in_law",
+    label: "Daughters in Law",
+    description: "4 Daughters in Law",
+    icon: HeartHandshake,
+    color: "text-pink-600",
   },
   {
     id: "friends",

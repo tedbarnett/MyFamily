@@ -10,11 +10,12 @@ const categoryLabels: Record<PersonCategory, string> = {
   husband: "Husband",
   children: "Children",
   grandchildren: "Grandchildren",
+  daughters_in_law: "Daughters in Law",
   friends: "Friends",
   caregivers: "Caregivers",
 };
 
-const validCategories: PersonCategory[] = ["husband", "children", "grandchildren", "friends", "caregivers"];
+const validCategories: PersonCategory[] = ["husband", "children", "grandchildren", "daughters_in_law", "friends", "caregivers"];
 
 export default function Category() {
   const [, params] = useRoute("/category/:category");
