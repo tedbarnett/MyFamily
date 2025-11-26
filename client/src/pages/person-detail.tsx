@@ -29,10 +29,29 @@ export default function PersonDetail() {
   });
 
   // Helper function to find a person by name and return their ID
+  // Supports exact match, first name match, or partial match
   const findPersonByName = (name: string): string | null => {
-    const found = allPeople.find(
-      (p) => p.name.toLowerCase() === name.toLowerCase()
+    const searchName = name.toLowerCase().trim();
+    
+    // First try exact match
+    let found = allPeople.find(
+      (p) => p.name.toLowerCase() === searchName
     );
+    
+    // If no exact match, try matching first name
+    if (!found) {
+      found = allPeople.find(
+        (p) => p.name.toLowerCase().startsWith(searchName + " ")
+      );
+    }
+    
+    // If still no match, try partial match (name contains search term)
+    if (!found) {
+      found = allPeople.find(
+        (p) => p.name.toLowerCase().includes(searchName)
+      );
+    }
+    
     return found?.id || null;
   };
 
