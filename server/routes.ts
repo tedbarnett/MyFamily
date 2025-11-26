@@ -51,9 +51,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Search people
-  app.get("/api/search", async (req, res) => {
+  app.get("/api/search/:query", async (req, res) => {
     try {
-      const query = req.query.q as string;
+      const query = req.params.query;
       if (!query || query.trim().length === 0) {
         return res.json([]);
       }
