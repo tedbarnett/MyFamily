@@ -274,9 +274,20 @@ export default function Admin() {
                           </div>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-foreground truncate" data-testid={`text-name-${person.id}`}>
-                            {person.name}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold text-foreground truncate" data-testid={`text-name-${person.id}`}>
+                              {person.name}
+                            </p>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-6 w-6 flex-shrink-0"
+                              onClick={() => handleEditClick(person)}
+                              data-testid={`button-edit-${person.id}`}
+                            >
+                              <Pencil className="w-3 h-3" />
+                            </Button>
+                          </div>
                           <p className="text-sm text-muted-foreground truncate">
                             {person.relationship}
                           </p>
@@ -286,14 +297,6 @@ export default function Admin() {
                             </p>
                           )}
                         </div>
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          onClick={() => handleEditClick(person)}
-                          data-testid={`button-edit-${person.id}`}
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
                       </div>
                     </Card>
                   );
