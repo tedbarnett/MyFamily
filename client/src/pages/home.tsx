@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Users, Heart, Baby, UserCircle, Stethoscope, Search, X, HeartHandshake, UsersRound } from "lucide-react";
+import { Users, Heart, Baby, UserCircle, Stethoscope, Search, X, HeartHandshake, UsersRound, BrainCircuit } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { PersonCategory, Person } from "@shared/schema";
 
@@ -307,6 +307,28 @@ export default function Home() {
                     </h2>
                     <p className="text-lg text-muted-foreground">
                       {allPeople.length} people
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            </Link>
+
+            {/* Memory Quiz button */}
+            <Link
+              href="/quiz"
+              data-testid="link-quiz"
+            >
+              <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all bg-primary/5 border-primary/20">
+                <div className="p-6 flex items-center gap-4">
+                  <div className="text-primary flex-shrink-0">
+                    <BrainCircuit className="w-14 h-14" strokeWidth={1.5} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-2xl font-bold text-foreground mb-1">
+                      Memory Quiz
+                    </h2>
+                    <p className="text-lg text-muted-foreground">
+                      Practice remembering names
                     </p>
                   </div>
                 </div>

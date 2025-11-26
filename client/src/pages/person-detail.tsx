@@ -129,6 +129,16 @@ export default function PersonDetail() {
       <main className="max-w-2xl mx-auto px-4 py-8">
         <div className="space-y-8">
 
+          {person.fullName && person.fullName !== person.name && (
+            <Card>
+              <div className="p-6">
+                <p className="text-lg text-muted-foreground text-center">
+                  <span className="font-medium">Full name:</span> {person.fullName}
+                </p>
+              </div>
+            </Card>
+          )}
+
           {(person.age || person.born) && (
             <Card>
               <div className="p-6 space-y-4">

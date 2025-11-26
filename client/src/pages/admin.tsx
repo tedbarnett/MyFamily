@@ -130,6 +130,7 @@ export default function Admin() {
     setEditingPerson(person);
     setEditForm({
       name: person.name,
+      fullName: person.fullName || "",
       relationship: person.relationship,
       born: person.born || "",
       age: person.age || undefined,
@@ -353,6 +354,17 @@ export default function Admin() {
                 data-testid="input-edit-name"
               />
             </div>
+            {editingPerson && ["husband", "children", "grandchildren"].includes(editingPerson.category) && (
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1 block">Full Name</label>
+                <Input
+                  value={editForm.fullName || ""}
+                  onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
+                  placeholder="Full legal name"
+                  data-testid="input-edit-fullname"
+                />
+              </div>
+            )}
             <div>
               <label className="text-sm font-medium text-foreground mb-1 block">Relationship</label>
               <Input
@@ -464,10 +476,21 @@ export default function Admin() {
               <Input
                 value={addForm.name || ""}
                 onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
-                placeholder="Enter full name"
+                placeholder="Enter name"
                 data-testid="input-add-name"
               />
             </div>
+            {addingToCategory && ["husband", "children", "grandchildren"].includes(addingToCategory) && (
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1 block">Full Name</label>
+                <Input
+                  value={addForm.fullName || ""}
+                  onChange={(e) => setAddForm({ ...addForm, fullName: e.target.value })}
+                  placeholder="Full legal name"
+                  data-testid="input-add-fullname"
+                />
+              </div>
+            )}
             <div>
               <label className="text-sm font-medium text-foreground mb-1 block">Relationship *</label>
               <Input

@@ -17,6 +17,7 @@ export type PersonCategory =
 export const people = pgTable("people", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
+  fullName: text("full_name"), // Full legal name (for husband, children, grandchildren)
   category: text("category").notNull(),
   relationship: text("relationship").notNull(), // e.g., "Husband", "Son", "Granddaughter"
   photoUrl: text("photo_url"),
