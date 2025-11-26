@@ -264,6 +264,12 @@ export default function Home() {
             })}
           </div>
         )}
+
+        <div className="mt-8 text-center">
+          <Link href="/admin" className="text-xs text-muted-foreground hover:text-primary" data-testid="link-admin">
+            Admin view
+          </Link>
+        </div>
       </main>
     </div>
   );
