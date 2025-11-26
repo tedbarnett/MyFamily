@@ -100,20 +100,13 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Date Reminder Banner */}
-      <div className="bg-primary/10 border-b border-primary/20 px-6 py-4">
-        <div className="flex items-center justify-center gap-3">
-          <Calendar className="w-7 h-7 text-primary flex-shrink-0" />
-          <p className="text-xl font-medium text-foreground" data-testid="text-today-date">
-            Today is {formatTodayDate()}
-          </p>
-        </div>
-      </div>
-
       <header className="bg-card border-b border-card-border px-6 py-6">
-        <h1 className="text-4xl font-bold text-center text-foreground">
-          Judy's Family
-        </h1>
+        <div className="flex items-center justify-center gap-3">
+          <Calendar className="w-8 h-8 text-primary flex-shrink-0" />
+          <h1 className="text-3xl font-bold text-foreground" data-testid="text-today-date">
+            Judy: Today is {formatTodayDate()}
+          </h1>
+        </div>
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-8">
