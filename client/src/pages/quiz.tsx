@@ -142,11 +142,12 @@ export default function Quiz() {
         <header className="bg-card border-b border-card-border px-4 py-4">
           <div className="max-w-lg mx-auto flex items-center gap-4">
             <Link href="/" data-testid="link-back-home">
-              <Button size="icon" variant="ghost" className="h-14 w-14">
-                <ArrowLeft className="w-8 h-8" />
+              <Button variant="ghost" className="h-auto py-3 px-4 flex flex-col items-center gap-1 text-primary">
+                <ArrowLeft className="w-16 h-16" strokeWidth={3} />
+                <span className="text-lg font-bold">Back</span>
               </Button>
             </Link>
-            <h1 className="text-2xl font-bold text-foreground">Memory Quiz</h1>
+            <h1 className="text-2xl font-bold text-foreground ml-2">Memory Quiz</h1>
           </div>
         </header>
         <main className="max-w-lg mx-auto px-4 py-8">
@@ -171,11 +172,12 @@ export default function Quiz() {
         <header className="bg-card border-b border-card-border px-4 py-4">
           <div className="max-w-lg mx-auto flex items-center gap-4">
             <Link href="/" data-testid="link-back-home">
-              <Button size="icon" variant="ghost" className="h-14 w-14">
-                <ArrowLeft className="w-8 h-8" />
+              <Button variant="ghost" className="h-auto py-3 px-4 flex flex-col items-center gap-1 text-primary">
+                <ArrowLeft className="w-16 h-16" strokeWidth={3} />
+                <span className="text-lg font-bold">Back</span>
               </Button>
             </Link>
-            <h1 className="text-2xl font-bold text-foreground">Quiz Complete!</h1>
+            <h1 className="text-2xl font-bold text-foreground ml-2">Quiz Complete!</h1>
           </div>
         </header>
         <main className="max-w-lg mx-auto px-4 py-8">
@@ -220,11 +222,12 @@ export default function Quiz() {
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link href="/" data-testid="link-back-home">
-              <Button size="icon" variant="ghost" className="h-14 w-14">
-                <ArrowLeft className="w-8 h-8" />
+              <Button variant="ghost" className="h-auto py-3 px-4 flex flex-col items-center gap-1 text-primary">
+                <ArrowLeft className="w-16 h-16" strokeWidth={3} />
+                <span className="text-lg font-bold">Back</span>
               </Button>
             </Link>
-            <h1 className="text-2xl font-bold text-foreground">Memory Quiz</h1>
+            <h1 className="text-2xl font-bold text-foreground ml-2">Memory Quiz</h1>
           </div>
           <div className="flex items-center gap-2 text-xl font-bold text-foreground">
             <Star className="w-6 h-6 text-yellow-500 fill-yellow-500" />

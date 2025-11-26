@@ -146,86 +146,6 @@ export default function Home() {
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-8">
-        {/* Search Section */}
-        <div className="mb-8">
-          <div className="relative">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-8 h-8 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search family..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-16 pr-20 text-4xl font-bold h-20 placeholder:text-2xl placeholder:font-normal"
-              data-testid="input-search"
-            />
-            {searchQuery && (
-              <Button
-                variant="secondary"
-                size="icon"
-                onClick={handleClearSearch}
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-12 w-12"
-                data-testid="button-clear-search"
-              >
-                <X className="w-8 h-8" />
-              </Button>
-            )}
-          </div>
-
-          {/* Search Results */}
-          {showSearchResults && (
-            <div className="mt-6" data-testid="search-results">
-              {isLoading ? (
-                <div className="text-center text-xl text-muted-foreground py-8">
-                  Searching...
-                </div>
-              ) : searchResults.length === 0 ? (
-                <div className="text-center text-xl text-muted-foreground py-8">
-                  No one found matching "{searchQuery}"
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <p className="text-lg text-muted-foreground mb-4">
-                    Found {searchResults.length} {searchResults.length === 1 ? "person" : "people"}
-                  </p>
-                  {searchResults.map((person) => (
-                    <Link
-                      key={person.id}
-                      href={`/person/${person.id}`}
-                      data-testid={`link-person-${person.id}`}
-                    >
-                      <Card className="hover-elevate active-elevate-2 cursor-pointer">
-                        <div className="p-6 flex items-center gap-6">
-                          <Avatar className="w-20 h-20 flex-shrink-0">
-                            {person.photoData && (
-                              <AvatarImage src={person.photoData} alt={person.name} />
-                            )}
-                            <AvatarFallback className="text-2xl">
-                              {getInitials(person.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-2xl font-bold text-foreground mb-1">
-                              {person.name}
-                            </h3>
-                            <p className="text-xl text-muted-foreground">
-                              {person.relationship}
-                            </p>
-                            {person.location && (
-                              <p className="text-lg text-muted-foreground mt-1">
-                                {person.location}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </Card>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
         {/* Category Grid - Hide when searching */}
         {!showSearchResults && (
           <div className="grid grid-cols-1 gap-6">
@@ -291,12 +211,12 @@ export default function Home() {
               );
             })}
 
-            {/* Everyone button */}
+            {/* Everyone button - darker gray to differentiate */}
             <Link
               href="/everyone"
               data-testid="link-everyone"
             >
-              <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all">
+              <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all bg-muted/70 dark:bg-muted/50">
                 <div className="p-6 flex items-center gap-4">
                   <div className="text-primary flex-shrink-0">
                     <UsersRound className="w-14 h-14" strokeWidth={1.5} />
@@ -334,6 +254,94 @@ export default function Home() {
                 </div>
               </Card>
             </Link>
+
+            {/* Search Section - at bottom */}
+            <div className="mt-2">
+              <div className="relative">
+                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-8 h-8 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Search family..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-16 pr-20 text-4xl font-bold h-20 placeholder:text-2xl placeholder:font-normal"
+                  data-testid="input-search"
+                />
+                {searchQuery && (
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    onClick={handleClearSearch}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-12 w-12"
+                    data-testid="button-clear-search"
+                  >
+                    <X className="w-8 h-8" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Search Results - shown when searching */}
+        {showSearchResults && (
+          <div className="mt-6" data-testid="search-results">
+            {isLoading ? (
+              <div className="text-center text-xl text-muted-foreground py-8">
+                Searching...
+              </div>
+            ) : searchResults.length === 0 ? (
+              <div className="text-center text-xl text-muted-foreground py-8">
+                No one found matching "{searchQuery}"
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-lg text-muted-foreground mb-4">
+                  Found {searchResults.length} {searchResults.length === 1 ? "person" : "people"}
+                </p>
+                {searchResults.map((person) => (
+                  <Link
+                    key={person.id}
+                    href={`/person/${person.id}`}
+                    data-testid={`link-person-${person.id}`}
+                  >
+                    <Card className="hover-elevate active-elevate-2 cursor-pointer">
+                      <div className="p-6 flex items-center gap-6">
+                        <Avatar className="w-20 h-20 flex-shrink-0">
+                          {person.photoData && (
+                            <AvatarImage src={person.photoData} alt={person.name} />
+                          )}
+                          <AvatarFallback className="text-2xl">
+                            {getInitials(person.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-2xl font-bold text-foreground mb-1">
+                            {person.name}
+                          </h3>
+                          <p className="text-xl text-muted-foreground">
+                            {person.relationship}
+                          </p>
+                          {person.location && (
+                            <p className="text-lg text-muted-foreground mt-1">
+                              {person.location}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  </Link>
+                ))}
+                <Button
+                  variant="secondary"
+                  onClick={handleClearSearch}
+                  className="w-full h-14 text-xl mt-4"
+                  data-testid="button-clear-search-bottom"
+                >
+                  Clear Search
+                </Button>
+              </div>
+            )}
           </div>
         )}
 

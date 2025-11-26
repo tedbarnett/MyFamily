@@ -120,14 +120,14 @@ export default function PersonDetail() {
           <Link href="/">
             <Button
               variant="ghost"
-              className="flex-shrink-0 h-auto py-2 px-3 flex flex-col items-center gap-1 text-primary"
+              className="flex-shrink-0 h-auto py-3 px-4 flex flex-col items-center gap-1 text-primary"
               data-testid="button-back"
             >
-              <ArrowLeft className="w-12 h-12" strokeWidth={3} />
-              <span className="text-sm font-bold">Back</span>
+              <ArrowLeft className="w-16 h-16" strokeWidth={3} />
+              <span className="text-lg font-bold">Back</span>
             </Button>
           </Link>
-          <h1 className="text-2xl font-bold text-foreground flex-1 truncate">
+          <h1 className="text-2xl font-bold text-foreground flex-1 truncate ml-2">
             Family Details
           </h1>
         </div>
