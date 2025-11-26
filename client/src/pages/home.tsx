@@ -207,10 +207,13 @@ export default function Home() {
             {categories.map((category) => {
               const Icon = category.icon;
               const categoryPeople = getPeopleByCategory(category.id);
+              const linkTarget = categoryPeople.length === 1 
+                ? `/person/${categoryPeople[0].id}` 
+                : `/category/${category.id}`;
               return (
                 <Link
                   key={category.id}
-                  href={`/category/${category.id}`}
+                  href={linkTarget}
                   data-testid={`link-category-${category.id}`}
                 >
                   <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all">
