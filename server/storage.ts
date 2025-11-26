@@ -1,6 +1,6 @@
-import { type Person, type InsertPerson, type PersonCategory, people } from "@shared/schema";
+import { type Person, type InsertPerson, type PersonCategory, people, type QuizResult, type InsertQuizResult, quizResults } from "@shared/schema";
 import { db } from "./db";
-import { eq, or, like, sql } from "drizzle-orm";
+import { eq, or, like, sql, desc } from "drizzle-orm";
 
 export interface IStorage {
   getAllPeople(): Promise<Person[]>;
@@ -11,6 +11,8 @@ export interface IStorage {
   deletePerson(id: string): Promise<boolean>;
   searchPeople(query: string): Promise<Person[]>;
   recordVisit(id: string, visitDate: string): Promise<Person | undefined>;
+  saveQuizResult(result: InsertQuizResult): Promise<QuizResult>;
+  getQuizResults(): Promise<QuizResult[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -80,6 +82,19 @@ export class DatabaseStorage implements IStorage {
       lastVisit: visitDate,
       visitHistory,
     });
+  }
+
+  async saveQuizResult(result: InsertQuizResult): Promise<QuizResult> {
+    const [created] = await db.insert(quizResults).values(result).returning();
+    return created;
+  }
+
+  async getQuizResults(): Promise<QuizResult[]> {
+    const results = await db
+      .select()
+      .from(quizResults)
+      .orderBy(desc(quizResults.completedAt));
+    return results;
   }
 }
 

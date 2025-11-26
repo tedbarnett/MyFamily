@@ -6,11 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Home, Camera, Loader2, Save, X, Pencil, Plus, Trash2 } from "lucide-react";
+import { Home, Camera, Loader2, Save, X, Pencil, Plus, Trash2, BrainCircuit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { PhotoCropper } from "@/components/photo-cropper";
-import type { Person, PersonCategory } from "@shared/schema";
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
+import type { Person, PersonCategory, QuizResult } from "@shared/schema";
 
 const categoryLabels: Record<PersonCategory, string> = {
   husband: "Husband",
@@ -44,6 +45,25 @@ export default function Admin() {
   const { data: allPeople = [], isLoading } = useQuery<Person[]>({
     queryKey: ["/api/people"],
   });
+
+  const { data: quizResults = [] } = useQuery<QuizResult[]>({
+    queryKey: ["/api/quiz-results"],
+  });
+
+  // Format quiz results for chart - show last 20 results, oldest first
+  const chartData = quizResults
+    .slice(0, 20)
+    .reverse()
+    .map((result, index) => ({
+      index: index + 1,
+      score: result.score,
+      total: result.totalQuestions,
+      percentage: Math.round((result.score / result.totalQuestions) * 100),
+      date: new Date(result.completedAt).toLocaleDateString("en-US", { 
+        month: "short", 
+        day: "numeric" 
+      }),
+    }));
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<Person> }) => {
@@ -275,6 +295,59 @@ export default function Admin() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-6">
+        {/* Quiz Results Chart - Mental Acuity Tracking */}
+        {chartData.length > 0 && (
+          <Card className="mb-8 p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <BrainCircuit className="w-5 h-5 text-primary" />
+              <h2 className="text-lg font-bold text-foreground">Memory Quiz Results</h2>
+            </div>
+            <div className="h-48">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 12 }} 
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis 
+                    domain={[0, 100]} 
+                    tick={{ fontSize: 12 }} 
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => `${value}%`}
+                  />
+                  <Tooltip 
+                    formatter={(value: number, name: string) => {
+                      if (name === "percentage") return [`${value}%`, "Score"];
+                      return [value, name];
+                    }}
+                    labelFormatter={(label) => `Date: ${label}`}
+                    contentStyle={{ 
+                      backgroundColor: "hsl(var(--card))", 
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px"
+                    }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="percentage" 
+                    stroke="hsl(var(--primary))" 
+                    strokeWidth={2}
+                    dot={{ fill: "hsl(var(--primary))", strokeWidth: 0, r: 4 }}
+                    activeDot={{ r: 6, fill: "hsl(var(--primary))" }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="text-sm text-muted-foreground mt-2 text-center">
+              Last {chartData.length} quiz{chartData.length !== 1 ? "zes" : ""} • 
+              Latest: {chartData.length > 0 ? `${chartData[chartData.length - 1].score}/${chartData[chartData.length - 1].total}` : "—"}
+            </p>
+          </Card>
+        )}
+
         {categoryOrder.map((category) => {
           const people = getPeopleByCategory(category);
 

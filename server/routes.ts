@@ -163,6 +163,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Save quiz result
+  app.post("/api/quiz-result", async (req, res) => {
+    try {
+      const { score, totalQuestions } = req.body;
+
+      if (typeof score !== "number" || typeof totalQuestions !== "number") {
+        return res.status(400).json({ error: "Score and totalQuestions are required" });
+      }
+
+      const result = await storage.saveQuizResult({ score, totalQuestions });
+      res.status(201).json(result);
+    } catch (error) {
+      console.error("Error saving quiz result:", error);
+      res.status(500).json({ error: "Failed to save quiz result" });
+    }
+  });
+
+  // Get quiz results history
+  app.get("/api/quiz-results", async (req, res) => {
+    try {
+      const results = await storage.getQuizResults();
+      res.json(results);
+    } catch (error) {
+      console.error("Error fetching quiz results:", error);
+      res.status(500).json({ error: "Failed to fetch quiz results" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

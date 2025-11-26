@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -47,3 +47,19 @@ export interface CategoryInfo {
   description: string;
   count: number;
 }
+
+// Quiz results table schema for tracking mental acuity over time
+export const quizResults = pgTable("quiz_results", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  score: integer("score").notNull(),
+  totalQuestions: integer("total_questions").notNull(),
+  completedAt: timestamp("completed_at").notNull().defaultNow(),
+});
+
+export const insertQuizResultSchema = createInsertSchema(quizResults).omit({
+  id: true,
+  completedAt: true,
+});
+
+export type InsertQuizResult = z.infer<typeof insertQuizResultSchema>;
+export type QuizResult = typeof quizResults.$inferSelect;

@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, RefreshCw, Trophy, Star, PartyPopper, ThumbsUp, ChevronRight } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import type { Person } from "@shared/schema";
 
 const MAX_QUESTIONS = 10;
@@ -41,12 +42,28 @@ export default function Quiz() {
   const [feedback, setFeedback] = useState<{ message: string; isCorrect: boolean } | null>(null);
   const [quizComplete, setQuizComplete] = useState(false);
   const [askedPeople, setAskedPeople] = useState<Set<string>>(new Set());
+  const resultSavedRef = useRef(false);
 
   const { data: allPeople = [], isLoading } = useQuery<Person[]>({
     queryKey: ["/api/people"],
   });
 
   const totalQuestions = Math.min(MAX_QUESTIONS, allPeople.length);
+
+  const saveResultMutation = useMutation({
+    mutationFn: async ({ score, totalQuestions }: { score: number; totalQuestions: number }) => {
+      const response = await apiRequest("POST", "/api/quiz-result", { score, totalQuestions });
+      return response.json();
+    },
+  });
+
+  // Save quiz result when complete
+  useEffect(() => {
+    if (quizComplete && !resultSavedRef.current && totalQuestions > 0) {
+      resultSavedRef.current = true;
+      saveResultMutation.mutate({ score, totalQuestions });
+    }
+  }, [quizComplete, score, totalQuestions]);
 
   const getInitials = (name: string) => {
     return name
@@ -139,6 +156,7 @@ export default function Quiz() {
     setAskedPeople(new Set());
     setFeedback(null);
     setCurrentQuestion(null);
+    resultSavedRef.current = false;
   };
 
   if (isLoading) {
