@@ -175,46 +175,64 @@ export default function PersonDetail() {
         </div>
       </header>
 
+      <div className="relative w-full aspect-square max-w-2xl mx-auto">
+        {photoSrc ? (
+          <img
+            src={photoSrc}
+            alt={person.name}
+            className="w-full h-full object-cover"
+            data-testid="img-person-photo"
+          />
+        ) : (
+          <div className="w-full h-full bg-primary/10 flex items-center justify-center">
+            <span className="text-8xl font-bold text-primary">
+              {getInitials(person.name)}
+            </span>
+          </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 p-6">
+          <h2 
+            className="text-4xl font-bold text-white mb-2"
+            style={{ textShadow: "2px 2px 4px rgba(0,0,0,0.8)" }}
+            data-testid="text-person-name"
+          >
+            {person.name}
+          </h2>
+          <p 
+            className="text-2xl text-white/90"
+            style={{ textShadow: "1px 1px 3px rgba(0,0,0,0.8)" }}
+            data-testid="text-person-relationship"
+          >
+            {person.relationship}
+          </p>
+        </div>
+        <Button
+          size="icon"
+          variant="default"
+          className="absolute bottom-4 right-4 rounded-full h-10 w-10 shadow-lg"
+          onClick={handlePhotoClick}
+          disabled={photoMutation.isPending}
+          data-testid="button-change-photo"
+        >
+          {photoMutation.isPending ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Camera className="w-4 h-4" />
+          )}
+        </Button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          className="hidden"
+          data-testid="input-photo-upload"
+        />
+      </div>
+
       <main className="max-w-2xl mx-auto px-4 py-8">
         <div className="space-y-8">
-          <div className="flex flex-col items-center text-center">
-            <div className="relative mb-6">
-              <Avatar className="w-40 h-40 border-4 border-border">
-                <AvatarImage src={photoSrc} alt={person.name} />
-                <AvatarFallback className="text-4xl font-bold bg-primary/10 text-primary">
-                  {getInitials(person.name)}
-                </AvatarFallback>
-              </Avatar>
-              <Button
-                size="icon"
-                variant="default"
-                className="absolute bottom-1 right-1 rounded-full h-10 w-10 shadow-lg"
-                onClick={handlePhotoClick}
-                disabled={photoMutation.isPending}
-                data-testid="button-change-photo"
-              >
-                {photoMutation.isPending ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Camera className="w-4 h-4" />
-                )}
-              </Button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="hidden"
-                data-testid="input-photo-upload"
-              />
-            </div>
-            <h2 className="text-4xl font-bold text-foreground mb-2" data-testid="text-person-name">
-              {person.name}
-            </h2>
-            <p className="text-2xl text-muted-foreground" data-testid="text-person-relationship">
-              {person.relationship}
-            </p>
-          </div>
 
           {(person.age || person.born) && (
             <Card>
