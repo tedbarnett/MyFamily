@@ -1,7 +1,6 @@
 import { useRoute, Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import type { Person, PersonCategory } from "@shared/schema";
@@ -67,38 +66,59 @@ export default function Category() {
             <Loader2 className="w-12 h-12 animate-spin text-primary" />
           </div>
         ) : people && people.length > 0 ? (
-          <div className="space-y-6">
-            {people.map((person) => (
-              <Link
-                key={person.id}
-                href={`/person/${person.id}`}
-                data-testid={`link-person-${person.id}`}
-              >
-                <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all">
-                  <div className="p-6 flex items-center gap-6">
-                    <Avatar className="w-32 h-32 flex-shrink-0 border-2 border-border">
-                      <AvatarImage src={person.photoData || person.photoUrl || undefined} alt={person.name} />
-                      <AvatarFallback className="text-2xl font-semibold bg-primary/10 text-primary">
-                        {getInitials(person.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <h2 className="text-3xl font-bold text-foreground mb-1 break-words">
-                        {person.name}
-                      </h2>
-                      <p className="text-xl text-muted-foreground break-words">
-                        {person.relationship}
-                      </p>
-                      {person.location && (
-                        <p className="text-lg text-muted-foreground mt-1 break-words">
-                          {person.location}
-                        </p>
+          <div className="grid grid-cols-1 gap-6">
+            {people.map((person) => {
+              const photoSrc = person.photoData || person.photoUrl;
+              return (
+                <Link
+                  key={person.id}
+                  href={`/person/${person.id}`}
+                  data-testid={`link-person-${person.id}`}
+                >
+                  <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all overflow-hidden">
+                    <div 
+                      className="relative aspect-square w-full"
+                      style={{
+                        backgroundColor: photoSrc ? undefined : 'hsl(var(--primary) / 0.1)',
+                      }}
+                    >
+                      {photoSrc ? (
+                        <img 
+                          src={photoSrc} 
+                          alt={person.name}
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-8xl font-bold text-primary/40">
+                            {getInitials(person.name)}
+                          </span>
+                        </div>
                       )}
+                      {/* Dark gradient overlay for text readability */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                      {/* Text overlay */}
+                      <div className="absolute bottom-0 left-0 right-0 p-6">
+                        <h2 
+                          className="text-4xl font-bold text-white mb-1 break-words"
+                          style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}
+                          data-testid={`text-person-name-${person.id}`}
+                        >
+                          {person.name}
+                        </h2>
+                        <p 
+                          className="text-2xl text-white/90 break-words"
+                          style={{ textShadow: '1px 1px 3px rgba(0,0,0,0.8)' }}
+                          data-testid={`text-person-relationship-${person.id}`}
+                        >
+                          {person.relationship}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </Card>
-              </Link>
-            ))}
+                  </Card>
+                </Link>
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-20">
