@@ -10,7 +10,8 @@ export type PersonCategory =
   | "grandchildren" 
   | "daughters_in_law"
   | "friends" 
-  | "caregivers";
+  | "caregivers"
+  | "other";
 
 // Person table schema
 export const people = pgTable("people", {

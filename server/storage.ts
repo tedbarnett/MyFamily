@@ -6,6 +6,7 @@ export interface IStorage {
   getAllPeople(): Promise<Person[]>;
   getPeopleByCategory(category: PersonCategory): Promise<Person[]>;
   getPersonById(id: string): Promise<Person | undefined>;
+  createPerson(person: InsertPerson): Promise<Person>;
   updatePerson(id: string, updates: Partial<Person>): Promise<Person | undefined>;
   searchPeople(query: string): Promise<Person[]>;
   recordVisit(id: string, visitDate: string): Promise<Person | undefined>;
@@ -29,6 +30,11 @@ export class DatabaseStorage implements IStorage {
   async getPersonById(id: string): Promise<Person | undefined> {
     const [person] = await db.select().from(people).where(eq(people.id, id));
     return person || undefined;
+  }
+
+  async createPerson(person: InsertPerson): Promise<Person> {
+    const [created] = await db.insert(people).values(person).returning();
+    return created;
   }
 
   async updatePerson(id: string, updates: Partial<Person>): Promise<Person | undefined> {

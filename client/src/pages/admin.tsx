@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Camera, Loader2, Save, X, Pencil } from "lucide-react";
+import { ArrowLeft, Camera, Loader2, Save, X, Pencil, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { PhotoCropper } from "@/components/photo-cropper";
@@ -20,6 +20,7 @@ const categoryLabels: Record<PersonCategory, string> = {
   daughters_in_law: "Daughters in Law",
   friends: "Friends",
   caregivers: "Caregivers",
+  other: "Other",
 };
 
 const categoryOrder: PersonCategory[] = [
@@ -29,6 +30,7 @@ const categoryOrder: PersonCategory[] = [
   "daughters_in_law",
   "friends",
   "caregivers",
+  "other",
 ];
 
 export default function Admin() {
@@ -39,6 +41,8 @@ export default function Admin() {
   const [cropperImage, setCropperImage] = useState<string | null>(null);
   const [showCropper, setShowCropper] = useState(false);
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
+  const [addingToCategory, setAddingToCategory] = useState<PersonCategory | null>(null);
+  const [addForm, setAddForm] = useState<Partial<Person>>({});
 
   const { data: allPeople = [], isLoading } = useQuery<Person[]>({
     queryKey: ["/api/people"],
@@ -88,6 +92,29 @@ export default function Admin() {
     },
   });
 
+  const createMutation = useMutation({
+    mutationFn: async (personData: Partial<Person>) => {
+      const response = await apiRequest("POST", "/api/person", personData);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/people"] });
+      toast({
+        title: "Person Added",
+        description: "New person added successfully.",
+      });
+      setAddingToCategory(null);
+      setAddForm({});
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add person.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const getInitials = (name: string) => {
     const parts = name.split(" ");
     if (parts.length >= 2) {
@@ -120,6 +147,30 @@ export default function Admin() {
     updateMutation.mutate({
       id: editingPerson.id,
       updates: editForm,
+    });
+  };
+
+  const handleAddClick = (category: PersonCategory) => {
+    setAddingToCategory(category);
+    setAddForm({
+      category,
+      name: "",
+      relationship: categoryLabels[category] === "Husband" ? "Husband" : 
+                    categoryLabels[category] === "Children" ? "Son" :
+                    categoryLabels[category] === "Grandchildren" ? "Grandchild" :
+                    categoryLabels[category] === "Daughters in Law" ? "Daughter in Law" :
+                    categoryLabels[category] === "Friends" ? "Friend" :
+                    categoryLabels[category] === "Caregivers" ? "Caregiver" : "",
+      summary: "",
+    });
+  };
+
+  const handleAddSave = () => {
+    if (!addingToCategory || !addForm.name) return;
+    createMutation.mutate({
+      ...addForm,
+      category: addingToCategory,
+      sortOrder: getPeopleByCategory(addingToCategory).length + 1,
     });
   };
 
@@ -197,7 +248,6 @@ export default function Admin() {
       <main className="max-w-4xl mx-auto px-4 py-6">
         {categoryOrder.map((category) => {
           const people = getPeopleByCategory(category);
-          if (people.length === 0) return null;
 
           return (
             <div key={category} className="mb-8">
@@ -250,6 +300,20 @@ export default function Admin() {
                     </Card>
                   );
                 })}
+                <Button
+                  variant="outline"
+                  className="w-full mt-2 text-primary border-dashed"
+                  onClick={() => handleAddClick(category)}
+                  data-testid={`button-add-${category}`}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add {categoryLabels[category] === "Children" ? "Child" : 
+                       categoryLabels[category] === "Grandchildren" ? "Grandchild" :
+                       categoryLabels[category] === "Daughters in Law" ? "Daughter in Law" :
+                       categoryLabels[category] === "Friends" ? "Friend" :
+                       categoryLabels[category] === "Caregivers" ? "Caregiver" :
+                       categoryLabels[category] === "Other" ? "Person" : "Person"}
+                </Button>
               </div>
             </div>
           );
@@ -383,6 +447,66 @@ export default function Admin() {
                 <Save className="w-4 h-4 mr-2" />
               )}
               Save
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!addingToCategory} onOpenChange={(open) => !open && setAddingToCategory(null)}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl">Add New Person to {addingToCategory && categoryLabels[addingToCategory]}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Name *</label>
+              <Input
+                value={addForm.name || ""}
+                onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
+                placeholder="Enter full name"
+                data-testid="input-add-name"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Relationship *</label>
+              <Input
+                value={addForm.relationship || ""}
+                onChange={(e) => setAddForm({ ...addForm, relationship: e.target.value })}
+                placeholder="e.g., Son, Granddaughter, Caregiver"
+                data-testid="input-add-relationship"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Summary / About</label>
+              <Textarea
+                value={addForm.summary || ""}
+                onChange={(e) => setAddForm({ ...addForm, summary: e.target.value })}
+                rows={3}
+                placeholder="Brief description about this person"
+                data-testid="input-add-summary"
+              />
+            </div>
+          </div>
+          <div className="flex gap-3 justify-end">
+            <Button
+              variant="outline"
+              onClick={() => setAddingToCategory(null)}
+              data-testid="button-cancel-add"
+            >
+              <X className="w-4 h-4 mr-2" />
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAddSave}
+              disabled={createMutation.isPending || !addForm.name}
+              data-testid="button-save-add"
+            >
+              {createMutation.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Plus className="w-4 h-4 mr-2" />
+              )}
+              Add Person
             </Button>
           </div>
         </DialogContent>

@@ -19,7 +19,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/people/:category", async (req, res) => {
     try {
       const category = req.params.category as PersonCategory;
-      const validCategories = ["husband", "children", "grandchildren", "daughters_in_law", "friends", "caregivers"];
+      const validCategories = ["husband", "children", "grandchildren", "daughters_in_law", "friends", "caregivers", "other"];
       
       if (!validCategories.includes(category)) {
         return res.status(400).json({ error: "Invalid category" });
@@ -85,6 +85,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating photo:", error);
       res.status(500).json({ error: "Failed to update photo" });
+    }
+  });
+
+  // Create new person
+  app.post("/api/person", async (req, res) => {
+    try {
+      const personData = req.body;
+
+      if (!personData.name || !personData.category || !personData.relationship) {
+        return res.status(400).json({ error: "Name, category, and relationship are required" });
+      }
+
+      const person = await storage.createPerson(personData);
+      res.status(201).json(person);
+    } catch (error) {
+      console.error("Error creating person:", error);
+      res.status(500).json({ error: "Failed to create person" });
     }
   });
 

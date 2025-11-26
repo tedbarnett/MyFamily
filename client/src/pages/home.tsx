@@ -59,6 +59,13 @@ const categories: CategoryCard[] = [
     icon: Stethoscope,
     color: "text-orange-600",
   },
+  {
+    id: "other",
+    label: "Other",
+    description: "",
+    icon: Users,
+    color: "text-gray-600",
+  },
 ];
 
 export default function Home() {
