@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import type { PersonCategory } from "@shared/schema";
+import type { PersonCategory, Person } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Get all people
@@ -19,7 +19,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/people/:category", async (req, res) => {
     try {
       const category = req.params.category as PersonCategory;
-      const validCategories = ["husband", "children", "grandchildren", "friends", "caregivers"];
+      const validCategories = ["husband", "children", "grandchildren", "daughters_in_law", "friends", "caregivers"];
       
       if (!validCategories.includes(category)) {
         return res.status(400).json({ error: "Invalid category" });
@@ -85,6 +85,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating photo:", error);
       res.status(500).json({ error: "Failed to update photo" });
+    }
+  });
+
+  // Update person data
+  app.patch("/api/person/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates: Partial<Person> = req.body;
+
+      // Remove id from updates if present
+      delete (updates as any).id;
+
+      const person = await storage.updatePerson(id, updates);
+      if (!person) {
+        return res.status(404).json({ error: "Person not found" });
+      }
+
+      res.json(person);
+    } catch (error) {
+      console.error("Error updating person:", error);
+      res.status(500).json({ error: "Failed to update person" });
     }
   });
 
