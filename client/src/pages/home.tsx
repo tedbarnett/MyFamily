@@ -212,9 +212,9 @@ export default function Home() {
                           {category.description}
                         </p>
                       </div>
-                      {/* Photo Collage */}
+                      {/* Photo Collage - hidden on mobile */}
                       {categoryPeople.length > 0 && (
-                        <div className="flex -space-x-6 flex-shrink-0">
+                        <div className="hidden sm:flex -space-x-6 flex-shrink-0">
                           {categoryPeople.slice(0, 4).map((person, index) => (
                             <Avatar
                               key={person.id}
