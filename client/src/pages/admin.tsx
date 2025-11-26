@@ -1,5 +1,4 @@
 import { useState, useRef } from "react";
-import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Camera, Loader2, Save, X, Pencil, Plus } from "lucide-react";
+import { Home, Camera, Loader2, Save, X, Pencil, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { PhotoCropper } from "@/components/photo-cropper";
@@ -229,16 +228,15 @@ export default function Admin() {
     <div className="min-h-screen bg-background pb-8">
       <header className="bg-card border-b border-card-border px-6 py-4 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto flex items-center gap-4">
-          <Link href="/">
-            <Button
-              variant="ghost"
-              className="flex-shrink-0 h-auto py-2 px-3 flex flex-col items-center gap-1 text-primary"
-              data-testid="button-back"
-            >
-              <ArrowLeft className="w-10 h-10" strokeWidth={3} />
-              <span className="text-xs font-bold">Back</span>
-            </Button>
-          </Link>
+          <Button
+            variant="ghost"
+            className="flex-shrink-0 h-auto py-2 px-3 flex flex-col items-center gap-1 text-primary"
+            onClick={() => window.open("/", "_blank")}
+            data-testid="button-home"
+          >
+            <Home className="w-10 h-10" strokeWidth={2} />
+            <span className="text-xs font-bold">Home</span>
+          </Button>
           <h1 className="text-2xl font-bold text-foreground flex-1">
             Admin - Edit People
           </h1>
