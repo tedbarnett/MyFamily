@@ -1,9 +1,9 @@
-import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { useCallback, useRef, useMemo } from "react";
 import { useRoute, Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, MapPin, Calendar, Briefcase, Heart, Volume2, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, Loader2, MapPin, Calendar, Briefcase, Heart, ChevronLeft, ChevronRight } from "lucide-react";
 import type { Person, PersonCategory } from "@shared/schema";
 
 const categoryOrder: PersonCategory[] = [
@@ -20,7 +20,6 @@ export default function PersonDetail() {
   const [, params] = useRoute("/person/:id");
   const [, setLocation] = useLocation();
   const personId = params?.id;
-  const [isSpeaking, setIsSpeaking] = useState(false);
   
   // Touch/swipe state
   const touchStartX = useRef<number | null>(null);
@@ -101,45 +100,6 @@ export default function PersonDetail() {
     touchStartX.current = null;
     touchEndX.current = null;
   }, [navigateToNext, navigateToPrev]);
-
-  const speakName = useCallback((name: string) => {
-    setIsSpeaking(true);
-    
-    const minDisplayTime = 1500;
-    const startTime = Date.now();
-    
-    const clearSpeakingAfterMin = () => {
-      const elapsed = Date.now() - startTime;
-      if (elapsed < minDisplayTime) {
-        setTimeout(() => setIsSpeaking(false), minDisplayTime - elapsed);
-      } else {
-        setIsSpeaking(false);
-      }
-    };
-    
-    if (!("speechSynthesis" in window)) {
-      setTimeout(() => setIsSpeaking(false), minDisplayTime);
-      return;
-    }
-    
-    window.speechSynthesis.cancel();
-    
-    const utterance = new SpeechSynthesisUtterance(name);
-    utterance.rate = 0.8;
-    utterance.pitch = 1;
-    utterance.volume = 1;
-    
-    utterance.onend = clearSpeakingAfterMin;
-    utterance.onerror = clearSpeakingAfterMin;
-    
-    window.speechSynthesis.speak(utterance);
-    
-    setTimeout(() => {
-      if (!window.speechSynthesis.speaking) {
-        clearSpeakingAfterMin();
-      }
-    }, 4000);
-  }, []);
 
   // Helper function to find a person by name and return their ID
   // Supports exact match, first name match, or partial match
@@ -238,25 +198,13 @@ export default function PersonDetail() {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-6 text-center">
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <h2 
-              className="text-4xl font-bold text-white"
-              style={{ textShadow: "2px 2px 4px rgba(0,0,0,0.8)" }}
-              data-testid="text-person-name"
-            >
-              {person.name}
-            </h2>
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={() => speakName(person.name)}
-              className={`h-14 w-14 rounded-full bg-white/20 hover:bg-white/30 border-2 border-white/50 ${isSpeaking ? "animate-pulse bg-white/40 ring-4 ring-white/70" : ""}`}
-              data-testid="button-speak-name"
-              data-speaking={isSpeaking}
-            >
-              <Volume2 className="w-8 h-8 text-white" />
-            </Button>
-          </div>
+          <h2 
+            className="text-4xl font-bold text-white mb-2"
+            style={{ textShadow: "2px 2px 4px rgba(0,0,0,0.8)" }}
+            data-testid="text-person-name"
+          >
+            {person.name}
+          </h2>
           <p 
             className="text-2xl text-white/90"
             style={{ textShadow: "1px 1px 3px rgba(0,0,0,0.8)" }}
