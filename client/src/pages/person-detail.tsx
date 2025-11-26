@@ -23,6 +23,19 @@ export default function PersonDetail() {
     enabled: !!personId,
   });
 
+  // Fetch all people to enable linking children/grandchildren by name
+  const { data: allPeople = [] } = useQuery<Person[]>({
+    queryKey: ["/api/people"],
+  });
+
+  // Helper function to find a person by name and return their ID
+  const findPersonByName = (name: string): string | null => {
+    const found = allPeople.find(
+      (p) => p.name.toLowerCase() === name.toLowerCase()
+    );
+    return found?.id || null;
+  };
+
   const photoMutation = useMutation({
     mutationFn: async (photoData: string) => {
       const response = await apiRequest(
@@ -243,7 +256,21 @@ export default function PersonDetail() {
                     </h3>
                     {person.spouse && (
                       <p className="text-lg text-foreground mb-2 break-words">
-                        <span className="font-medium">Spouse:</span> {person.spouse}
+                        <span className="font-medium">Spouse:</span>{" "}
+                        {(() => {
+                          const spouseId = findPersonByName(person.spouse);
+                          return spouseId ? (
+                            <Link
+                              href={`/person/${spouseId}`}
+                              className="text-primary underline font-medium hover:text-primary/80"
+                              data-testid="link-spouse"
+                            >
+                              {person.spouse}
+                            </Link>
+                          ) : (
+                            person.spouse
+                          );
+                        })()}
                       </p>
                     )}
                     {person.children && person.children.length > 0 && (
@@ -251,12 +278,25 @@ export default function PersonDetail() {
                         <p className="text-lg font-medium text-foreground mb-1">
                           Children:
                         </p>
-                        <ul className="list-disc list-inside space-y-1">
-                          {person.children.map((child, index) => (
-                            <li key={index} className="text-lg text-foreground break-words">
-                              {child}
-                            </li>
-                          ))}
+                        <ul className="list-disc list-inside space-y-2">
+                          {person.children.map((child, index) => {
+                            const childId = findPersonByName(child);
+                            return (
+                              <li key={index} className="text-lg break-words">
+                                {childId ? (
+                                  <Link
+                                    href={`/person/${childId}`}
+                                    className="text-primary underline font-medium hover:text-primary/80"
+                                    data-testid={`link-child-${index}`}
+                                  >
+                                    {child}
+                                  </Link>
+                                ) : (
+                                  <span className="text-foreground">{child}</span>
+                                )}
+                              </li>
+                            );
+                          })}
                         </ul>
                       </div>
                     )}
