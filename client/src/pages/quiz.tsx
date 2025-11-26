@@ -7,6 +7,8 @@ import { ArrowLeft, RefreshCw, Trophy, Star, PartyPopper, ThumbsUp, ChevronRight
 import { useQuery } from "@tanstack/react-query";
 import type { Person } from "@shared/schema";
 
+const MAX_QUESTIONS = 10;
+
 interface QuizQuestion {
   person: Person;
   options: string[];
@@ -44,6 +46,8 @@ export default function Quiz() {
     queryKey: ["/api/people"],
   });
 
+  const totalQuestions = Math.min(MAX_QUESTIONS, allPeople.length);
+
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -55,6 +59,11 @@ export default function Quiz() {
 
   const generateQuestion = useCallback(() => {
     if (allPeople.length < 4) return null;
+    
+    if (questionsAsked >= totalQuestions) {
+      setQuizComplete(true);
+      return null;
+    }
     
     const availablePeople = allPeople.filter(p => !askedPeople.has(p.id));
     
@@ -78,16 +87,20 @@ export default function Quiz() {
       options: shuffledOptions,
       correctAnswer: correctPerson.name,
     };
-  }, [allPeople, askedPeople]);
+  }, [allPeople, askedPeople, questionsAsked, totalQuestions]);
 
   const startNewQuestion = useCallback(() => {
+    if (questionsAsked >= totalQuestions) {
+      setQuizComplete(true);
+      return;
+    }
     const question = generateQuestion();
     if (question) {
       setCurrentQuestion(question);
       setFeedback(null);
       setQuestionsAsked((prev) => prev + 1);
     }
-  }, [generateQuestion]);
+  }, [generateQuestion, questionsAsked, totalQuestions]);
 
   useEffect(() => {
     if (allPeople.length >= 4 && !currentQuestion && !quizComplete) {
@@ -139,19 +152,18 @@ export default function Quiz() {
   if (allPeople.length < 4) {
     return (
       <div className="min-h-screen bg-background">
-        <header className="bg-card border-b border-card-border px-4 py-4">
-          <div className="max-w-lg mx-auto flex items-center gap-4">
+        <header className="bg-card border-b border-card-border px-4 py-3">
+          <div className="max-w-lg mx-auto flex items-center gap-3">
             <Link href="/" data-testid="link-back-home">
-              <Button variant="ghost" className="h-auto py-3 px-4 flex flex-col items-center gap-1 text-primary">
-                <ArrowLeft className="w-16 h-16" strokeWidth={3} />
-                <span className="text-lg font-bold">Back</span>
+              <Button variant="ghost" className="h-auto p-2 text-primary">
+                <ArrowLeft className="w-12 h-12" strokeWidth={3} />
               </Button>
             </Link>
-            <h1 className="text-2xl font-bold text-foreground ml-2">Memory Quiz</h1>
+            <h1 className="text-2xl font-bold text-foreground">Memory Quiz</h1>
           </div>
         </header>
-        <main className="max-w-lg mx-auto px-4 py-8">
-          <Card className="p-8 text-center">
+        <main className="max-w-lg mx-auto px-3 py-6">
+          <Card className="p-6 text-center">
             <p className="text-xl text-muted-foreground">
               Need at least 4 people to start the quiz. Add more people first!
             </p>
@@ -169,43 +181,42 @@ export default function Quiz() {
   if (quizComplete) {
     return (
       <div className="min-h-screen bg-background">
-        <header className="bg-card border-b border-card-border px-4 py-4">
-          <div className="max-w-lg mx-auto flex items-center gap-4">
+        <header className="bg-card border-b border-card-border px-4 py-3">
+          <div className="max-w-lg mx-auto flex items-center gap-3">
             <Link href="/" data-testid="link-back-home">
-              <Button variant="ghost" className="h-auto py-3 px-4 flex flex-col items-center gap-1 text-primary">
-                <ArrowLeft className="w-16 h-16" strokeWidth={3} />
-                <span className="text-lg font-bold">Back</span>
+              <Button variant="ghost" className="h-auto p-2 text-primary">
+                <ArrowLeft className="w-12 h-12" strokeWidth={3} />
               </Button>
             </Link>
-            <h1 className="text-2xl font-bold text-foreground ml-2">Quiz Complete!</h1>
+            <h1 className="text-2xl font-bold text-foreground">Quiz Complete!</h1>
           </div>
         </header>
-        <main className="max-w-lg mx-auto px-4 py-8">
-          <Card className="p-8 text-center">
-            <PartyPopper className="w-20 h-20 mx-auto text-yellow-500 mb-6" />
-            <h2 className="text-3xl font-bold text-foreground mb-4">
+        <main className="max-w-lg mx-auto px-3 py-6">
+          <Card className="p-6 text-center">
+            <PartyPopper className="w-16 h-16 mx-auto text-yellow-500 mb-4" />
+            <h2 className="text-3xl font-bold text-foreground mb-3">
               Wonderful Job!
             </h2>
-            <div className="flex items-center justify-center gap-2 mb-6">
-              <Trophy className="w-10 h-10 text-yellow-500" />
-              <span className="text-4xl font-bold text-foreground">
-                {score}
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <Trophy className="w-8 h-8 text-yellow-500" />
+              <span className="text-3xl font-bold text-foreground">
+                {score} / {totalQuestions}
               </span>
             </div>
-            <p className="text-2xl text-muted-foreground mb-8">
-              You remembered all {allPeople.length} people!
+            <p className="text-xl text-muted-foreground mb-6">
+              Great memory practice!
             </p>
-            <div className="space-y-4">
+            <div className="space-y-3">
               <Button
                 onClick={handleRestartQuiz}
-                className="w-full h-16 text-xl"
+                className="w-full h-14 text-xl"
                 data-testid="button-restart-quiz"
               >
-                <RefreshCw className="w-6 h-6 mr-3" />
+                <RefreshCw className="w-5 h-5 mr-2" />
                 Practice Again
               </Button>
               <Link href="/" data-testid="link-go-home-complete">
-                <Button variant="outline" className="w-full h-16 text-xl">
+                <Button variant="outline" className="w-full h-14 text-xl">
                   Back to Home
                 </Button>
               </Link>
@@ -217,38 +228,32 @@ export default function Quiz() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-card border-b border-card-border px-4 py-4">
+    <div className="min-h-screen bg-background flex flex-col">
+      <header className="bg-card border-b border-card-border px-4 py-3">
         <div className="max-w-lg mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <Link href="/" data-testid="link-back-home">
-              <Button variant="ghost" className="h-auto py-3 px-4 flex flex-col items-center gap-1 text-primary">
-                <ArrowLeft className="w-16 h-16" strokeWidth={3} />
-                <span className="text-lg font-bold">Back</span>
+              <Button variant="ghost" className="h-auto p-2 text-primary">
+                <ArrowLeft className="w-12 h-12" strokeWidth={3} />
               </Button>
             </Link>
-            <h1 className="text-2xl font-bold text-foreground ml-2">Memory Quiz</h1>
+            <h1 className="text-2xl font-bold text-foreground">Memory Quiz</h1>
           </div>
-          <div className="flex items-center gap-2 text-xl font-bold text-foreground">
-            <Star className="w-6 h-6 text-yellow-500 fill-yellow-500" />
+          <div className="flex items-center gap-1 text-xl font-bold text-foreground">
+            <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
             <span data-testid="text-score">{score}</span>
           </div>
         </div>
       </header>
 
-      <main className="max-w-lg mx-auto px-4 py-8">
+      <main className="flex-1 max-w-lg mx-auto px-3 py-4 w-full">
         {currentQuestion && (
-          <div className="space-y-8">
-            <div className="text-center">
-              <p className="text-lg text-muted-foreground" data-testid="text-progress">
-                Question {questionsAsked} of {allPeople.length}
-              </p>
-            </div>
-            <Card className="p-8">
-              <p className="text-xl text-center text-muted-foreground mb-6">
+          <div className="space-y-4">
+            <Card className="p-4">
+              <p className="text-lg text-center text-muted-foreground mb-3">
                 Who is this?
               </p>
-              <Avatar className="w-48 h-48 mx-auto border-4 border-primary/20">
+              <Avatar className="w-40 h-40 mx-auto border-4 border-primary/20">
                 {currentQuestion.person.photoData && (
                   <AvatarImage
                     src={currentQuestion.person.photoData}
@@ -256,44 +261,44 @@ export default function Quiz() {
                     className="object-cover"
                   />
                 )}
-                <AvatarFallback className="text-5xl bg-muted">
+                <AvatarFallback className="text-4xl bg-muted">
                   {getInitials(currentQuestion.person.name)}
                 </AvatarFallback>
               </Avatar>
-              <p className="text-lg text-center text-muted-foreground mt-4">
+              <p className="text-lg text-center text-muted-foreground mt-3">
                 {currentQuestion.person.relationship}
               </p>
             </Card>
 
             {feedback && (
-              <Card className={`p-6 text-center ${feedback.isCorrect ? "bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800" : "bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800"}`}>
-                <div className="flex items-center justify-center gap-3">
+              <Card className={`p-4 text-center ${feedback.isCorrect ? "bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800" : "bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800"}`}>
+                <div className="flex items-center justify-center gap-2">
                   {feedback.isCorrect ? (
-                    <ThumbsUp className="w-8 h-8 text-green-600 dark:text-green-400" />
+                    <ThumbsUp className="w-6 h-6 text-green-600 dark:text-green-400" />
                   ) : null}
-                  <p className={`text-2xl font-bold ${feedback.isCorrect ? "text-green-700 dark:text-green-300" : "text-amber-700 dark:text-amber-300"}`}>
+                  <p className={`text-xl font-bold ${feedback.isCorrect ? "text-green-700 dark:text-green-300" : "text-amber-700 dark:text-amber-300"}`}>
                     {feedback.message}
                   </p>
                 </div>
                 {feedback.isCorrect && (
                   <>
-                    <p className="text-xl text-green-600 dark:text-green-400 mt-2">
+                    <p className="text-lg text-green-600 dark:text-green-400 mt-1">
                       It's {currentQuestion.correctAnswer}!
                     </p>
                     <Button
                       onClick={handleNextQuestion}
-                      className="mt-4 h-14 text-xl px-10"
+                      className="mt-3 h-12 text-lg px-8"
                       data-testid="button-next-question"
                     >
                       Next
-                      <ChevronRight className="w-6 h-6 ml-2" />
+                      <ChevronRight className="w-5 h-5 ml-1" />
                     </Button>
                   </>
                 )}
                 {!feedback.isCorrect && (
                   <Button
                     onClick={handleTryAgain}
-                    className="mt-4 h-12 text-lg px-8"
+                    className="mt-3 h-10 text-base px-6"
                     data-testid="button-try-again"
                   >
                     Try Again
@@ -302,13 +307,13 @@ export default function Quiz() {
               </Card>
             )}
 
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 gap-3">
               {currentQuestion.options.map((option, index) => (
                 <Button
                   key={option}
                   onClick={() => handleAnswer(option)}
                   disabled={!!feedback}
-                  className="h-20 text-2xl font-medium"
+                  className="h-16 text-xl font-medium"
                   variant={
                     feedback
                       ? option === currentQuestion.correctAnswer
@@ -322,21 +327,26 @@ export default function Quiz() {
                 </Button>
               ))}
             </div>
-
-            <div className="text-center">
-              <Button
-                variant="ghost"
-                onClick={handleRestartQuiz}
-                className="h-12 text-lg text-muted-foreground"
-                data-testid="button-restart-quiz-inline"
-              >
-                <RefreshCw className="w-5 h-5 mr-2" />
-                Start Over
-              </Button>
-            </div>
           </div>
         )}
       </main>
+
+      <footer className="bg-background px-4 py-3 border-t border-card-border">
+        <div className="max-w-lg mx-auto flex items-center justify-between">
+          <Button
+            variant="ghost"
+            onClick={handleRestartQuiz}
+            className="h-10 text-base text-muted-foreground"
+            data-testid="button-restart-quiz-inline"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Start Over
+          </Button>
+          <p className="text-lg font-medium text-muted-foreground" data-testid="text-progress">
+            {questionsAsked} / {totalQuestions}
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
