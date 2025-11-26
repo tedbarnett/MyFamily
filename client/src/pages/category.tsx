@@ -46,12 +46,12 @@ export default function Category() {
         <div className="max-w-2xl mx-auto flex items-center gap-4">
           <Link href="/">
             <Button
-              size="icon"
               variant="ghost"
-              className="flex-shrink-0 h-12 w-12"
+              className="flex-shrink-0 h-auto py-2 px-3 flex flex-col items-center gap-1"
               data-testid="button-back"
             >
-              <ArrowLeft className="w-6 h-6" />
+              <ArrowLeft className="w-12 h-12" strokeWidth={3} />
+              <span className="text-sm font-bold">Back</span>
             </Button>
           </Link>
           <h1 className="text-3xl font-bold text-foreground flex-1">
