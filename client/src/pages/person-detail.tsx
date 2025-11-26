@@ -171,7 +171,7 @@ export default function PersonDetail() {
               className="flex-shrink-0 h-auto p-2 text-primary"
               data-testid="button-back"
             >
-              <ArrowLeft className="w-32 h-32" strokeWidth={3} />
+              <ArrowLeft className="w-64 h-64" strokeWidth={3} />
             </Button>
           </Link>
           <h1 className="text-3xl font-bold text-foreground flex-1 truncate">
