@@ -1,19 +1,86 @@
+import { useRef } from "react";
 import { useRoute, Link } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, MapPin, Calendar, Briefcase, Users, Heart } from "lucide-react";
+import { ArrowLeft, Loader2, MapPin, Calendar, Briefcase, Heart, Camera } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { Person } from "@shared/schema";
 
 export default function PersonDetail() {
   const [, params] = useRoute("/person/:id");
   const personId = params?.id;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   const { data: person, isLoading } = useQuery<Person>({
     queryKey: [`/api/person/${personId}`],
     enabled: !!personId,
   });
+
+  const photoMutation = useMutation({
+    mutationFn: async (photoData: string) => {
+      const response = await apiRequest(
+        "POST",
+        `/api/person/${personId}/photo`,
+        { photoData }
+      );
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/person/${personId}`] });
+      toast({
+        title: "Photo Updated",
+        description: "The photo has been successfully updated.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Upload Failed",
+        description: error.message || "Failed to upload photo. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handlePhotoClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Invalid File",
+        description: "Please select an image file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Please select an image smaller than 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target?.result as string;
+      photoMutation.mutate(base64);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const getInitials = (name: string) => {
     const parts = name.split(" ");
@@ -39,6 +106,8 @@ export default function PersonDetail() {
     );
   }
 
+  const photoSrc = person.photoData || person.photoUrl || undefined;
+
   return (
     <div className="min-h-screen bg-background pb-8">
       <header className="bg-card border-b border-card-border px-6 py-6 sticky top-0 z-10">
@@ -62,12 +131,36 @@ export default function PersonDetail() {
       <main className="max-w-2xl mx-auto px-4 py-8">
         <div className="space-y-8">
           <div className="flex flex-col items-center text-center">
-            <Avatar className="w-40 h-40 border-4 border-border mb-6">
-              <AvatarImage src={person.photoUrl || undefined} alt={person.name} />
-              <AvatarFallback className="text-4xl font-bold bg-primary/10 text-primary">
-                {getInitials(person.name)}
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative mb-6">
+              <Avatar className="w-40 h-40 border-4 border-border">
+                <AvatarImage src={photoSrc} alt={person.name} />
+                <AvatarFallback className="text-4xl font-bold bg-primary/10 text-primary">
+                  {getInitials(person.name)}
+                </AvatarFallback>
+              </Avatar>
+              <Button
+                size="icon"
+                variant="default"
+                className="absolute bottom-0 right-0 rounded-full h-14 w-14 shadow-lg"
+                onClick={handlePhotoClick}
+                disabled={photoMutation.isPending}
+                data-testid="button-change-photo"
+              >
+                {photoMutation.isPending ? (
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                ) : (
+                  <Camera className="w-6 h-6" />
+                )}
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+                data-testid="input-photo-upload"
+              />
+            </div>
             <h2 className="text-4xl font-bold text-foreground mb-2" data-testid="text-person-name">
               {person.name}
             </h2>

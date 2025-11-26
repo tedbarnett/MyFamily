@@ -77,7 +77,7 @@ export default function Category() {
                 <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all">
                   <div className="p-6 flex items-center gap-6">
                     <Avatar className="w-32 h-32 flex-shrink-0 border-2 border-border">
-                      <AvatarImage src={person.photoUrl || undefined} alt={person.name} />
+                      <AvatarImage src={person.photoData || person.photoUrl || undefined} alt={person.name} />
                       <AvatarFallback className="text-2xl font-semibold bg-primary/10 text-primary">
                         {getInitials(person.name)}
                       </AvatarFallback>
