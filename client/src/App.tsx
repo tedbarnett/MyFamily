@@ -7,6 +7,7 @@ import Home from "@/pages/home";
 import Category from "@/pages/category";
 import PersonDetail from "@/pages/person-detail";
 import Admin from "@/pages/admin";
+import Everyone from "@/pages/everyone";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -16,6 +17,7 @@ function Router() {
       <Route path="/category/:category" component={Category} />
       <Route path="/person/:id" component={PersonDetail} />
       <Route path="/admin" component={Admin} />
+      <Route path="/everyone" component={Everyone} />
       <Route component={NotFound} />
     </Switch>
   );

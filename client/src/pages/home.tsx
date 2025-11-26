@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Users, Heart, Baby, UserCircle, Stethoscope, Search, X, HeartHandshake } from "lucide-react";
+import { Users, Heart, Baby, UserCircle, Stethoscope, Search, X, HeartHandshake, UsersRound } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { PersonCategory, Person } from "@shared/schema";
 
@@ -290,6 +290,28 @@ export default function Home() {
                 </Link>
               );
             })}
+
+            {/* Everyone button */}
+            <Link
+              href="/everyone"
+              data-testid="link-everyone"
+            >
+              <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all">
+                <div className="p-6 flex items-center gap-4">
+                  <div className="text-primary flex-shrink-0">
+                    <UsersRound className="w-14 h-14" strokeWidth={1.5} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-2xl font-bold text-foreground mb-1">
+                      Everyone
+                    </h2>
+                    <p className="text-lg text-muted-foreground">
+                      {allPeople.length} people
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            </Link>
           </div>
         )}
 
