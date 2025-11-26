@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Heart, Baby, UserCircle, Stethoscope, Search, X } from "lucide-react";
+import { Users, Heart, Baby, UserCircle, Stethoscope, Search, X, Calendar } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { PersonCategory, Person } from "@shared/schema";
 
@@ -57,6 +57,17 @@ const categories: CategoryCard[] = [
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
 
+  const formatTodayDate = () => {
+    const today = new Date();
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    };
+    return today.toLocaleDateString("en-US", options);
+  };
+
   const { data: searchResults = [], isLoading } = useQuery<Person[]>({
     queryKey: ["/api/search", searchQuery],
     enabled: searchQuery.trim().length > 0,
@@ -79,6 +90,16 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Date Reminder Banner */}
+      <div className="bg-primary/10 border-b border-primary/20 px-6 py-4">
+        <div className="flex items-center justify-center gap-3">
+          <Calendar className="w-7 h-7 text-primary flex-shrink-0" />
+          <p className="text-xl font-medium text-foreground" data-testid="text-today-date">
+            Today is {formatTodayDate()}
+          </p>
+        </div>
+      </div>
+
       <header className="bg-card border-b border-card-border px-6 py-8">
         <h1 className="text-4xl font-bold text-center text-foreground">
           Judy's Family
