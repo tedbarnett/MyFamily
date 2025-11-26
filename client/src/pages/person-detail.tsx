@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useRoute, Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2, MapPin, Calendar, Briefcase, Heart, Camera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { PhotoCropper } from "@/components/photo-cropper";
 import type { Person } from "@shared/schema";
 
 export default function PersonDetail() {
@@ -14,6 +15,8 @@ export default function PersonDetail() {
   const personId = params?.id;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const [cropperImage, setCropperImage] = useState<string | null>(null);
+  const [showCropper, setShowCropper] = useState(false);
 
   const { data: person, isLoading } = useQuery<Person>({
     queryKey: [`/api/person/${personId}`],
@@ -74,9 +77,24 @@ export default function PersonDetail() {
     const reader = new FileReader();
     reader.onload = (e) => {
       const base64 = e.target?.result as string;
-      photoMutation.mutate(base64);
+      setCropperImage(base64);
+      setShowCropper(true);
     };
     reader.readAsDataURL(file);
+    
+    // Reset the input so the same file can be selected again
+    event.target.value = "";
+  };
+
+  const handleCropperClose = () => {
+    setShowCropper(false);
+    setCropperImage(null);
+  };
+
+  const handleCropperSave = (croppedImage: string) => {
+    photoMutation.mutate(croppedImage);
+    setShowCropper(false);
+    setCropperImage(null);
   };
 
   const getInitials = (name: string) => {
@@ -267,6 +285,15 @@ export default function PersonDetail() {
           )}
         </div>
       </main>
+
+      {cropperImage && (
+        <PhotoCropper
+          imageSrc={cropperImage}
+          open={showCropper}
+          onClose={handleCropperClose}
+          onSave={handleCropperSave}
+        />
+      )}
     </div>
   );
 }
