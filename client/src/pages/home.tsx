@@ -126,7 +126,7 @@ export default function Home() {
               placeholder="Search for someone..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-14 pr-14 text-xl h-16"
+              className="pl-14 pr-16 text-2xl font-bold h-16"
               data-testid="input-search"
             />
             {searchQuery && (
