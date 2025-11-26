@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -73,7 +73,6 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAdminDialog, setShowAdminDialog] = useState(false);
   const [, setLocation] = useLocation();
-  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
 
   const formatTodayDate = () => {
     const today = new Date();
@@ -120,19 +119,6 @@ export default function Home() {
 
   const handleClearSearch = () => {
     setSearchQuery("");
-  };
-
-  const handleAdminPressStart = () => {
-    longPressTimer.current = setTimeout(() => {
-      setShowAdminDialog(true);
-    }, 3000);
-  };
-
-  const handleAdminPressEnd = () => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
   };
 
   const handleAdminProceed = () => {
@@ -309,13 +295,8 @@ export default function Home() {
 
         <div className="mt-8 text-center">
           <button
-            className="text-xs text-muted-foreground hover:text-primary select-none"
-            onMouseDown={handleAdminPressStart}
-            onMouseUp={handleAdminPressEnd}
-            onMouseLeave={handleAdminPressEnd}
-            onTouchStart={handleAdminPressStart}
-            onTouchEnd={handleAdminPressEnd}
-            onTouchCancel={handleAdminPressEnd}
+            className="text-xs text-muted-foreground hover:text-primary"
+            onClick={() => setShowAdminDialog(true)}
             data-testid="button-admin"
           >
             Admin view
