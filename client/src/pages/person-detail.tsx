@@ -1,15 +1,31 @@
-import { useState, useCallback } from "react";
-import { useRoute, Link } from "wouter";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { useRoute, Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, MapPin, Calendar, Briefcase, Heart, Volume2 } from "lucide-react";
-import type { Person } from "@shared/schema";
+import { ArrowLeft, Loader2, MapPin, Calendar, Briefcase, Heart, Volume2, ChevronLeft, ChevronRight } from "lucide-react";
+import type { Person, PersonCategory } from "@shared/schema";
+
+const categoryOrder: PersonCategory[] = [
+  "husband",
+  "children",
+  "grandchildren",
+  "daughters_in_law",
+  "friends",
+  "caregivers",
+  "other",
+];
 
 export default function PersonDetail() {
   const [, params] = useRoute("/person/:id");
+  const [, setLocation] = useLocation();
   const personId = params?.id;
   const [isSpeaking, setIsSpeaking] = useState(false);
+  
+  // Touch/swipe state
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const { data: person, isLoading } = useQuery<Person>({
     queryKey: [`/api/person/${personId}`],
@@ -20,6 +36,71 @@ export default function PersonDetail() {
   const { data: allPeople = [] } = useQuery<Person[]>({
     queryKey: ["/api/people"],
   });
+
+  // Sort people the same way as the Everyone page
+  const sortedPeople = useMemo(() => {
+    return [...allPeople].sort((a, b) => {
+      const categoryIndexA = categoryOrder.indexOf(a.category as PersonCategory);
+      const categoryIndexB = categoryOrder.indexOf(b.category as PersonCategory);
+      
+      if (categoryIndexA !== categoryIndexB) {
+        return categoryIndexA - categoryIndexB;
+      }
+      
+      return a.name.localeCompare(b.name);
+    });
+  }, [allPeople]);
+
+  // Find current person's index and neighbors
+  const currentIndex = useMemo(() => {
+    return sortedPeople.findIndex(p => p.id === personId);
+  }, [sortedPeople, personId]);
+
+  const prevPerson = currentIndex > 0 ? sortedPeople[currentIndex - 1] : null;
+  const nextPerson = currentIndex < sortedPeople.length - 1 ? sortedPeople[currentIndex + 1] : null;
+
+  // Navigate to previous/next person
+  const navigateToPrev = useCallback(() => {
+    if (prevPerson) {
+      setLocation(`/person/${prevPerson.id}`);
+    }
+  }, [prevPerson, setLocation]);
+
+  const navigateToNext = useCallback(() => {
+    if (nextPerson) {
+      setLocation(`/person/${nextPerson.id}`);
+    }
+  }, [nextPerson, setLocation]);
+
+  // Swipe gesture handlers
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchEndX.current = null;
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    if (touchStartX.current === null || touchEndX.current === null) return;
+    
+    const swipeDistance = touchStartX.current - touchEndX.current;
+    const minSwipeDistance = 50; // Minimum swipe distance to trigger navigation
+    
+    if (Math.abs(swipeDistance) >= minSwipeDistance) {
+      if (swipeDistance > 0) {
+        // Swiped left -> go to next person
+        navigateToNext();
+      } else {
+        // Swiped right -> go to previous person
+        navigateToPrev();
+      }
+    }
+    
+    touchStartX.current = null;
+    touchEndX.current = null;
+  }, [navigateToNext, navigateToPrev]);
 
   const speakName = useCallback((name: string) => {
     setIsSpeaking(true);
@@ -114,7 +195,14 @@ export default function PersonDetail() {
   const photoSrc = person.photoData || person.photoUrl || undefined;
 
   return (
-    <div className="min-h-screen bg-background pb-8">
+    <div 
+      ref={containerRef}
+      className="min-h-screen bg-background pb-8"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      data-testid="person-detail-container"
+    >
       <header className="bg-card border-b border-card-border px-6 py-6 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto flex items-center gap-4">
           <Link href="/">
@@ -317,6 +405,32 @@ export default function PersonDetail() {
                 </div>
               </div>
             </Card>
+          )}
+
+          {/* Navigation arrows */}
+          {(prevPerson || nextPerson) && (
+            <div className="flex justify-between items-center gap-4 pt-4">
+              <Button
+                variant="outline"
+                className="flex-1 h-16 text-lg"
+                onClick={navigateToPrev}
+                disabled={!prevPerson}
+                data-testid="button-prev-person"
+              >
+                <ChevronLeft className="w-8 h-8 mr-2" />
+                {prevPerson ? prevPerson.name : ""}
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 h-16 text-lg"
+                onClick={navigateToNext}
+                disabled={!nextPerson}
+                data-testid="button-next-person"
+              >
+                {nextPerson ? nextPerson.name : ""}
+                <ChevronRight className="w-8 h-8 ml-2" />
+              </Button>
+            </div>
           )}
         </div>
       </main>
