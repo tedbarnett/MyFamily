@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Users, Heart, Baby, UserCircle, Stethoscope, Search, X, HeartHandshake, UsersRound, BrainCircuit } from "lucide-react";
+import { Users, Heart, Baby, Stethoscope, Search, X, HeartHandshake, UsersRound, BrainCircuit } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { PersonCategory, Person } from "@shared/schema";
 
@@ -45,13 +45,6 @@ const categories: CategoryCard[] = [
     description: "4 Daughters in Law",
     icon: HeartHandshake,
     color: "text-pink-600",
-  },
-  {
-    id: "friends",
-    label: "Friends",
-    description: "",
-    icon: UserCircle,
-    color: "text-green-600",
   },
   {
     id: "caregivers",
