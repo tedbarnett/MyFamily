@@ -163,19 +163,18 @@ export default function PersonDetail() {
       onTouchEnd={handleTouchEnd}
       data-testid="person-detail-container"
     >
-      <header className="bg-card border-b border-card-border px-6 py-6 sticky top-0 z-10">
+      <header className="bg-card border-b border-card-border px-6 py-4 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto flex items-center gap-4">
           <Link href="/">
             <Button
               variant="ghost"
-              className="flex-shrink-0 h-auto py-3 px-4 flex flex-col items-center gap-1 text-primary"
+              className="flex-shrink-0 h-auto p-2 text-primary"
               data-testid="button-back"
             >
-              <ArrowLeft className="w-16 h-16" strokeWidth={3} />
-              <span className="text-lg font-bold">Back</span>
+              <ArrowLeft className="w-32 h-32" strokeWidth={3} />
             </Button>
           </Link>
-          <h1 className="text-2xl font-bold text-foreground flex-1 truncate ml-2">
+          <h1 className="text-3xl font-bold text-foreground flex-1 truncate">
             Family Details
           </h1>
         </div>
