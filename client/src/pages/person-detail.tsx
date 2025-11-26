@@ -63,11 +63,11 @@ export default function PersonDetail() {
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
+    // Validate file size (max 15MB to stay safely under 20MB server limit after base64 encoding)
+    if (file.size > 15 * 1024 * 1024) {
       toast({
         title: "File Too Large",
-        description: "Please select an image smaller than 5MB.",
+        description: "Please select an image smaller than 15MB.",
         variant: "destructive",
       });
       return;
