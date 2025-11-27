@@ -331,7 +331,7 @@ export default function Quiz() {
                   key={option}
                   onClick={() => handleAnswer(option)}
                   disabled={!!feedback}
-                  className={`h-20 text-2xl font-bold shadow-md ${
+                  className={`h-14 text-2xl font-bold shadow-md ${
                     feedback
                       ? option === currentQuestion.correctAnswer
                         ? "bg-green-600 hover:bg-green-600 text-white border-green-600"
