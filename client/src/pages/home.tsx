@@ -186,7 +186,7 @@ export default function Home() {
                         className="absolute inset-0 bg-cover opacity-30"
                         style={{ 
                           backgroundImage: `url(${backgroundPhoto})`,
-                          backgroundPosition: 'center 0%'
+                          backgroundPosition: 'center 40%'
                         }}
                       />
                     )}
