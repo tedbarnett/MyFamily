@@ -208,8 +208,8 @@ export default function PersonDetail() {
               <ArrowLeft className="w-64 h-64" strokeWidth={3} />
             </Button>
           </Link>
-          <h1 className="text-3xl font-bold text-foreground flex-1 truncate">
-            Family Details
+          <h1 className="text-3xl font-bold text-muted-foreground/70 flex-1 truncate">
+            Details
           </h1>
         </div>
       </header>
