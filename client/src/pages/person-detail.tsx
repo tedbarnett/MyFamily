@@ -26,6 +26,10 @@ export default function PersonDetail() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+  
+  // Voice note playback
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const { data: person, isLoading } = useQuery<Person>({
     queryKey: [`/api/person/${personId}`],
@@ -187,8 +191,6 @@ export default function PersonDetail() {
   }
 
   const photoSrc = person.photoData || person.photoUrl || undefined;
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
 
   const playVoiceNote = () => {
     if (person.voiceNoteData && audioRef.current) {
