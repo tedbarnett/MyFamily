@@ -270,23 +270,23 @@ export default function PersonDetail() {
               {person.relationship}
             </p>
           </div>
-          {person.voiceNoteData && (
-            <>
-              <audio 
-                ref={audioRef} 
-                src={person.voiceNoteData}
-                onEnded={() => setIsPlaying(false)}
-              />
-              <Button
-                onClick={playVoiceNote}
-                className={`absolute bottom-6 right-6 h-16 w-16 rounded-full shadow-lg ${isPlaying ? 'bg-green-600 hover:bg-green-700' : 'bg-primary hover:bg-primary/90'}`}
-                data-testid="button-play-voice"
-              >
-                <Volume2 className="w-8 h-8 text-white" />
-              </Button>
-            </>
-          )}
         </div>
+        {person.voiceNoteData && (
+          <>
+            <audio 
+              ref={audioRef} 
+              src={person.voiceNoteData}
+              onEnded={() => setIsPlaying(false)}
+            />
+            <Button
+              onClick={playVoiceNote}
+              className={`absolute bottom-4 right-4 h-16 w-16 rounded-full shadow-lg z-20 ${isPlaying ? 'bg-green-600 hover:bg-green-700' : 'bg-primary hover:bg-primary/90'}`}
+              data-testid="button-play-voice"
+            >
+              <Volume2 className="w-8 h-8 text-white" />
+            </Button>
+          </>
+        )}
       </div>
 
       <main className="max-w-2xl mx-auto px-4 py-8">
