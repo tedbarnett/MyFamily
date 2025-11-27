@@ -63,7 +63,8 @@ const categories: CategoryCard[] = [
 ];
 
 export default function Home() {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [submittedSearch, setSubmittedSearch] = useState("");
   const [showAdminDialog, setShowAdminDialog] = useState(false);
   const [, setLocation] = useLocation();
 
@@ -78,9 +79,15 @@ export default function Home() {
     return today.toLocaleDateString("en-US", options);
   };
 
+  const handleSearch = () => {
+    if (searchInput.trim().length > 0) {
+      setSubmittedSearch(searchInput.trim());
+    }
+  };
+
   const { data: searchResults = [], isLoading } = useQuery<Person[]>({
-    queryKey: ["/api/search", searchQuery],
-    enabled: searchQuery.trim().length > 0,
+    queryKey: ["/api/search", submittedSearch],
+    enabled: submittedSearch.length > 0,
   });
 
   // Fetch all people to display photos in category cards
@@ -111,7 +118,8 @@ export default function Home() {
   };
 
   const handleClearSearch = () => {
-    setSearchQuery("");
+    setSearchInput("");
+    setSubmittedSearch("");
   };
 
   const handleAdminProceed = () => {
@@ -128,7 +136,7 @@ export default function Home() {
       .slice(0, 2);
   };
 
-  const showSearchResults = searchQuery.trim().length > 0;
+  const showSearchResults = submittedSearch.length > 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -249,29 +257,39 @@ export default function Home() {
             </Link>
 
             {/* Search Section - at bottom */}
-            <div className="mt-2">
+            <div className="mt-2 space-y-3">
               <div className="relative">
                 <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-8 h-8 text-muted-foreground" />
                 <Input
                   type="text"
-                  placeholder="Search family..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-16 pr-20 text-4xl font-bold h-20 placeholder:text-2xl placeholder:font-normal"
+                  placeholder="Type a name..."
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                  className="pl-16 pr-16 text-3xl font-bold h-20 placeholder:text-2xl placeholder:font-normal"
                   data-testid="input-search"
                 />
-                {searchQuery && (
+                {searchInput && (
                   <Button
-                    variant="secondary"
+                    variant="ghost"
                     size="icon"
-                    onClick={handleClearSearch}
+                    onClick={() => setSearchInput("")}
                     className="absolute right-2 top-1/2 -translate-y-1/2 h-12 w-12"
-                    data-testid="button-clear-search"
+                    data-testid="button-clear-input"
                   >
-                    <X className="w-8 h-8" />
+                    <X className="w-6 h-6" />
                   </Button>
                 )}
               </div>
+              <Button
+                onClick={handleSearch}
+                disabled={searchInput.trim().length === 0}
+                className="w-full h-16 text-2xl font-bold"
+                data-testid="button-search"
+              >
+                <Search className="w-8 h-8 mr-3" />
+                Search
+              </Button>
             </div>
           </div>
         )}
@@ -285,7 +303,7 @@ export default function Home() {
               </div>
             ) : searchResults.length === 0 ? (
               <div className="text-center text-xl text-muted-foreground py-8">
-                No one found matching "{searchQuery}"
+                No one found matching "{submittedSearch}"
               </div>
             ) : (
               <div className="space-y-4">
