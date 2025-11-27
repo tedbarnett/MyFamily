@@ -31,6 +31,7 @@ export const people = pgTable("people", {
   sortOrder: integer("sort_order").notNull().default(0),
   lastVisit: text("last_visit"), // ISO date string of last visit
   visitHistory: text("visit_history").array(), // Array of ISO date strings
+  voiceNoteData: text("voice_note_data"), // Base64 encoded audio for uploads
 });
 
 export const insertPersonSchema = createInsertSchema(people).omit({

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Home, Camera, Loader2, Save, X, Pencil, Plus, Trash2, BrainCircuit } from "lucide-react";
+import { Home, Camera, Loader2, Save, X, Pencil, Plus, Trash2, BrainCircuit, Mic } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { PhotoCropper } from "@/components/photo-cropper";
@@ -41,6 +41,8 @@ export default function Admin() {
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
   const [addingToCategory, setAddingToCategory] = useState<PersonCategory | null>(null);
   const [addForm, setAddForm] = useState<Partial<Person>>({});
+  const voiceInputRef = useRef<HTMLInputElement>(null);
+  const [selectedPersonIdForVoice, setSelectedPersonIdForVoice] = useState<string | null>(null);
 
   const { data: allPeople = [], isLoading } = useQuery<Person[]>({
     queryKey: ["/api/people"],
@@ -104,6 +106,27 @@ export default function Admin() {
       toast({
         title: "Error",
         description: error.message || "Failed to upload photo.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const voiceNoteMutation = useMutation({
+    mutationFn: async ({ id, voiceNoteData }: { id: string; voiceNoteData: string }) => {
+      const response = await apiRequest("POST", `/api/person/${id}/voice-note`, { voiceNoteData });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/people"] });
+      toast({
+        title: "Voice Note Updated",
+        description: "Voice note saved successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upload voice note.",
         variant: "destructive",
       });
     },
@@ -265,6 +288,34 @@ export default function Admin() {
     setShowCropper(false);
     setCropperImage(null);
     setSelectedPersonId(null);
+  };
+
+  const handleVoiceClick = (personId: string) => {
+    setSelectedPersonIdForVoice(personId);
+    voiceInputRef.current?.click();
+  };
+
+  const handleVoiceFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !selectedPersonIdForVoice) return;
+
+    if (!file.type.startsWith("audio/")) {
+      toast({
+        title: "Invalid File",
+        description: "Please select an audio file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target?.result as string;
+      voiceNoteMutation.mutate({ id: selectedPersonIdForVoice, voiceNoteData: base64 });
+    };
+    reader.readAsDataURL(file);
+    event.target.value = "";
+    setSelectedPersonIdForVoice(null);
   };
 
   if (isLoading) {
