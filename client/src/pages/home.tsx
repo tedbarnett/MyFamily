@@ -183,8 +183,11 @@ export default function Home() {
                   <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all relative overflow-hidden">
                     {backgroundPhoto && (
                       <div 
-                        className="absolute inset-0 bg-cover bg-center opacity-30"
-                        style={{ backgroundImage: `url(${backgroundPhoto})` }}
+                        className="absolute inset-0 bg-cover opacity-30"
+                        style={{ 
+                          backgroundImage: `url(${backgroundPhoto})`,
+                          backgroundPosition: 'center 20%'
+                        }}
                       />
                     )}
                     <div className="p-6 flex items-center gap-4 relative z-10">
