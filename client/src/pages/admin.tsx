@@ -428,6 +428,15 @@ export default function Admin() {
                             <Camera className="w-3 h-3 text-primary-foreground" />
                           </div>
                         </div>
+                        <Button
+                          size="icon"
+                          variant={person.voiceNoteData ? "default" : "outline"}
+                          className="h-10 w-10 flex-shrink-0"
+                          onClick={() => handleVoiceClick(person.id)}
+                          data-testid={`button-voice-${person.id}`}
+                        >
+                          <Mic className="w-5 h-5" />
+                        </Button>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <p className="font-semibold text-foreground truncate" data-testid={`text-name-${person.id}`}>
@@ -483,6 +492,14 @@ export default function Admin() {
         onChange={handleFileChange}
         className="hidden"
         data-testid="input-photo-upload"
+      />
+      <input
+        ref={voiceInputRef}
+        type="file"
+        accept="audio/*"
+        onChange={handleVoiceFileChange}
+        className="hidden"
+        data-testid="input-voice-upload"
       />
 
       {cropperImage && (

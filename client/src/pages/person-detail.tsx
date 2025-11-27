@@ -3,7 +3,7 @@ import { useRoute, Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, MapPin, Calendar, Briefcase, Heart, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, Loader2, MapPin, Calendar, Briefcase, Heart, ChevronLeft, ChevronRight, Volume2 } from "lucide-react";
 import type { Person, PersonCategory } from "@shared/schema";
 
 const categoryOrder: PersonCategory[] = [
@@ -187,6 +187,21 @@ export default function PersonDetail() {
   }
 
   const photoSrc = person.photoData || person.photoUrl || undefined;
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  const playVoiceNote = () => {
+    if (person.voiceNoteData && audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        setIsPlaying(false);
+      } else {
+        audioRef.current.play();
+        setIsPlaying(true);
+      }
+    }
+  };
 
   return (
     <div 
@@ -253,6 +268,22 @@ export default function PersonDetail() {
               {person.relationship}
             </p>
           </div>
+          {person.voiceNoteData && (
+            <>
+              <audio 
+                ref={audioRef} 
+                src={person.voiceNoteData}
+                onEnded={() => setIsPlaying(false)}
+              />
+              <Button
+                onClick={playVoiceNote}
+                className={`absolute bottom-6 right-6 h-16 w-16 rounded-full shadow-lg ${isPlaying ? 'bg-green-600 hover:bg-green-700' : 'bg-primary hover:bg-primary/90'}`}
+                data-testid="button-play-voice"
+              >
+                <Volume2 className="w-8 h-8 text-white" />
+              </Button>
+            </>
+          )}
         </div>
       </div>
 

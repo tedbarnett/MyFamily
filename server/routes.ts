@@ -88,6 +88,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update person voice note
+  app.post("/api/person/:id/voice-note", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { voiceNoteData } = req.body;
+
+      if (!voiceNoteData) {
+        return res.status(400).json({ error: "Voice note data required" });
+      }
+
+      const person = await storage.updatePerson(id, { voiceNoteData });
+      if (!person) {
+        return res.status(404).json({ error: "Person not found" });
+      }
+
+      res.json(person);
+    } catch (error) {
+      console.error("Error updating voice note:", error);
+      res.status(500).json({ error: "Failed to update voice note" });
+    }
+  });
+
   // Create new person
   app.post("/api/person", async (req, res) => {
     try {
