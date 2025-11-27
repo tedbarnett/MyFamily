@@ -164,7 +164,7 @@ export default function PersonDetail() {
     >
       <header className="bg-card border-b border-card-border px-6 py-4 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto flex items-center gap-4">
-          <Link href="/">
+          <Link href={`/category/${person.category}`}>
             <Button
               variant="ghost"
               className="flex-shrink-0 h-auto p-2 text-primary"
