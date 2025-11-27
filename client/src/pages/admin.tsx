@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Home, Camera, Loader2, Save, X, Pencil, Plus, Trash2, BrainCircuit, Mic } from "lucide-react";
+import { Home, Camera, Loader2, Save, X, Pencil, Plus, Trash2, BrainCircuit, Mic, Square } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { PhotoCropper } from "@/components/photo-cropper";
@@ -41,8 +41,9 @@ export default function Admin() {
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
   const [addingToCategory, setAddingToCategory] = useState<PersonCategory | null>(null);
   const [addForm, setAddForm] = useState<Partial<Person>>({});
-  const voiceInputRef = useRef<HTMLInputElement>(null);
-  const [selectedPersonIdForVoice, setSelectedPersonIdForVoice] = useState<string | null>(null);
+  const [recordingPersonId, setRecordingPersonId] = useState<string | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   const { data: allPeople = [], isLoading } = useQuery<Person[]>({
     queryKey: ["/api/people"],
@@ -290,32 +291,65 @@ export default function Admin() {
     setSelectedPersonId(null);
   };
 
-  const handleVoiceClick = (personId: string) => {
-    setSelectedPersonIdForVoice(personId);
-    voiceInputRef.current?.click();
-  };
+  const startRecording = async (personId: string) => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
 
-  const handleVoiceFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !selectedPersonIdForVoice) return;
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
 
-    if (!file.type.startsWith("audio/")) {
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64 = reader.result as string;
+          voiceNoteMutation.mutate({ id: personId, voiceNoteData: base64 });
+        };
+        reader.readAsDataURL(audioBlob);
+        
+        // Stop all tracks to release the microphone
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setRecordingPersonId(personId);
       toast({
-        title: "Invalid File",
-        description: "Please select an audio file.",
+        title: "Recording...",
+        description: "Tap the button again to stop.",
+      });
+    } catch (error) {
+      toast({
+        title: "Microphone Access Denied",
+        description: "Please allow microphone access to record voice notes.",
         variant: "destructive",
       });
-      return;
     }
+  };
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const base64 = e.target?.result as string;
-      voiceNoteMutation.mutate({ id: selectedPersonIdForVoice, voiceNoteData: base64 });
-    };
-    reader.readAsDataURL(file);
-    event.target.value = "";
-    setSelectedPersonIdForVoice(null);
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+      setRecordingPersonId(null);
+    }
+  };
+
+  const handleVoiceClick = (personId: string) => {
+    if (recordingPersonId === personId) {
+      stopRecording();
+    } else if (recordingPersonId) {
+      // Stop current recording first
+      stopRecording();
+      // Start new recording after a small delay
+      setTimeout(() => startRecording(personId), 100);
+    } else {
+      startRecording(personId);
+    }
   };
 
   if (isLoading) {
@@ -430,12 +464,16 @@ export default function Admin() {
                         </div>
                         <Button
                           size="icon"
-                          variant={person.voiceNoteData ? "default" : "outline"}
-                          className="h-10 w-10 flex-shrink-0"
+                          variant={recordingPersonId === person.id ? "destructive" : person.voiceNoteData ? "default" : "outline"}
+                          className={`h-10 w-10 flex-shrink-0 ${recordingPersonId === person.id ? "animate-pulse" : ""}`}
                           onClick={() => handleVoiceClick(person.id)}
                           data-testid={`button-voice-${person.id}`}
                         >
-                          <Mic className="w-5 h-5" />
+                          {recordingPersonId === person.id ? (
+                            <Square className="w-5 h-5" />
+                          ) : (
+                            <Mic className="w-5 h-5" />
+                          )}
                         </Button>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
@@ -492,14 +530,6 @@ export default function Admin() {
         onChange={handleFileChange}
         className="hidden"
         data-testid="input-photo-upload"
-      />
-      <input
-        ref={voiceInputRef}
-        type="file"
-        accept="audio/*"
-        onChange={handleVoiceFileChange}
-        className="hidden"
-        data-testid="input-voice-upload"
       />
 
       {cropperImage && (
