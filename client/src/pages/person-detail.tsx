@@ -1,4 +1,4 @@
-import { useCallback, useRef, useMemo } from "react";
+import { useCallback, useRef, useMemo, useState } from "react";
 import { useRoute, Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
@@ -24,6 +24,8 @@ export default function PersonDetail() {
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   const { data: person, isLoading } = useQuery<Person>({
     queryKey: [`/api/person/${personId}`],
@@ -72,33 +74,66 @@ export default function PersonDetail() {
 
   // Swipe gesture handlers
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (isAnimating) return;
     touchStartX.current = e.touches[0].clientX;
     touchEndX.current = null;
-  }, []);
+    setSwipeOffset(0);
+  }, [isAnimating]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (isAnimating || touchStartX.current === null) return;
     touchEndX.current = e.touches[0].clientX;
-  }, []);
+    const offset = touchEndX.current - touchStartX.current;
+    // Limit the offset and add resistance at edges
+    const maxOffset = 150;
+    const limitedOffset = Math.max(-maxOffset, Math.min(maxOffset, offset));
+    // Add resistance if no person in that direction
+    const resistedOffset = (offset > 0 && !prevPerson) || (offset < 0 && !nextPerson)
+      ? limitedOffset * 0.3
+      : limitedOffset;
+    setSwipeOffset(resistedOffset);
+  }, [isAnimating, prevPerson, nextPerson]);
 
   const handleTouchEnd = useCallback(() => {
-    if (touchStartX.current === null || touchEndX.current === null) return;
+    if (touchStartX.current === null || touchEndX.current === null) {
+      setSwipeOffset(0);
+      return;
+    }
     
     const swipeDistance = touchStartX.current - touchEndX.current;
     const minSwipeDistance = 50; // Minimum swipe distance to trigger navigation
     
     if (Math.abs(swipeDistance) >= minSwipeDistance) {
-      if (swipeDistance > 0) {
-        // Swiped left -> go to next person
-        navigateToNext();
+      if (swipeDistance > 0 && nextPerson) {
+        // Swiped left -> animate out and go to next person
+        setIsAnimating(true);
+        setSwipeOffset(-300);
+        setTimeout(() => {
+          navigateToNext();
+          setSwipeOffset(0);
+          setIsAnimating(false);
+        }, 200);
+      } else if (swipeDistance < 0 && prevPerson) {
+        // Swiped right -> animate out and go to previous person
+        setIsAnimating(true);
+        setSwipeOffset(300);
+        setTimeout(() => {
+          navigateToPrev();
+          setSwipeOffset(0);
+          setIsAnimating(false);
+        }, 200);
       } else {
-        // Swiped right -> go to previous person
-        navigateToPrev();
+        // Bounce back
+        setSwipeOffset(0);
       }
+    } else {
+      // Bounce back
+      setSwipeOffset(0);
     }
     
     touchStartX.current = null;
     touchEndX.current = null;
-  }, [navigateToNext, navigateToPrev]);
+  }, [navigateToNext, navigateToPrev, nextPerson, prevPerson]);
 
   // Helper function to find a person by name and return their ID
   // Supports exact match, first name match, or partial match
@@ -179,37 +214,45 @@ export default function PersonDetail() {
         </div>
       </header>
 
-      <div className="relative w-full aspect-square max-w-2xl mx-auto">
-        {photoSrc ? (
-          <img
-            src={photoSrc}
-            alt={person.name}
-            className="w-full h-full object-cover"
-            data-testid="img-person-photo"
-          />
-        ) : (
-          <div className="w-full h-full bg-primary/10 flex items-center justify-center">
-            <span className="text-8xl font-bold text-primary">
-              {getInitials(person.name)}
-            </span>
+      <div className="relative w-full aspect-square max-w-2xl mx-auto overflow-hidden">
+        <div 
+          className="w-full h-full"
+          style={{ 
+            transform: `translateX(${swipeOffset}px)`,
+            transition: isAnimating || swipeOffset === 0 ? 'transform 0.2s ease-out' : 'none'
+          }}
+        >
+          {photoSrc ? (
+            <img
+              src={photoSrc}
+              alt={person.name}
+              className="w-full h-full object-cover"
+              data-testid="img-person-photo"
+            />
+          ) : (
+            <div className="w-full h-full bg-primary/10 flex items-center justify-center">
+              <span className="text-8xl font-bold text-primary">
+                {getInitials(person.name)}
+              </span>
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 p-6 text-center">
+            <h2 
+              className="text-4xl font-bold text-white mb-2"
+              style={{ textShadow: "2px 2px 4px rgba(0,0,0,0.8)" }}
+              data-testid="text-person-name"
+            >
+              {person.name}
+            </h2>
+            <p 
+              className="text-2xl text-white/90"
+              style={{ textShadow: "1px 1px 3px rgba(0,0,0,0.8)" }}
+              data-testid="text-person-relationship"
+            >
+              {person.relationship}
+            </p>
           </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 p-6 text-center">
-          <h2 
-            className="text-4xl font-bold text-white mb-2"
-            style={{ textShadow: "2px 2px 4px rgba(0,0,0,0.8)" }}
-            data-testid="text-person-name"
-          >
-            {person.name}
-          </h2>
-          <p 
-            className="text-2xl text-white/90"
-            style={{ textShadow: "1px 1px 3px rgba(0,0,0,0.8)" }}
-            data-testid="text-person-relationship"
-          >
-            {person.relationship}
-          </p>
         </div>
       </div>
 
