@@ -103,8 +103,11 @@ export default function Everyone() {
                           {person.name}
                         </h2>
                         <p 
-                          className="text-sm text-white/90 break-words"
-                          style={{ textShadow: '1px 1px 3px rgba(0,0,0,0.8)' }}
+                          className="text-sm text-white/90"
+                          style={{ 
+                            textShadow: '1px 1px 3px rgba(0,0,0,0.8)',
+                            textWrap: 'balance'
+                          }}
                           data-testid={`text-person-relationship-${person.id}`}
                         >
                           {person.relationship}
