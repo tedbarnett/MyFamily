@@ -3,12 +3,48 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import type { PersonCategory, Person } from "@shared/schema";
 
+// Parse birth date string and compute current age
+function computeAgeFromBorn(born: string | null | undefined): number | null {
+  if (!born) return null;
+  
+  // Try to parse various date formats like "September 22, 1935" or "June 10, 1962"
+  const parsed = Date.parse(born);
+  if (isNaN(parsed)) return null;
+  
+  const birthDate = new Date(parsed);
+  const today = new Date();
+  
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  
+  // Adjust if birthday hasn't occurred yet this year
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  
+  return age > 0 ? age : null;
+}
+
+// Update age for a person if they have a parseable born date and haven't passed
+async function updateAgeIfNeeded(person: Person): Promise<Person> {
+  if (!person.born || person.passed) return person;
+  
+  const computedAge = computeAgeFromBorn(person.born);
+  if (computedAge !== null && computedAge !== person.age) {
+    const updated = await storage.updatePerson(person.id, { age: computedAge });
+    return updated || person;
+  }
+  return person;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Get all people
   app.get("/api/people", async (req, res) => {
     try {
       const people = await storage.getAllPeople();
-      res.json(people);
+      // Update ages for all people with parseable birth dates
+      const updatedPeople = await Promise.all(people.map(updateAgeIfNeeded));
+      res.json(updatedPeople);
     } catch (error) {
       console.error("Error fetching all people:", error);
       res.status(500).json({ error: "Failed to fetch people" });
@@ -26,7 +62,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const people = await storage.getPeopleByCategory(category);
-      res.json(people);
+      // Update ages for all people with parseable birth dates
+      const updatedPeople = await Promise.all(people.map(updateAgeIfNeeded));
+      res.json(updatedPeople);
     } catch (error) {
       console.error("Error fetching people by category:", error);
       res.status(500).json({ error: "Failed to fetch people" });
@@ -43,7 +81,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Person not found" });
       }
 
-      res.json(person);
+      // Update age if needed
+      const updatedPerson = await updateAgeIfNeeded(person);
+      res.json(updatedPerson);
     } catch (error) {
       console.error("Error fetching person:", error);
       res.status(500).json({ error: "Failed to fetch person" });
