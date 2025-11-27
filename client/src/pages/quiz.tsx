@@ -268,7 +268,7 @@ export default function Quiz() {
         {currentQuestion && (
           <div className="space-y-4">
             <Card className="p-4">
-              <p className="text-lg text-center text-muted-foreground mb-3">
+              <p className="text-2xl text-center text-foreground font-bold mb-3">
                 Who is this?
               </p>
               <Avatar className="w-40 h-40 mx-auto border-4 border-primary/20">
@@ -325,13 +325,19 @@ export default function Quiz() {
               </Card>
             )}
 
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-1 gap-4">
               {currentQuestion.options.map((option, index) => (
                 <Button
                   key={option}
                   onClick={() => handleAnswer(option)}
                   disabled={!!feedback}
-                  className="h-16 text-xl font-medium"
+                  className={`h-20 text-2xl font-bold shadow-md ${
+                    feedback
+                      ? option === currentQuestion.correctAnswer
+                        ? "bg-green-600 hover:bg-green-600 text-white border-green-600"
+                        : ""
+                      : "bg-primary/10 hover:bg-primary/20 text-foreground border-2 border-primary/30"
+                  }`}
                   variant={
                     feedback
                       ? option === currentQuestion.correctAnswer
