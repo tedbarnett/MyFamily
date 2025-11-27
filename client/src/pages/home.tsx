@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -100,6 +100,23 @@ export default function Home() {
     return allPeople.filter((person) => person.category === categoryId);
   };
 
+  // Get a random photo for each category (memoized to stay consistent)
+  const categoryBackgroundPhotos = useMemo(() => {
+    const photos: Record<string, string | null> = {};
+    categories.forEach((category) => {
+      const peopleWithPhotos = allPeople.filter(
+        (p) => p.category === category.id && (p.photoData || p.photoUrl)
+      );
+      if (peopleWithPhotos.length > 0) {
+        const randomPerson = peopleWithPhotos[Math.floor(Math.random() * peopleWithPhotos.length)];
+        photos[category.id] = randomPerson.photoData || randomPerson.photoUrl || null;
+      } else {
+        photos[category.id] = null;
+      }
+    });
+    return photos;
+  }, [allPeople]);
+
   // Get dynamic label for children category based on gender
   const getChildrenLabel = (): string => {
     const children = getPeopleByCategory("children");
@@ -153,6 +170,7 @@ export default function Home() {
             {categories.map((category) => {
               const Icon = category.icon;
               const categoryPeople = getPeopleByCategory(category.id);
+              const backgroundPhoto = categoryBackgroundPhotos[category.id];
               const linkTarget = categoryPeople.length === 1 
                 ? `/person/${categoryPeople[0].id}` 
                 : `/category/${category.id}`;
@@ -162,8 +180,14 @@ export default function Home() {
                   href={linkTarget}
                   data-testid={`link-category-${category.id}`}
                 >
-                  <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all">
-                    <div className="p-6 flex items-center gap-4">
+                  <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all relative overflow-hidden">
+                    {backgroundPhoto && (
+                      <div 
+                        className="absolute inset-0 bg-cover bg-center opacity-30"
+                        style={{ backgroundImage: `url(${backgroundPhoto})` }}
+                      />
+                    )}
+                    <div className="p-6 flex items-center gap-4 relative z-10">
                       <div className={`${category.color} flex-shrink-0`}>
                         <Icon className="w-14 h-14" strokeWidth={1.5} />
                       </div>
@@ -175,37 +199,6 @@ export default function Home() {
                           {category.description}
                         </p>
                       </div>
-                      {/* Photo Collage - hidden on mobile */}
-                      {categoryPeople.length > 0 && (
-                        <div className="hidden sm:flex -space-x-6 flex-shrink-0">
-                          {categoryPeople.slice(0, 4).map((person, index) => (
-                            <Avatar
-                              key={person.id}
-                              className="w-20 h-20 border-2 border-card"
-                              style={{ zIndex: categoryPeople.length - index }}
-                              data-testid={`avatar-category-${category.id}-${person.id}`}
-                            >
-                              {(person.photoData || person.photoUrl) && (
-                                <AvatarImage
-                                  src={person.photoData || person.photoUrl || undefined}
-                                  alt={person.name}
-                                />
-                              )}
-                              <AvatarFallback className="text-xl bg-muted">
-                                {getInitials(person.name)}
-                              </AvatarFallback>
-                            </Avatar>
-                          ))}
-                          {categoryPeople.length > 4 && (
-                            <div
-                              className="w-20 h-20 rounded-full bg-muted border-2 border-card flex items-center justify-center text-lg font-medium text-muted-foreground"
-                              style={{ zIndex: 0 }}
-                            >
-                              +{categoryPeople.length - 4}
-                            </div>
-                          )}
-                        </div>
-                      )}
                     </div>
                   </Card>
                 </Link>
