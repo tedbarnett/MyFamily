@@ -41,7 +41,7 @@ function AppContent() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-16 h-16 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-2xl text-muted-foreground">Loading app...</p>
+          <p className="text-2xl text-muted-foreground">One minute please...</p>
         </div>
       </div>
     );
