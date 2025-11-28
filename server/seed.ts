@@ -374,11 +374,20 @@ async function seed() {
   ];
 
   await db.insert(people).values(familyData);
-  console.log("✅ Successfully seeded 21 family members!");
-  process.exit(0);
+  console.log("✅ Successfully seeded family members!");
 }
 
-seed().catch((error) => {
-  console.error("❌ Error seeding database:", error);
-  process.exit(1);
-});
+// Export for use from routes.ts during app initialization
+export async function seedDatabase() {
+  return seed();
+}
+
+// Run seed directly if this file is executed as a script
+if (import.meta.url === `file://${process.argv[1]}`) {
+  seed().catch((error) => {
+    console.error("❌ Error seeding database:", error);
+    process.exit(1);
+  }).then(() => {
+    process.exit(0);
+  });
+}
