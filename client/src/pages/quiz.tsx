@@ -170,16 +170,23 @@ export default function Quiz() {
   if (allPeople.length < 4) {
     return (
       <div className="min-h-screen bg-background">
-        <header className="bg-card border-b border-card-border px-4 py-3">
-          <div className="max-w-lg mx-auto flex items-center gap-3">
-            <Link href="/" data-testid="link-back-home">
-              <Button variant="ghost" className="h-auto p-2 text-primary">
-                <ArrowLeft className="w-12 h-12" strokeWidth={3} />
-              </Button>
-            </Link>
-            <h1 className="text-2xl font-bold text-foreground">Memory Quiz</h1>
-          </div>
-        </header>
+        <Link href="/">
+          <header 
+            className="bg-card border-b border-card-border px-6 py-6 cursor-pointer hover-elevate active-elevate-2"
+            data-testid="header-back"
+          >
+            <div className="max-w-lg mx-auto flex items-center gap-4">
+              <div
+                className="flex-shrink-0 h-auto py-3 px-4 flex flex-col items-center gap-1 text-primary"
+                data-testid="button-back"
+              >
+                <ArrowLeft className="w-16 h-16" strokeWidth={3} />
+                <span className="text-lg font-bold">Back</span>
+              </div>
+              <h1 className="text-3xl font-bold text-foreground flex-1 ml-2">Memory Quiz</h1>
+            </div>
+          </header>
+        </Link>
         <main className="max-w-lg mx-auto px-3 py-6">
           <Card className="p-6 text-center">
             <p className="text-xl text-muted-foreground">
@@ -199,16 +206,23 @@ export default function Quiz() {
   if (quizComplete) {
     return (
       <div className="min-h-screen bg-background">
-        <header className="bg-card border-b border-card-border px-4 py-3">
-          <div className="max-w-lg mx-auto flex items-center gap-3">
-            <Link href="/" data-testid="link-back-home">
-              <Button variant="ghost" className="h-auto p-2 text-primary">
-                <ArrowLeft className="w-12 h-12" strokeWidth={3} />
-              </Button>
-            </Link>
-            <h1 className="text-2xl font-bold text-foreground">Quiz Complete!</h1>
-          </div>
-        </header>
+        <Link href="/">
+          <header 
+            className="bg-card border-b border-card-border px-6 py-6 cursor-pointer hover-elevate active-elevate-2"
+            data-testid="header-back"
+          >
+            <div className="max-w-lg mx-auto flex items-center gap-4">
+              <div
+                className="flex-shrink-0 h-auto py-3 px-4 flex flex-col items-center gap-1 text-primary"
+                data-testid="button-back"
+              >
+                <ArrowLeft className="w-16 h-16" strokeWidth={3} />
+                <span className="text-lg font-bold">Back</span>
+              </div>
+              <h1 className="text-3xl font-bold text-foreground flex-1 ml-2">Quiz Complete!</h1>
+            </div>
+          </header>
+        </Link>
         <main className="max-w-lg mx-auto px-3 py-6">
           <Card className="p-6 text-center">
             <PartyPopper className="w-16 h-16 mx-auto text-yellow-500 mb-4" />
@@ -247,22 +261,29 @@ export default function Quiz() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <header className="bg-card border-b border-card-border px-4 py-3">
-        <div className="max-w-lg mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/" data-testid="link-back-home">
-              <Button variant="ghost" className="h-auto p-2 text-primary">
-                <ArrowLeft className="w-12 h-12" strokeWidth={3} />
-              </Button>
-            </Link>
-            <h1 className="text-2xl font-bold text-foreground">Memory Quiz</h1>
+      <Link href="/">
+        <header 
+          className="bg-card border-b border-card-border px-6 py-6 cursor-pointer hover-elevate active-elevate-2"
+          data-testid="header-back"
+        >
+          <div className="max-w-lg mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div
+                className="flex-shrink-0 h-auto py-3 px-4 flex flex-col items-center gap-1 text-primary"
+                data-testid="button-back"
+              >
+                <ArrowLeft className="w-16 h-16" strokeWidth={3} />
+                <span className="text-lg font-bold">Back</span>
+              </div>
+              <h1 className="text-3xl font-bold text-foreground">Memory Quiz</h1>
+            </div>
+            <div className="flex items-center gap-1 text-xl font-bold text-foreground">
+              <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+              <span data-testid="text-score">{score}</span>
+            </div>
           </div>
-          <div className="flex items-center gap-1 text-xl font-bold text-foreground">
-            <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-            <span data-testid="text-score">{score}</span>
-          </div>
-        </div>
-      </header>
+        </header>
+      </Link>
 
       <main className="flex-1 max-w-lg mx-auto px-3 py-4 w-full">
         {currentQuestion && (

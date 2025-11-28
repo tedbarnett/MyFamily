@@ -285,18 +285,18 @@ export default function PersonDetail() {
     >
       <Link href={`/category/${person.category}`}>
         <header 
-          className="bg-card border-b border-card-border px-6 py-4 sticky top-0 z-10 cursor-pointer hover-elevate"
+          className="bg-card border-b border-card-border px-6 py-6 sticky top-0 z-10 cursor-pointer hover-elevate active-elevate-2"
           data-testid="header-back"
         >
           <div className="max-w-2xl mx-auto flex items-center gap-4">
-            <Button
-              variant="ghost"
-              className="flex-shrink-0 h-auto p-2 text-primary"
+            <div
+              className="flex-shrink-0 h-auto py-3 px-4 flex flex-col items-center gap-1 text-primary"
               data-testid="button-back"
             >
-              <ArrowLeft className="w-20 h-20" strokeWidth={3} />
-            </Button>
-            <h1 className="text-3xl font-bold text-muted-foreground/70 flex-1 truncate">
+              <ArrowLeft className="w-16 h-16" strokeWidth={3} />
+              <span className="text-lg font-bold">Back</span>
+            </div>
+            <h1 className="text-3xl font-bold text-muted-foreground/70 flex-1 truncate ml-2">
               Details
             </h1>
           </div>

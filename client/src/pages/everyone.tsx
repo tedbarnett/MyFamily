@@ -1,7 +1,6 @@
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import type { Person, PersonCategory } from "@shared/schema";
 
@@ -40,23 +39,25 @@ export default function Everyone() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-card border-b border-card-border px-6 py-6 sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto flex items-center gap-4">
-          <Link href="/">
-            <Button
-              variant="ghost"
+      <Link href="/">
+        <header 
+          className="bg-card border-b border-card-border px-6 py-6 sticky top-0 z-10 cursor-pointer hover-elevate active-elevate-2"
+          data-testid="header-back"
+        >
+          <div className="max-w-2xl mx-auto flex items-center gap-4">
+            <div
               className="flex-shrink-0 h-auto py-3 px-4 flex flex-col items-center gap-1 text-primary"
               data-testid="button-back"
             >
               <ArrowLeft className="w-16 h-16" strokeWidth={3} />
               <span className="text-lg font-bold">Back</span>
-            </Button>
-          </Link>
-          <h1 className="text-3xl font-bold text-foreground flex-1 ml-2">
-            Everyone
-          </h1>
-        </div>
-      </header>
+            </div>
+            <h1 className="text-3xl font-bold text-foreground flex-1 ml-2">
+              Everyone
+            </h1>
+          </div>
+        </header>
+      </Link>
 
       <main className="max-w-2xl mx-auto px-4 py-8">
         {isLoading ? (

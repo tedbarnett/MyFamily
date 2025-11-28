@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { Link } from "wouter";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, Cake } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -72,23 +71,25 @@ export default function Birthdays() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <header className="bg-card border-b border-card-border px-6 py-6">
-        <div className="max-w-2xl mx-auto flex items-center gap-4">
-          <Link href="/">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-14 w-14 flex-shrink-0"
+      <Link href="/">
+        <header 
+          className="bg-card border-b border-card-border px-6 py-6 cursor-pointer hover-elevate active-elevate-2"
+          data-testid="header-back"
+        >
+          <div className="max-w-2xl mx-auto flex items-center gap-4">
+            <div
+              className="flex-shrink-0 h-auto py-3 px-4 flex flex-col items-center gap-1 text-primary"
               data-testid="button-back"
             >
-              <ArrowLeft className="w-8 h-8" />
-            </Button>
-          </Link>
-          <h1 className="text-3xl font-bold text-foreground" data-testid="text-page-title">
-            Upcoming Birthdays
-          </h1>
-        </div>
-      </header>
+              <ArrowLeft className="w-16 h-16" strokeWidth={3} />
+              <span className="text-lg font-bold">Back</span>
+            </div>
+            <h1 className="text-3xl font-bold text-foreground flex-1 ml-2" data-testid="text-page-title">
+              Upcoming Birthdays
+            </h1>
+          </div>
+        </header>
+      </Link>
 
       <main className="flex-1 max-w-2xl mx-auto px-4 py-8 w-full">
         <div className="space-y-6">
