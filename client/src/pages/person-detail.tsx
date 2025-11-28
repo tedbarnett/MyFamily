@@ -87,15 +87,22 @@ export default function PersonDetail() {
   const handlePhotoTap = useCallback(() => {
     if (allPhotos.length <= 1) return;
     
-    const nextIndex = (currentPhotoIndex + 1) % allPhotos.length;
-    setCurrentPhotoIndex(nextIndex);
-    
-    // Set the new photo as primary so it shows up elsewhere in the app
-    const newPrimaryPhoto = allPhotos[nextIndex];
-    if (newPrimaryPhoto && newPrimaryPhoto !== person?.photoData) {
-      setPrimaryMutation.mutate(newPrimaryPhoto);
-    }
-  }, [allPhotos, currentPhotoIndex, person?.photoData, setPrimaryMutation]);
+    // Calculate next index and get the photo to set as primary
+    setCurrentPhotoIndex(prevIndex => {
+      const nextIndex = (prevIndex + 1) % allPhotos.length;
+      
+      // Get the new photo from the stable allPhotos array
+      const newPrimaryPhoto = allPhotos[nextIndex];
+      if (newPrimaryPhoto && newPrimaryPhoto !== person?.photoData) {
+        // Delay mutation slightly to ensure state is updated
+        setTimeout(() => {
+          setPrimaryMutation.mutate(newPrimaryPhoto);
+        }, 0);
+      }
+      
+      return nextIndex;
+    });
+  }, [allPhotos, person?.photoData, setPrimaryMutation]);
 
   // Sort people the same way as the Everyone page
   const sortedPeople = useMemo(() => {

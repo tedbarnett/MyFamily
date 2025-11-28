@@ -650,7 +650,13 @@ export default function Admin() {
         />
       )}
 
-      <Dialog open={!!editingPerson} onOpenChange={(open) => !open && setEditingPerson(null)}>
+      <Dialog open={!!editingPerson} onOpenChange={(open) => {
+        if (!open) {
+          setEditingPerson(null);
+          setSelectedPersonId(null);
+          setIsAddingPhoto(false);
+        }
+      }}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl">Edit {editingPerson?.name}</DialogTitle>
