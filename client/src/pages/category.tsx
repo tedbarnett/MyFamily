@@ -12,7 +12,7 @@ const categoryLabels: Record<PersonCategory, string> = {
   grandchildren: "Grandchildren",
   daughters_in_law: "Daughters in Law",
   caregivers: "Caregivers",
-  other: "Other",
+  other: "Friends & Neighbors",
 };
 
 const validCategories: PersonCategory[] = ["husband", "children", "grandchildren", "daughters_in_law", "caregivers", "other"];

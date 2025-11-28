@@ -55,7 +55,7 @@ const categories: CategoryCard[] = [
   },
   {
     id: "other",
-    label: "Other",
+    label: "Friends & Neighbors",
     description: "",
     icon: Users,
     color: "text-gray-600",
