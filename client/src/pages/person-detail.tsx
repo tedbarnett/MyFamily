@@ -264,6 +264,11 @@ export default function PersonDetail() {
   // Current photo to display (from cycling through all photos)
   const currentPhotoSrc = allPhotos.length > 0 ? allPhotos[currentPhotoIndex] : undefined;
 
+  // Check if this person is the only one in their category
+  const peopleInCategory = allPeople.filter(p => p.category === person.category);
+  const isOnlyOneInCategory = peopleInCategory.length === 1;
+  const backLink = isOnlyOneInCategory ? "/" : `/category/${person.category}`;
+
   const playVoiceNote = async () => {
     if (person.voiceNoteData && audioRef.current) {
       try {
@@ -291,7 +296,7 @@ export default function PersonDetail() {
       onTouchEnd={handleTouchEnd}
       data-testid="person-detail-container"
     >
-      <Link href={`/category/${person.category}`}>
+      <Link href={backLink}>
         <header 
           className="bg-card border-b border-card-border px-6 py-6 sticky top-0 z-10 cursor-pointer hover-elevate active-elevate-2"
           data-testid="header-back"
