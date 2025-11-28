@@ -234,7 +234,7 @@ export default function PersonDetail() {
         </header>
       </Link>
 
-      <div className="relative w-full aspect-square max-w-2xl mx-auto overflow-hidden">
+      <div className="relative w-full aspect-square max-w-2xl mx-auto overflow-visible">
         <div 
           className="w-full h-full"
           style={{ 
@@ -281,13 +281,15 @@ export default function PersonDetail() {
               src={person.voiceNoteData}
               onEnded={() => setIsPlaying(false)}
             />
-            <Button
+            <button
               onClick={playVoiceNote}
-              className={`absolute bottom-4 right-4 h-16 w-16 rounded-full shadow-lg z-20 ${isPlaying ? 'bg-green-600 hover:bg-green-700' : 'bg-primary hover:bg-primary/90'}`}
+              type="button"
+              className={`absolute bottom-2 right-2 h-16 w-16 rounded-full shadow-lg z-50 pointer-events-auto flex items-center justify-center transition-colors ${isPlaying ? 'bg-green-600' : 'bg-primary'}`}
               data-testid="button-play-voice"
+              aria-label="Play voice note"
             >
               <Volume2 className="w-8 h-8 text-white" />
-            </Button>
+            </button>
           </>
         )}
       </div>
