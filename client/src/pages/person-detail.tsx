@@ -1,10 +1,11 @@
-import { useCallback, useRef, useMemo, useState } from "react";
+import { useCallback, useRef, useMemo, useState, useEffect } from "react";
 import { useRoute, Link, useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2, MapPin, Calendar, Briefcase, Heart, ChevronLeft, ChevronRight, Volume2 } from "lucide-react";
 import type { Person, PersonCategory } from "@shared/schema";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 const categoryOrder: PersonCategory[] = [
   "husband",
@@ -30,6 +31,9 @@ export default function PersonDetail() {
   // Voice note playback
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  
+  // Multi-photo state
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
   const { data: person, isLoading } = useQuery<Person>({
     queryKey: [`/api/person/${personId}`],
@@ -40,6 +44,58 @@ export default function PersonDetail() {
   const { data: allPeople = [] } = useQuery<Person[]>({
     queryKey: ["/api/people"],
   });
+
+  // Build array of all photos for this person
+  const allPhotos = useMemo(() => {
+    if (!person) return [];
+    const photos: string[] = [];
+    // Include primary photo
+    if (person.photoData) {
+      photos.push(person.photoData);
+    } else if (person.photoUrl) {
+      photos.push(person.photoUrl);
+    }
+    // Add any additional photos from the photos array
+    if (person.photos && person.photos.length > 0) {
+      person.photos.forEach(photo => {
+        if (!photos.includes(photo)) {
+          photos.push(photo);
+        }
+      });
+    }
+    return photos;
+  }, [person]);
+
+  // Reset photo index when person changes
+  useEffect(() => {
+    setCurrentPhotoIndex(0);
+  }, [personId]);
+
+  // Mutation to set primary photo
+  const setPrimaryMutation = useMutation({
+    mutationFn: async (photoData: string) => {
+      const response = await apiRequest("POST", `/api/person/${personId}/photos/set-primary`, { photoData });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/person/${personId}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/people"] });
+    },
+  });
+
+  // Handle tapping on photo to cycle through
+  const handlePhotoTap = useCallback(() => {
+    if (allPhotos.length <= 1) return;
+    
+    const nextIndex = (currentPhotoIndex + 1) % allPhotos.length;
+    setCurrentPhotoIndex(nextIndex);
+    
+    // Set the new photo as primary so it shows up elsewhere in the app
+    const newPrimaryPhoto = allPhotos[nextIndex];
+    if (newPrimaryPhoto && newPrimaryPhoto !== person?.photoData) {
+      setPrimaryMutation.mutate(newPrimaryPhoto);
+    }
+  }, [allPhotos, currentPhotoIndex, person?.photoData, setPrimaryMutation]);
 
   // Sort people the same way as the Everyone page
   const sortedPeople = useMemo(() => {
@@ -190,7 +246,8 @@ export default function PersonDetail() {
     );
   }
 
-  const photoSrc = person.photoData || person.photoUrl || undefined;
+  // Current photo to display (from cycling through all photos)
+  const currentPhotoSrc = allPhotos.length > 0 ? allPhotos[currentPhotoIndex] : undefined;
 
   const playVoiceNote = async () => {
     if (person.voiceNoteData && audioRef.current) {
@@ -241,15 +298,17 @@ export default function PersonDetail() {
 
       <div className="relative w-full aspect-square max-w-2xl mx-auto overflow-visible">
         <div 
-          className="w-full h-full"
+          className="w-full h-full cursor-pointer"
           style={{ 
             transform: `translateX(${swipeOffset}px)`,
             transition: isAnimating || swipeOffset === 0 ? 'transform 0.2s ease-out' : 'none'
           }}
+          onClick={handlePhotoTap}
+          data-testid="photo-tap-area"
         >
-          {photoSrc ? (
+          {currentPhotoSrc ? (
             <img
-              src={photoSrc}
+              src={currentPhotoSrc}
               alt={person.name}
               className="w-full h-full object-cover"
               data-testid="img-person-photo"
@@ -261,8 +320,8 @@ export default function PersonDetail() {
               </span>
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-6 text-center">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
+          <div className="absolute bottom-0 left-0 right-0 p-6 text-center pointer-events-none">
             <h2 
               className="text-4xl font-bold text-white mb-2"
               style={{ textShadow: "2px 2px 4px rgba(0,0,0,0.8)" }}
@@ -277,6 +336,21 @@ export default function PersonDetail() {
             >
               {person.relationship}
             </p>
+            {allPhotos.length > 1 && (
+              <div className="flex justify-center gap-2 mt-3" data-testid="photo-indicators">
+                {allPhotos.map((_, index) => (
+                  <div
+                    key={index}
+                    className={`w-3 h-3 rounded-full transition-all ${
+                      index === currentPhotoIndex 
+                        ? 'bg-white scale-110' 
+                        : 'bg-white/50'
+                    }`}
+                    data-testid={`photo-dot-${index}`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
         {person.voiceNoteData && (
