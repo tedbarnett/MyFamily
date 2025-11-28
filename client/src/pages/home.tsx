@@ -303,7 +303,7 @@ export default function Home() {
 
             <div className="mt-8 text-center">
               <button
-                className="text-xs text-gray-400"
+                className="text-xs text-white/20"
                 onClick={() => setShowAdminDialog(true)}
                 data-testid="button-admin"
               >
