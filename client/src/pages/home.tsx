@@ -90,7 +90,7 @@ export default function Home() {
     enabled: submittedSearch.length > 0,
   });
 
-  const { data: allPeople = [] } = useQuery<Person[]>({
+  const { data: allPeople = [], isLoading: isPeopleLoading } = useQuery<Person[]>({
     queryKey: ["/api/people"],
   });
 
@@ -238,7 +238,7 @@ export default function Home() {
                       Everyone
                     </h2>
                     <p className="text-lg text-muted-foreground">
-                      {allPeople.length} people
+                      {isPeopleLoading ? "Loading..." : `${allPeople.length} people`}
                     </p>
                   </div>
                 </div>
