@@ -147,27 +147,26 @@ export default function PersonDetail() {
     }
   }, [nextPerson, setLocation]);
 
-  // Swipe gesture handlers
+  // Swipe gesture handlers for cycling through photos
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (isAnimating) return;
+    if (isAnimating || isTransitioning) return;
     touchStartX.current = e.touches[0].clientX;
     touchEndX.current = null;
     setSwipeOffset(0);
-  }, [isAnimating]);
+  }, [isAnimating, isTransitioning]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (isAnimating || touchStartX.current === null) return;
+    if (isAnimating || isTransitioning || touchStartX.current === null) return;
+    // Only allow swiping if there are multiple photos
+    if (allPhotos.length <= 1) return;
+    
     touchEndX.current = e.touches[0].clientX;
     const offset = touchEndX.current - touchStartX.current;
-    // Limit the offset and add resistance at edges
+    // Limit the offset
     const maxOffset = 150;
     const limitedOffset = Math.max(-maxOffset, Math.min(maxOffset, offset));
-    // Add resistance if no person in that direction
-    const resistedOffset = (offset > 0 && !prevPerson) || (offset < 0 && !nextPerson)
-      ? limitedOffset * 0.3
-      : limitedOffset;
-    setSwipeOffset(resistedOffset);
-  }, [isAnimating, prevPerson, nextPerson]);
+    setSwipeOffset(limitedOffset);
+  }, [isAnimating, isTransitioning, allPhotos.length]);
 
   const handleTouchEnd = useCallback(() => {
     if (touchStartX.current === null || touchEndX.current === null) {
@@ -175,31 +174,68 @@ export default function PersonDetail() {
       return;
     }
     
+    // Only handle swipe if there are multiple photos
+    if (allPhotos.length <= 1) {
+      setSwipeOffset(0);
+      touchStartX.current = null;
+      touchEndX.current = null;
+      return;
+    }
+    
     const swipeDistance = touchStartX.current - touchEndX.current;
-    const minSwipeDistance = 50; // Minimum swipe distance to trigger navigation
+    const minSwipeDistance = 50; // Minimum swipe distance to trigger photo change
     
     if (Math.abs(swipeDistance) >= minSwipeDistance) {
-      if (swipeDistance > 0 && nextPerson) {
-        // Swiped left -> animate out and go to next person
+      if (swipeDistance > 0) {
+        // Swiped left -> go to next photo
         setIsAnimating(true);
         setSwipeOffset(-300);
         setTimeout(() => {
-          navigateToNext();
+          // Go to next photo (with wrap around)
+          const nextIndex = (currentPhotoIndex + 1) % allPhotos.length;
+          setIsTransitioning(true);
+          setPreviousPhotoIndex(currentPhotoIndex);
+          setCurrentPhotoIndex(nextIndex);
+          
+          // Set as primary photo
+          const newPrimaryPhoto = allPhotos[nextIndex];
+          if (newPrimaryPhoto && newPrimaryPhoto !== person?.photoData) {
+            setPrimaryMutation.mutate(newPrimaryPhoto);
+          }
+          
           setSwipeOffset(0);
           setIsAnimating(false);
+          
+          setTimeout(() => {
+            setIsTransitioning(false);
+            setPreviousPhotoIndex(null);
+          }, 800);
         }, 200);
-      } else if (swipeDistance < 0 && prevPerson) {
-        // Swiped right -> animate out and go to previous person
+      } else if (swipeDistance < 0) {
+        // Swiped right -> go to previous photo
         setIsAnimating(true);
         setSwipeOffset(300);
         setTimeout(() => {
-          navigateToPrev();
+          // Go to previous photo (with wrap around)
+          const prevIndex = (currentPhotoIndex - 1 + allPhotos.length) % allPhotos.length;
+          setIsTransitioning(true);
+          setPreviousPhotoIndex(currentPhotoIndex);
+          setCurrentPhotoIndex(prevIndex);
+          
+          // Set as primary photo
+          const newPrimaryPhoto = allPhotos[prevIndex];
+          if (newPrimaryPhoto && newPrimaryPhoto !== person?.photoData) {
+            setPrimaryMutation.mutate(newPrimaryPhoto);
+          }
+          
           setSwipeOffset(0);
           setIsAnimating(false);
+          
+          setTimeout(() => {
+            setIsTransitioning(false);
+            setPreviousPhotoIndex(null);
+          }, 800);
         }, 200);
-      } else {
-        // Bounce back
-        setSwipeOffset(0);
       }
     } else {
       // Bounce back
@@ -208,7 +244,7 @@ export default function PersonDetail() {
     
     touchStartX.current = null;
     touchEndX.current = null;
-  }, [navigateToNext, navigateToPrev, nextPerson, prevPerson]);
+  }, [allPhotos, currentPhotoIndex, person?.photoData, setPrimaryMutation]);
 
   // Helper function to find a person by name and return their ID
   // Supports exact match, first name match, or partial match
