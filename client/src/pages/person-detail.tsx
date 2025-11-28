@@ -192,15 +192,20 @@ export default function PersonDetail() {
 
   const photoSrc = person.photoData || person.photoUrl || undefined;
 
-  const playVoiceNote = () => {
+  const playVoiceNote = async () => {
     if (person.voiceNoteData && audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
+      try {
+        if (isPlaying) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+          setIsPlaying(false);
+        } else {
+          await audioRef.current.play();
+          setIsPlaying(true);
+        }
+      } catch (error) {
+        console.error("Error playing voice note:", error);
         setIsPlaying(false);
-      } else {
-        audioRef.current.play();
-        setIsPlaying(true);
       }
     }
   };
@@ -278,18 +283,21 @@ export default function PersonDetail() {
           <>
             <audio 
               ref={audioRef} 
-              src={person.voiceNoteData}
+              preload="auto"
               onEnded={() => setIsPlaying(false)}
-            />
-            <button
-              onClick={playVoiceNote}
-              type="button"
-              className={`absolute bottom-2 right-2 h-16 w-16 rounded-full shadow-lg z-50 pointer-events-auto flex items-center justify-center transition-colors ${isPlaying ? 'bg-green-600' : 'bg-primary'}`}
-              data-testid="button-play-voice"
-              aria-label="Play voice note"
+              onError={(e) => console.error("Audio error:", e)}
             >
-              <Volume2 className="w-8 h-8 text-white" />
-            </button>
+              <source src={person.voiceNoteData} type="audio/webm" />
+              <source src={person.voiceNoteData} type="audio/wav" />
+            </audio>
+            <Button
+              onClick={playVoiceNote}
+              size="icon"
+              className={`absolute bottom-2 right-2 h-16 w-16 rounded-full shadow-lg z-50 ${isPlaying ? 'bg-green-600 hover:bg-green-700' : 'bg-primary hover:bg-primary/90'}`}
+              data-testid="button-play-voice"
+            >
+              <Volume2 className="w-8 h-8" />
+            </Button>
           </>
         )}
       </div>
