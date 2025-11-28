@@ -9,6 +9,7 @@ import PersonDetail from "@/pages/person-detail";
 import Admin from "@/pages/admin";
 import Everyone from "@/pages/everyone";
 import Quiz from "@/pages/quiz";
+import Birthdays from "@/pages/birthdays";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -20,6 +21,7 @@ function Router() {
       <Route path="/admin" component={Admin} />
       <Route path="/everyone" component={Everyone} />
       <Route path="/quiz" component={Quiz} />
+      <Route path="/birthdays" component={Birthdays} />
       <Route component={NotFound} />
     </Switch>
   );
