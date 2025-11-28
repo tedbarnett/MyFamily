@@ -214,9 +214,12 @@ export default function PersonDetail() {
       onTouchEnd={handleTouchEnd}
       data-testid="person-detail-container"
     >
-      <header className="bg-card border-b border-card-border px-6 py-4 sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto flex items-center gap-4">
-          <Link href={`/category/${person.category}`}>
+      <Link href={`/category/${person.category}`}>
+        <header 
+          className="bg-card border-b border-card-border px-6 py-4 sticky top-0 z-10 cursor-pointer hover-elevate"
+          data-testid="header-back"
+        >
+          <div className="max-w-2xl mx-auto flex items-center gap-4">
             <Button
               variant="ghost"
               className="flex-shrink-0 h-auto p-2 text-primary"
@@ -224,12 +227,12 @@ export default function PersonDetail() {
             >
               <ArrowLeft className="w-20 h-20" strokeWidth={3} />
             </Button>
-          </Link>
-          <h1 className="text-3xl font-bold text-muted-foreground/70 flex-1 truncate">
-            Details
-          </h1>
-        </div>
-      </header>
+            <h1 className="text-3xl font-bold text-muted-foreground/70 flex-1 truncate">
+              Details
+            </h1>
+          </div>
+        </header>
+      </Link>
 
       <div className="relative w-full aspect-square max-w-2xl mx-auto overflow-hidden">
         <div 
