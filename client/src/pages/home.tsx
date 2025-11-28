@@ -516,7 +516,7 @@ export default function Home() {
             <Button
               variant="outline"
               onClick={handleAdminProceed}
-              className="flex-1 h-14 text-lg bg-red-800 hover:bg-red-900 text-white border-red-800"
+              className="flex-1 h-14 text-lg"
               data-testid="button-admin-proceed"
             >
               Proceed
