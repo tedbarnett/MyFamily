@@ -32,8 +32,10 @@ export default function PersonDetail() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   
-  // Multi-photo state
+  // Multi-photo state with transition
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [previousPhotoIndex, setPreviousPhotoIndex] = useState<number | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const { data: person, isLoading } = useQuery<Person>({
     queryKey: [`/api/person/${personId}`],
@@ -83,26 +85,32 @@ export default function PersonDetail() {
     },
   });
 
-  // Handle tapping on photo to cycle through
+  // Handle tapping on photo to cycle through with transition
   const handlePhotoTap = useCallback(() => {
-    if (allPhotos.length <= 1) return;
+    if (allPhotos.length <= 1 || isTransitioning) return;
     
-    // Calculate next index and get the photo to set as primary
-    setCurrentPhotoIndex(prevIndex => {
-      const nextIndex = (prevIndex + 1) % allPhotos.length;
-      
-      // Get the new photo from the stable allPhotos array
-      const newPrimaryPhoto = allPhotos[nextIndex];
-      if (newPrimaryPhoto && newPrimaryPhoto !== person?.photoData) {
-        // Delay mutation slightly to ensure state is updated
-        setTimeout(() => {
-          setPrimaryMutation.mutate(newPrimaryPhoto);
-        }, 0);
-      }
-      
-      return nextIndex;
-    });
-  }, [allPhotos, person?.photoData, setPrimaryMutation]);
+    // Start transition
+    setIsTransitioning(true);
+    setPreviousPhotoIndex(currentPhotoIndex);
+    
+    const nextIndex = (currentPhotoIndex + 1) % allPhotos.length;
+    setCurrentPhotoIndex(nextIndex);
+    
+    // Get the new photo from the stable allPhotos array
+    const newPrimaryPhoto = allPhotos[nextIndex];
+    if (newPrimaryPhoto && newPrimaryPhoto !== person?.photoData) {
+      // Delay mutation slightly to ensure state is updated
+      setTimeout(() => {
+        setPrimaryMutation.mutate(newPrimaryPhoto);
+      }, 0);
+    }
+    
+    // End transition after animation completes
+    setTimeout(() => {
+      setIsTransitioning(false);
+      setPreviousPhotoIndex(null);
+    }, 800);
+  }, [allPhotos, currentPhotoIndex, isTransitioning, person?.photoData, setPrimaryMutation]);
 
   // Sort people the same way as the Everyone page
   const sortedPeople = useMemo(() => {
@@ -305,7 +313,7 @@ export default function PersonDetail() {
 
       <div className="relative w-full aspect-square max-w-2xl mx-auto overflow-visible">
         <div 
-          className="w-full h-full cursor-pointer"
+          className="w-full h-full cursor-pointer overflow-hidden"
           style={{ 
             transform: `translateX(${swipeOffset}px)`,
             transition: isAnimating || swipeOffset === 0 ? 'transform 0.2s ease-out' : 'none'
@@ -313,11 +321,33 @@ export default function PersonDetail() {
           onClick={handlePhotoTap}
           data-testid="photo-tap-area"
         >
+          {/* Previous photo (fading out during transition) */}
+          {previousPhotoIndex !== null && allPhotos[previousPhotoIndex] && (
+            <img
+              src={allPhotos[previousPhotoIndex]}
+              alt={person.name}
+              className="absolute inset-0 w-full h-full object-cover"
+              style={{
+                opacity: isTransitioning ? 0 : 1,
+                transition: 'opacity 0.8s ease-in-out',
+                transform: 'scale(1.05)',
+              }}
+            />
+          )}
+          
+          {/* Current photo with Ken Burns effect */}
           {currentPhotoSrc ? (
             <img
+              key={currentPhotoIndex}
               src={currentPhotoSrc}
               alt={person.name}
               className="w-full h-full object-cover"
+              style={{
+                opacity: isTransitioning ? 1 : 1,
+                transition: 'opacity 0.8s ease-in-out, transform 8s ease-out',
+                transform: isTransitioning ? 'scale(1.0)' : 'scale(1.08)',
+                transformOrigin: currentPhotoIndex % 2 === 0 ? 'center center' : 'top center',
+              }}
               data-testid="img-person-photo"
             />
           ) : (
