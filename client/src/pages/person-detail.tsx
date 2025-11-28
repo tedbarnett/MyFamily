@@ -290,11 +290,11 @@ export default function PersonDetail() {
         >
           <div className="max-w-2xl mx-auto flex items-center gap-4">
             <div
-              className="flex-shrink-0 h-auto py-3 px-4 flex flex-col items-center gap-1 text-primary"
+              className="flex-shrink-0 h-auto py-2 px-2 flex flex-col items-center gap-0.5 text-primary"
               data-testid="button-back"
             >
-              <ArrowLeft className="w-16 h-16" strokeWidth={3} />
-              <span className="text-lg font-bold">Back</span>
+              <ArrowLeft className="w-8 h-8" strokeWidth={2.5} />
+              <span className="text-sm font-bold">Back</span>
             </div>
             <h1 className="text-3xl font-bold text-muted-foreground/70 flex-1 truncate ml-2">
               Details
