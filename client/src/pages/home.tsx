@@ -47,18 +47,18 @@ const categories: CategoryCard[] = [
     color: "text-pink-600",
   },
   {
-    id: "caregivers",
-    label: "Caregivers",
-    description: "",
-    icon: Stethoscope,
-    color: "text-orange-600",
-  },
-  {
     id: "other",
     label: "Friends & Neighbors",
     description: "",
     icon: Users,
     color: "text-gray-600",
+  },
+  {
+    id: "caregivers",
+    label: "Caregivers",
+    description: "",
+    icon: Stethoscope,
+    color: "text-orange-600",
   },
 ];
 
