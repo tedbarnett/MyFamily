@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Home, Camera, Loader2, Save, X, Pencil, Plus, Trash2, BrainCircuit, Mic, Square } from "lucide-react";
+import { Home, Camera, Loader2, Save, X, Pencil, Plus, Trash2, BrainCircuit, Mic, Square, Images, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { PhotoCropper } from "@/components/photo-cropper";
@@ -44,6 +44,8 @@ export default function Admin() {
   const [recordingPersonId, setRecordingPersonId] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const [isAddingPhoto, setIsAddingPhoto] = useState(false);
+  const addPhotoInputRef = useRef<HTMLInputElement>(null);
 
   const { data: allPeople = [], isLoading } = useQuery<Person[]>({
     queryKey: ["/api/people"],
@@ -107,6 +109,69 @@ export default function Admin() {
       toast({
         title: "Error",
         description: error.message || "Failed to upload photo.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const addPhotoMutation = useMutation({
+    mutationFn: async ({ id, photoData }: { id: string; photoData: string }) => {
+      const response = await apiRequest("POST", `/api/person/${id}/photos/add`, { photoData });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/people"] });
+      toast({
+        title: "Photo Added",
+        description: "New photo added to gallery.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add photo.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deletePhotoMutation = useMutation({
+    mutationFn: async ({ id, photoData }: { id: string; photoData: string }) => {
+      const response = await apiRequest("DELETE", `/api/person/${id}/photos`, { photoData });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/people"] });
+      toast({
+        title: "Photo Deleted",
+        description: "Photo removed from gallery.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete photo.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const setPrimaryMutation = useMutation({
+    mutationFn: async ({ id, photoData }: { id: string; photoData: string }) => {
+      const response = await apiRequest("POST", `/api/person/${id}/photos/set-primary`, { photoData });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/people"] });
+      toast({
+        title: "Primary Photo Set",
+        description: "This photo is now the main photo.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to set primary photo.",
         variant: "destructive",
       });
     },
@@ -278,17 +343,52 @@ export default function Admin() {
 
   const handleCropperSave = (croppedImage: string) => {
     if (selectedPersonId) {
-      photoMutation.mutate({ id: selectedPersonId, photoData: croppedImage });
+      if (isAddingPhoto) {
+        addPhotoMutation.mutate({ id: selectedPersonId, photoData: croppedImage });
+      } else {
+        photoMutation.mutate({ id: selectedPersonId, photoData: croppedImage });
+      }
     }
     setShowCropper(false);
     setCropperImage(null);
     setSelectedPersonId(null);
+    setIsAddingPhoto(false);
   };
 
   const handleCropperClose = () => {
     setShowCropper(false);
     setCropperImage(null);
     setSelectedPersonId(null);
+    setIsAddingPhoto(false);
+  };
+
+  const handleAddPhotoClick = (personId: string) => {
+    setSelectedPersonId(personId);
+    setIsAddingPhoto(true);
+    addPhotoInputRef.current?.click();
+  };
+
+  const handleAddPhotoFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !selectedPersonId) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Invalid File",
+        description: "Please select an image file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target?.result as string;
+      setCropperImage(base64);
+      setShowCropper(true);
+    };
+    reader.readAsDataURL(file);
+    event.target.value = "";
   };
 
   const startRecording = async (personId: string) => {
@@ -532,6 +632,15 @@ export default function Admin() {
         data-testid="input-photo-upload"
       />
 
+      <input
+        ref={addPhotoInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleAddPhotoFileChange}
+        className="hidden"
+        data-testid="input-add-photo"
+      />
+
       {cropperImage && (
         <PhotoCropper
           imageSrc={cropperImage}
@@ -547,6 +656,79 @@ export default function Admin() {
             <DialogTitle className="text-xl">Edit {editingPerson?.name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            {editingPerson && (
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Images className="w-4 h-4 text-primary" />
+                  <label className="text-sm font-medium text-foreground">Photos</label>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {(() => {
+                    const photos: string[] = [];
+                    if (editingPerson.photoData) photos.push(editingPerson.photoData);
+                    else if (editingPerson.photoUrl) photos.push(editingPerson.photoUrl);
+                    if (editingPerson.photos) {
+                      editingPerson.photos.forEach(p => {
+                        if (!photos.includes(p)) photos.push(p);
+                      });
+                    }
+                    return photos.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No photos yet</p>
+                    ) : (
+                      photos.map((photo, index) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={photo}
+                            alt={`Photo ${index + 1}`}
+                            className="w-20 h-20 object-cover rounded-md border border-border"
+                            data-testid={`photo-thumbnail-${index}`}
+                          />
+                          {photo === (editingPerson.photoData || editingPerson.photoUrl) && (
+                            <div className="absolute top-1 left-1 bg-primary rounded-full p-0.5">
+                              <Check className="w-3 h-3 text-primary-foreground" />
+                            </div>
+                          )}
+                          <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {photo !== (editingPerson.photoData || editingPerson.photoUrl) && (
+                              <Button
+                                size="icon"
+                                variant="secondary"
+                                className="h-6 w-6"
+                                onClick={() => setPrimaryMutation.mutate({ id: editingPerson.id, photoData: photo })}
+                                data-testid={`button-set-primary-${index}`}
+                              >
+                                <Check className="w-3 h-3" />
+                              </Button>
+                            )}
+                            <Button
+                              size="icon"
+                              variant="destructive"
+                              className="h-6 w-6"
+                              onClick={() => deletePhotoMutation.mutate({ id: editingPerson.id, photoData: photo })}
+                              data-testid={`button-delete-photo-${index}`}
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))
+                    );
+                  })()}
+                  <Button
+                    variant="outline"
+                    className="w-20 h-20 border-dashed flex flex-col items-center justify-center gap-1"
+                    onClick={() => handleAddPhotoClick(editingPerson.id)}
+                    data-testid="button-add-photo"
+                  >
+                    <Plus className="w-5 h-5" />
+                    <span className="text-xs">Add</span>
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Tap a photo on the detail page to cycle through. The checkmark shows the main photo.
+                </p>
+              </div>
+            )}
             <div>
               <label className="text-sm font-medium text-foreground mb-1 block">Name</label>
               <Input
