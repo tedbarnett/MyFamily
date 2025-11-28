@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,11 @@ export default function Admin() {
   const audioChunksRef = useRef<Blob[]>([]);
   const [isAddingPhoto, setIsAddingPhoto] = useState(false);
   const addPhotoInputRef = useRef<HTMLInputElement>(null);
+
+  // Scroll to top when page opens
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const { data: allPeople = [], isLoading } = useQuery<Person[]>({
     queryKey: ["/api/people"],
