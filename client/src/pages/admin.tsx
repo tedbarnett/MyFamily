@@ -694,7 +694,7 @@ export default function Admin() {
                               <Check className="w-3 h-3 text-primary-foreground" />
                             </div>
                           )}
-                          <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="absolute top-1 right-1 flex gap-1">
                             {photo !== (editingPerson.photoData || editingPerson.photoUrl) && (
                               <Button
                                 size="icon"
