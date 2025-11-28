@@ -67,7 +67,7 @@ export default function Category() {
         >
           <div className="max-w-2xl mx-auto flex items-center gap-4">
             <div
-              className="flex-shrink-0 h-auto py-2 px-2 flex flex-col items-center gap-0.5 text-primary"
+              className="flex-shrink-0 flex items-center gap-1 text-primary"
               data-testid="button-back"
             >
               <ArrowLeft className="w-8 h-8" strokeWidth={2.5} />
