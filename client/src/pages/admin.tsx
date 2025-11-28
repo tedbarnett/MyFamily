@@ -119,8 +119,12 @@ export default function Admin() {
       const response = await apiRequest("POST", `/api/person/${id}/photos/add`, { photoData });
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (updatedPerson: Person) => {
       queryClient.invalidateQueries({ queryKey: ["/api/people"] });
+      // Update the editing person state so the dialog shows the new photo
+      if (editingPerson && editingPerson.id === updatedPerson.id) {
+        setEditingPerson(updatedPerson);
+      }
       toast({
         title: "Photo Added",
         description: "New photo added to gallery.",
@@ -140,8 +144,12 @@ export default function Admin() {
       const response = await apiRequest("DELETE", `/api/person/${id}/photos`, { photoData });
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (updatedPerson: Person) => {
       queryClient.invalidateQueries({ queryKey: ["/api/people"] });
+      // Update the editing person state so the dialog shows the change
+      if (editingPerson && editingPerson.id === updatedPerson.id) {
+        setEditingPerson(updatedPerson);
+      }
       toast({
         title: "Photo Deleted",
         description: "Photo removed from gallery.",
@@ -161,8 +169,12 @@ export default function Admin() {
       const response = await apiRequest("POST", `/api/person/${id}/photos/set-primary`, { photoData });
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (updatedPerson: Person) => {
       queryClient.invalidateQueries({ queryKey: ["/api/people"] });
+      // Update the editing person state so the dialog shows the change
+      if (editingPerson && editingPerson.id === updatedPerson.id) {
+        setEditingPerson(updatedPerson);
+      }
       toast({
         title: "Primary Photo Set",
         description: "This photo is now the main photo.",
