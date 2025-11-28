@@ -553,31 +553,39 @@ export default function PersonDetail() {
             </Card>
           )}
 
-          {/* Navigation arrows */}
-          {(prevPerson || nextPerson) && (
-            <div className="flex justify-between items-center gap-4 pt-4">
-              <Button
-                variant="outline"
-                className="flex-1 h-16 text-lg"
-                onClick={navigateToPrev}
-                disabled={!prevPerson}
-                data-testid="button-prev-person"
-              >
-                <ChevronLeft className="w-8 h-8 mr-2" />
-                {prevPerson ? prevPerson.name : ""}
-              </Button>
-              <Button
-                variant="outline"
-                className="flex-1 h-16 text-lg"
-                onClick={navigateToNext}
-                disabled={!nextPerson}
-                data-testid="button-next-person"
-              >
-                {nextPerson ? nextPerson.name : ""}
-                <ChevronRight className="w-8 h-8 ml-2" />
-              </Button>
-            </div>
-          )}
+          {/* Navigation to previous/next person */}
+          <div className="flex gap-4 pt-6 pb-4">
+            <Button
+              variant="outline"
+              className="flex-1 h-20 text-xl flex-col gap-1 px-4"
+              onClick={navigateToPrev}
+              disabled={!prevPerson}
+              data-testid="button-prev-person"
+            >
+              <div className="flex items-center text-muted-foreground text-sm">
+                <ChevronLeft className="w-5 h-5" />
+                Previous
+              </div>
+              <span className="font-bold truncate max-w-full">
+                {prevPerson ? prevPerson.name : "—"}
+              </span>
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1 h-20 text-xl flex-col gap-1 px-4"
+              onClick={navigateToNext}
+              disabled={!nextPerson}
+              data-testid="button-next-person"
+            >
+              <div className="flex items-center text-muted-foreground text-sm">
+                Next
+                <ChevronRight className="w-5 h-5" />
+              </div>
+              <span className="font-bold truncate max-w-full">
+                {nextPerson ? nextPerson.name : "—"}
+              </span>
+            </Button>
+          </div>
         </div>
       </main>
     </div>
