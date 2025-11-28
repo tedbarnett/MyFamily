@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Users, Heart, Baby, Stethoscope, Search, X, HeartHandshake, UsersRound, BrainCircuit } from "lucide-react";
+import { Users, Heart, Baby, Stethoscope, Search, X, HeartHandshake, UsersRound, BrainCircuit, Home as HomeIcon, Cake } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { PersonCategory, Person } from "@shared/schema";
 
@@ -62,10 +62,13 @@ const categories: CategoryCard[] = [
   },
 ];
 
+type TabType = "home" | "birthdays";
+
 export default function Home() {
   const [searchInput, setSearchInput] = useState("");
   const [submittedSearch, setSubmittedSearch] = useState("");
   const [showAdminDialog, setShowAdminDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>("home");
   const [, setLocation] = useLocation();
 
   const formatTodayDate = () => {
@@ -90,17 +93,14 @@ export default function Home() {
     enabled: submittedSearch.length > 0,
   });
 
-  // Fetch all people to display photos in category cards
   const { data: allPeople = [] } = useQuery<Person[]>({
     queryKey: ["/api/people"],
   });
 
-  // Group people by category for photo display
   const getPeopleByCategory = (categoryId: PersonCategory): Person[] => {
     return allPeople.filter((person) => person.category === categoryId);
   };
 
-  // Get a random photo for each category (memoized to stay consistent)
   const categoryBackgroundPhotos = useMemo(() => {
     const photos: Record<string, string | null> = {};
     categories.forEach((category) => {
@@ -117,7 +117,51 @@ export default function Home() {
     return photos;
   }, [allPeople]);
 
-  // Get dynamic label for children category based on gender
+  const parseBirthDate = (born: string): { month: number; day: number } | null => {
+    if (!born) return null;
+    const date = new Date(born);
+    if (isNaN(date.getTime())) return null;
+    return { month: date.getMonth(), day: date.getDate() };
+  };
+
+  const getUpcomingBirthdays = useMemo(() => {
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentDay = today.getDate();
+
+    const peopleWithBirthdays = allPeople
+      .filter((person) => {
+        if (!person.born || person.passed) return false;
+        return parseBirthDate(person.born) !== null;
+      })
+      .map((person) => {
+        const birthDate = parseBirthDate(person.born!)!;
+        let daysUntil: number;
+
+        const thisYearBirthday = new Date(today.getFullYear(), birthDate.month, birthDate.day);
+        const nextYearBirthday = new Date(today.getFullYear() + 1, birthDate.month, birthDate.day);
+
+        if (thisYearBirthday >= today) {
+          daysUntil = Math.ceil((thisYearBirthday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        } else {
+          daysUntil = Math.ceil((nextYearBirthday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        }
+
+        const nextBirthday = thisYearBirthday >= today ? thisYearBirthday : nextYearBirthday;
+
+        return {
+          person,
+          daysUntil,
+          nextBirthday,
+          birthdayString: nextBirthday.toLocaleDateString("en-US", { month: "long", day: "numeric" }),
+        };
+      })
+      .sort((a, b) => a.daysUntil - b.daysUntil)
+      .slice(0, 3);
+
+    return peopleWithBirthdays;
+  }, [allPeople]);
+
   const getChildrenLabel = (): string => {
     const children = getPeopleByCategory("children");
     if (children.length === 0) return "Children";
@@ -155,168 +199,243 @@ export default function Home() {
 
   const showSearchResults = submittedSearch.length > 0;
 
+  const getDaysUntilText = (days: number) => {
+    if (days === 0) return "Today!";
+    if (days === 1) return "Tomorrow";
+    return `In ${days} days`;
+  };
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <header className="bg-card border-b border-card-border px-6 py-6">
         <h1 className="text-3xl font-bold text-center text-foreground" data-testid="text-today-date">
           Today is {formatTodayDate()}
         </h1>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-8">
-        {/* Category Grid - Hide when searching */}
-        {!showSearchResults && (
-          <div className="grid grid-cols-1 gap-6">
-            {categories.map((category) => {
-              const Icon = category.icon;
-              const categoryPeople = getPeopleByCategory(category.id);
-              const backgroundPhoto = categoryBackgroundPhotos[category.id];
-              const linkTarget = categoryPeople.length === 1 
-                ? `/person/${categoryPeople[0].id}` 
-                : `/category/${category.id}`;
-              return (
+      <main className="flex-1 max-w-2xl mx-auto px-4 py-8 w-full pb-28">
+        {activeTab === "home" && (
+          <>
+            {!showSearchResults && (
+              <div className="grid grid-cols-1 gap-6">
+                {categories.map((category) => {
+                  const Icon = category.icon;
+                  const categoryPeople = getPeopleByCategory(category.id);
+                  const backgroundPhoto = categoryBackgroundPhotos[category.id];
+                  const linkTarget = categoryPeople.length === 1 
+                    ? `/person/${categoryPeople[0].id}` 
+                    : `/category/${category.id}`;
+                  return (
+                    <Link
+                      key={category.id}
+                      href={linkTarget}
+                      data-testid={`link-category-${category.id}`}
+                    >
+                      <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all relative overflow-hidden">
+                        {backgroundPhoto && (
+                          <div 
+                            className="absolute inset-0 bg-cover opacity-30"
+                            style={{ 
+                              backgroundImage: `url(${backgroundPhoto})`,
+                              backgroundPosition: 'center'
+                            }}
+                          />
+                        )}
+                        <div className="p-6 flex items-center gap-4 relative z-10">
+                          <div className={`${category.color} flex-shrink-0`}>
+                            <Icon className="w-14 h-14" strokeWidth={1.5} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h2 className="text-2xl font-bold text-foreground mb-1">
+                              {category.id === "children" ? getChildrenLabel() : category.label}
+                            </h2>
+                            <p className="text-lg text-muted-foreground">
+                              {category.description}
+                            </p>
+                          </div>
+                        </div>
+                      </Card>
+                    </Link>
+                  );
+                })}
+
                 <Link
-                  key={category.id}
-                  href={linkTarget}
-                  data-testid={`link-category-${category.id}`}
+                  href="/everyone"
+                  data-testid="link-everyone"
                 >
-                  <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all relative overflow-hidden">
-                    {backgroundPhoto && (
-                      <div 
-                        className="absolute inset-0 bg-cover opacity-30"
-                        style={{ 
-                          backgroundImage: `url(${backgroundPhoto})`,
-                          backgroundPosition: 'center'
-                        }}
-                      />
-                    )}
-                    <div className="p-6 flex items-center gap-4 relative z-10">
-                      <div className={`${category.color} flex-shrink-0`}>
-                        <Icon className="w-14 h-14" strokeWidth={1.5} />
+                  <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all bg-muted/70 dark:bg-muted/50">
+                    <div className="p-6 flex items-center gap-4">
+                      <div className="text-primary flex-shrink-0">
+                        <UsersRound className="w-14 h-14" strokeWidth={1.5} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <h2 className="text-2xl font-bold text-foreground mb-1">
-                          {category.id === "children" ? getChildrenLabel() : category.label}
+                          Everyone
                         </h2>
                         <p className="text-lg text-muted-foreground">
-                          {category.description}
+                          {allPeople.length} people
                         </p>
                       </div>
                     </div>
                   </Card>
                 </Link>
-              );
-            })}
 
-            {/* Everyone button - darker gray to differentiate */}
-            <Link
-              href="/everyone"
-              data-testid="link-everyone"
-            >
-              <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all bg-muted/70 dark:bg-muted/50">
-                <div className="p-6 flex items-center gap-4">
-                  <div className="text-primary flex-shrink-0">
-                    <UsersRound className="w-14 h-14" strokeWidth={1.5} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h2 className="text-2xl font-bold text-foreground mb-1">
-                      Everyone
-                    </h2>
-                    <p className="text-lg text-muted-foreground">
-                      {allPeople.length} people
-                    </p>
-                  </div>
-                </div>
-              </Card>
-            </Link>
+                <Link
+                  href="/quiz"
+                  data-testid="link-quiz"
+                >
+                  <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all bg-primary/5 border-primary/20">
+                    <div className="p-6 flex items-center gap-4">
+                      <div className="text-primary flex-shrink-0">
+                        <BrainCircuit className="w-14 h-14" strokeWidth={1.5} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h2 className="text-2xl font-bold text-foreground mb-1">
+                          Memory Quiz
+                        </h2>
+                        <p className="text-lg text-muted-foreground">
+                          Practice remembering names
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                </Link>
 
-            {/* Memory Quiz button */}
-            <Link
-              href="/quiz"
-              data-testid="link-quiz"
-            >
-              <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all bg-primary/5 border-primary/20">
-                <div className="p-6 flex items-center gap-4">
-                  <div className="text-primary flex-shrink-0">
-                    <BrainCircuit className="w-14 h-14" strokeWidth={1.5} />
+                <div className="mt-2 space-y-3">
+                  <div className="relative">
+                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-8 h-8 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Type a name..."
+                      value={searchInput}
+                      onChange={(e) => setSearchInput(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                      className="pl-16 pr-16 text-3xl font-bold h-20 placeholder:text-2xl placeholder:font-normal"
+                      data-testid="input-search"
+                    />
+                    {searchInput && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setSearchInput("")}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 h-12 w-12"
+                        data-testid="button-clear-input"
+                      >
+                        <X className="w-6 h-6" />
+                      </Button>
+                    )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h2 className="text-2xl font-bold text-foreground mb-1">
-                      Memory Quiz
-                    </h2>
-                    <p className="text-lg text-muted-foreground">
-                      Practice remembering names
-                    </p>
-                  </div>
-                </div>
-              </Card>
-            </Link>
-
-            {/* Search Section - at bottom */}
-            <div className="mt-2 space-y-3">
-              <div className="relative">
-                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-8 h-8 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Type a name..."
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                  className="pl-16 pr-16 text-3xl font-bold h-20 placeholder:text-2xl placeholder:font-normal"
-                  data-testid="input-search"
-                />
-                {searchInput && (
                   <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setSearchInput("")}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 h-12 w-12"
-                    data-testid="button-clear-input"
+                    onClick={handleSearch}
+                    disabled={searchInput.trim().length === 0}
+                    className="w-full h-16 text-2xl font-bold"
+                    data-testid="button-search"
                   >
-                    <X className="w-6 h-6" />
+                    <Search className="w-8 h-8 mr-3" />
+                    Search
                   </Button>
+                </div>
+              </div>
+            )}
+
+            {showSearchResults && (
+              <div className="mt-6" data-testid="search-results">
+                {isLoading ? (
+                  <div className="text-center text-xl text-muted-foreground py-8">
+                    Searching...
+                  </div>
+                ) : searchResults.length === 0 ? (
+                  <div className="text-center text-xl text-muted-foreground py-8">
+                    No one found matching "{submittedSearch}"
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <p className="text-lg text-muted-foreground mb-4">
+                      Found {searchResults.length} {searchResults.length === 1 ? "person" : "people"}
+                    </p>
+                    {searchResults.map((person) => (
+                      <Link
+                        key={person.id}
+                        href={`/person/${person.id}`}
+                        data-testid={`link-person-${person.id}`}
+                      >
+                        <Card className="hover-elevate active-elevate-2 cursor-pointer">
+                          <div className="p-6 flex items-center gap-6">
+                            <Avatar className="w-20 h-20 flex-shrink-0">
+                              {person.photoData && (
+                                <AvatarImage src={person.photoData} alt={person.name} />
+                              )}
+                              <AvatarFallback className="text-2xl">
+                                {getInitials(person.name)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-2xl font-bold text-foreground mb-1">
+                                {person.name}
+                              </h3>
+                              <p className="text-xl text-muted-foreground">
+                                {person.relationship}
+                              </p>
+                              {person.location && (
+                                <p className="text-lg text-muted-foreground mt-1">
+                                  {person.location}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </Card>
+                      </Link>
+                    ))}
+                    <Button
+                      variant="secondary"
+                      onClick={handleClearSearch}
+                      className="w-full h-14 text-xl mt-4"
+                      data-testid="button-clear-search-bottom"
+                    >
+                      Clear Search
+                    </Button>
+                  </div>
                 )}
               </div>
-              <Button
-                onClick={handleSearch}
-                disabled={searchInput.trim().length === 0}
-                className="w-full h-16 text-2xl font-bold"
-                data-testid="button-search"
+            )}
+
+            <div className="mt-8 text-center">
+              <button
+                className="text-xs text-gray-400"
+                onClick={() => setShowAdminDialog(true)}
+                data-testid="button-admin"
               >
-                <Search className="w-8 h-8 mr-3" />
-                Search
-              </Button>
+                Admin view
+              </button>
             </div>
-          </div>
+          </>
         )}
 
-        {/* Search Results - shown when searching */}
-        {showSearchResults && (
-          <div className="mt-6" data-testid="search-results">
-            {isLoading ? (
+        {activeTab === "birthdays" && (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <Cake className="w-16 h-16 mx-auto text-primary mb-4" />
+              <h2 className="text-3xl font-bold text-foreground">Upcoming Birthdays</h2>
+              <p className="text-xl text-muted-foreground mt-2">Next 3 celebrations</p>
+            </div>
+
+            {getUpcomingBirthdays.length === 0 ? (
               <div className="text-center text-xl text-muted-foreground py-8">
-                Searching...
-              </div>
-            ) : searchResults.length === 0 ? (
-              <div className="text-center text-xl text-muted-foreground py-8">
-                No one found matching "{submittedSearch}"
+                No upcoming birthdays found
               </div>
             ) : (
               <div className="space-y-4">
-                <p className="text-lg text-muted-foreground mb-4">
-                  Found {searchResults.length} {searchResults.length === 1 ? "person" : "people"}
-                </p>
-                {searchResults.map((person) => (
+                {getUpcomingBirthdays.map(({ person, daysUntil, birthdayString }) => (
                   <Link
                     key={person.id}
                     href={`/person/${person.id}`}
-                    data-testid={`link-person-${person.id}`}
+                    data-testid={`link-birthday-${person.id}`}
                   >
                     <Card className="hover-elevate active-elevate-2 cursor-pointer">
                       <div className="p-6 flex items-center gap-6">
                         <Avatar className="w-20 h-20 flex-shrink-0">
-                          {person.photoData && (
-                            <AvatarImage src={person.photoData} alt={person.name} />
+                          {(person.photoData || person.photoUrl) && (
+                            <AvatarImage src={person.photoData || person.photoUrl || undefined} alt={person.name} />
                           )}
                           <AvatarFallback className="text-2xl">
                             {getInitials(person.name)}
@@ -329,39 +448,54 @@ export default function Home() {
                           <p className="text-xl text-muted-foreground">
                             {person.relationship}
                           </p>
-                          {person.location && (
-                            <p className="text-lg text-muted-foreground mt-1">
-                              {person.location}
-                            </p>
-                          )}
+                          <div className="flex items-center gap-2 mt-2">
+                            <Cake className="w-5 h-5 text-primary" />
+                            <span className="text-lg font-medium text-primary">
+                              {birthdayString}
+                            </span>
+                            <span className="text-lg text-muted-foreground">
+                              • {getDaysUntilText(daysUntil)}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </Card>
                   </Link>
                 ))}
-                <Button
-                  variant="secondary"
-                  onClick={handleClearSearch}
-                  className="w-full h-14 text-xl mt-4"
-                  data-testid="button-clear-search-bottom"
-                >
-                  Clear Search
-                </Button>
               </div>
             )}
           </div>
         )}
+      </main>
 
-        <div className="mt-8 text-center">
+      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-card-border safe-area-pb z-50">
+        <div className="max-w-2xl mx-auto flex">
           <button
-            className="text-xs text-gray-400"
-            onClick={() => setShowAdminDialog(true)}
-            data-testid="button-admin"
+            onClick={() => { setActiveTab("home"); handleClearSearch(); }}
+            className={`flex-1 flex flex-col items-center justify-center py-4 gap-1 transition-colors ${
+              activeTab === "home" 
+                ? "text-primary bg-primary/10" 
+                : "text-muted-foreground"
+            }`}
+            data-testid="tab-home"
           >
-            Admin view
+            <HomeIcon className="w-8 h-8" />
+            <span className="text-lg font-medium">Home</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("birthdays")}
+            className={`flex-1 flex flex-col items-center justify-center py-4 gap-1 transition-colors ${
+              activeTab === "birthdays" 
+                ? "text-primary bg-primary/10" 
+                : "text-muted-foreground"
+            }`}
+            data-testid="tab-birthdays"
+          >
+            <Cake className="w-8 h-8" />
+            <span className="text-lg font-medium">Birthdays</span>
           </button>
         </div>
-      </main>
+      </nav>
 
       <Dialog open={showAdminDialog} onOpenChange={setShowAdminDialog}>
         <DialogContent className="max-w-sm">
