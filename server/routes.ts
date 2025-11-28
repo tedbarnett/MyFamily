@@ -106,8 +106,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update person photo
+  // Update person photo (sets as primary and adds to photos array)
   app.post("/api/person/:id/photo", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { photoData } = req.body;
+
+      if (!photoData) {
+        return res.status(400).json({ error: "Photo data required" });
+      }
+
+      // Get current person to access existing photos
+      const currentPerson = await storage.getPersonById(id);
+      if (!currentPerson) {
+        return res.status(404).json({ error: "Person not found" });
+      }
+
+      // Add to photos array if not already there
+      const currentPhotos = currentPerson.photos || [];
+      const updatedPhotos = currentPhotos.includes(photoData) 
+        ? currentPhotos 
+        : [...currentPhotos, photoData];
+
+      const person = await storage.updatePerson(id, { 
+        photoData,
+        photos: updatedPhotos 
+      });
+
+      res.json(person);
+    } catch (error) {
+      console.error("Error updating photo:", error);
+      res.status(500).json({ error: "Failed to update photo" });
+    }
+  });
+
+  // Add a photo to person's gallery (without changing primary)
+  app.post("/api/person/:id/photos/add", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { photoData } = req.body;
+
+      if (!photoData) {
+        return res.status(400).json({ error: "Photo data required" });
+      }
+
+      const currentPerson = await storage.getPersonById(id);
+      if (!currentPerson) {
+        return res.status(404).json({ error: "Person not found" });
+      }
+
+      const currentPhotos = currentPerson.photos || [];
+      
+      // Don't add duplicates
+      if (currentPhotos.includes(photoData)) {
+        return res.json(currentPerson);
+      }
+
+      const updatedPhotos = [...currentPhotos, photoData];
+      
+      // If this is the first photo, also set it as primary
+      const updates: Partial<Person> = { photos: updatedPhotos };
+      if (!currentPerson.photoData) {
+        updates.photoData = photoData;
+      }
+
+      const person = await storage.updatePerson(id, updates);
+      res.json(person);
+    } catch (error) {
+      console.error("Error adding photo:", error);
+      res.status(500).json({ error: "Failed to add photo" });
+    }
+  });
+
+  // Set a photo as the primary/active photo
+  app.post("/api/person/:id/photos/set-primary", async (req, res) => {
     try {
       const { id } = req.params;
       const { photoData } = req.body;
@@ -123,8 +195,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(person);
     } catch (error) {
-      console.error("Error updating photo:", error);
-      res.status(500).json({ error: "Failed to update photo" });
+      console.error("Error setting primary photo:", error);
+      res.status(500).json({ error: "Failed to set primary photo" });
+    }
+  });
+
+  // Delete a photo from person's gallery
+  app.delete("/api/person/:id/photos", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { photoData } = req.body;
+
+      if (!photoData) {
+        return res.status(400).json({ error: "Photo data required" });
+      }
+
+      const currentPerson = await storage.getPersonById(id);
+      if (!currentPerson) {
+        return res.status(404).json({ error: "Person not found" });
+      }
+
+      const currentPhotos = currentPerson.photos || [];
+      const updatedPhotos = currentPhotos.filter(p => p !== photoData);
+      
+      // If we're deleting the primary photo, set a new primary or clear it
+      const updates: Partial<Person> = { photos: updatedPhotos };
+      if (currentPerson.photoData === photoData) {
+        updates.photoData = updatedPhotos.length > 0 ? updatedPhotos[0] : null;
+      }
+
+      const person = await storage.updatePerson(id, updates);
+      res.json(person);
+    } catch (error) {
+      console.error("Error deleting photo:", error);
+      res.status(500).json({ error: "Failed to delete photo" });
     }
   });
 
