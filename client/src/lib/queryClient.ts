@@ -48,11 +48,12 @@ export const queryClient = new QueryClient({
       refetchInterval: false,
       refetchOnWindowFocus: false,
       staleTime: 5 * 60 * 1000, // 5 minutes - allows refresh after cold starts
-      retry: 2, // Retry twice on failure (handles cold start timeouts)
-      retryDelay: 1000, // Wait 1 second between retries
+      retry: 3, // Retry three times on failure (handles cold start timeouts on iOS)
+      retryDelay: (attemptIndex) => Math.min(2000 * Math.pow(2, attemptIndex), 10000), // Exponential backoff: 2s, 4s, 8s
     },
     mutations: {
-      retry: 1, // Retry mutations once
+      retry: 2, // Retry mutations twice
+      retryDelay: 1000,
     },
   },
 });
