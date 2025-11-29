@@ -2,7 +2,6 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import type { PersonCategory, Person } from "@shared/schema";
-import { seedDatabase } from "./seed";
 
 // Parse birth date string and compute current age
 function computeAgeFromBorn(born: string | null | undefined): number | null {
@@ -39,16 +38,6 @@ async function updateAgeIfNeeded(person: Person): Promise<Person> {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auto-seed database if empty (for production deployment)
-  try {
-    const existingPeople = await storage.getAllPeople();
-    if (existingPeople.length === 0) {
-      console.log("📦 Database is empty. Auto-seeding with family data...");
-      await seedDatabase();
-    }
-  } catch (error) {
-    console.error("⚠️ Auto-seed check failed:", error);
-  }
   // Get all people
   app.get("/api/people", async (req, res) => {
     try {
