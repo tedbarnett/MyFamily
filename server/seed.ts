@@ -378,7 +378,13 @@ async function seed() {
 }
 
 // Export for use from routes.ts during app initialization
+// Only seeds if database is empty to prevent duplicates
 export async function seedDatabase() {
+  const existingPeople = await db.select().from(people).limit(1);
+  if (existingPeople.length > 0) {
+    console.log("Database already has data, skipping seed");
+    return;
+  }
   return seed();
 }
 
