@@ -3,37 +3,53 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import type { PersonCategory, Person } from "@shared/schema";
 
-// Parse birth date string and compute current age
+// Parse birth date string and compute current age (defensive - never throws)
 function computeAgeFromBorn(born: string | null | undefined): number | null {
   if (!born) return null;
   
-  // Try to parse various date formats like "September 22, 1935" or "June 10, 1962"
-  const parsed = Date.parse(born);
-  if (isNaN(parsed)) return null;
-  
-  const birthDate = new Date(parsed);
-  const today = new Date();
-  
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
-  
-  // Adjust if birthday hasn't occurred yet this year
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-    age--;
+  try {
+    // Try to parse various date formats like "September 22, 1935" or "June 10, 1962"
+    const parsed = Date.parse(born);
+    if (!Number.isFinite(parsed)) return null;
+    
+    const birthDate = new Date(parsed);
+    // Validate the date is reasonable (year between 1900-2100)
+    const year = birthDate.getFullYear();
+    if (!Number.isFinite(year) || year < 1900 || year > 2100) return null;
+    
+    const today = new Date();
+    
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    // Adjust if birthday hasn't occurred yet this year
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    return age > 0 ? age : null;
+  } catch (error) {
+    // Any parsing error - just return null, don't crash
+    console.error("Error parsing birth date:", born, error);
+    return null;
   }
-  
-  return age > 0 ? age : null;
 }
 
-// Compute age for display without database updates (fast, read-only)
+// Compute age for display without database updates (fast, read-only, never throws)
 function withComputedAge(person: Person): Person {
-  if (!person.born || person.passed) return person;
-  
-  const computedAge = computeAgeFromBorn(person.born);
-  if (computedAge !== null && computedAge !== person.age) {
-    return { ...person, age: computedAge };
+  try {
+    if (!person.born || person.passed) return person;
+    
+    const computedAge = computeAgeFromBorn(person.born);
+    if (computedAge !== null && computedAge !== person.age) {
+      return { ...person, age: computedAge };
+    }
+    return person;
+  } catch (error) {
+    // If anything fails, just return the original person
+    console.error("Error computing age for person:", person.id, error);
+    return person;
   }
-  return person;
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
