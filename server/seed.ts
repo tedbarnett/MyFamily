@@ -232,10 +232,10 @@ async function seed() {
       visitHistory: null,
     },
 
-    // Friends (2)
+    // Friends & Neighbors (merged into "other" category)
     {
       name: "Weezy Allen",
-      category: "friends",
+      category: "other",
       relationship: "Friend",
       photoUrl: null,
       photoData: null,
@@ -246,13 +246,13 @@ async function seed() {
       spouse: "Widow of Tom Gougeon",
       children: null,
       summary: null,
-      sortOrder: 1,
+      sortOrder: 10,
       lastVisit: null,
       visitHistory: null,
     },
     {
       name: "Lynn Murray",
-      category: "friends",
+      category: "other",
       relationship: "Friend",
       photoUrl: null,
       photoData: null,
@@ -263,7 +263,7 @@ async function seed() {
       spouse: "Widow of Jack Murray",
       children: null,
       summary: null,
-      sortOrder: 2,
+      sortOrder: 11,
       lastVisit: null,
       visitHistory: null,
     },

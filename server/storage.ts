@@ -31,7 +31,7 @@ export interface IStorage {
 
 const ALL_CATEGORIES: PersonCategory[] = [
   "husband", "children", "grandchildren", "daughters_in_law", 
-  "friends", "caregivers", "other"
+  "other", "caregivers"
 ];
 
 export class CachedDatabaseStorage implements IStorage {

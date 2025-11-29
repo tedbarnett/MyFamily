@@ -7,7 +7,7 @@
 A specialized web application designed to help an 89-year-old user (Judy) identify and remember family members, friends, and caregivers. The app prioritizes extreme accessibility with large touch targets, high-contrast typography, and simple navigation optimized for seniors with potential vision and dexterity challenges.
 
 ### v1.0 Features
-- 25 people across 6 categories (husband, children, grandchildren, daughters in law, friends & neighbors, caregivers)
+- 32 people across 6 categories (husband, children, grandchildren, daughters_in_law, other/Friends & Neighbors, caregivers)
 - Large square photos with centered name/role overlay
 - Senior-friendly design with large touch targets (56px+) and high contrast
 - Search functionality to find people by name, relationship, or location
