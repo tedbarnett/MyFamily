@@ -21,6 +21,7 @@ export const people = pgTable("people", {
   relationship: text("relationship").notNull(), // e.g., "Husband", "Son", "Granddaughter"
   photoUrl: text("photo_url"),
   photoData: text("photo_data"), // Base64 encoded photo for uploads (primary/active photo)
+  thumbnailData: text("thumbnail_data"), // 512x512 thumbnail version of primary photo (base64)
   photos: text("photos").array(), // Array of base64 encoded photos for multiple images
   born: text("born"),
   age: integer("age"),
