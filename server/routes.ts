@@ -123,7 +123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get lightweight data for birthdays (no photos - fast loading)
+  // Get lightweight data for birthdays (uses thumbnails for fast loading)
   app.get("/api/birthdays", async (req, res) => {
     try {
       const people = await storage.getAllPeople();
@@ -136,9 +136,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           relationship: p.relationship,
           born: p.born,
           category: p.category,
-          // Include a small thumbnail version of the photo if needed
+          // Use thumbnail for birthday display (much smaller than full photo)
+          thumbnailData: p.thumbnailData,
           photoUrl: p.photoUrl,
-          // Don't include photoData - it's too large
         }));
       res.json(birthdayData);
     } catch (error) {
@@ -147,18 +147,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get lightweight data for quiz (minimal data - fast loading)
+  // Get lightweight data for quiz (uses thumbnails for fast loading)
   app.get("/api/quiz-people", async (req, res) => {
     try {
       const people = await storage.getAllPeople();
-      // Return minimal data needed for quiz
+      // Return minimal data needed for quiz - use thumbnails instead of full photos
       const quizData = people.map(p => ({
         id: p.id,
         name: p.name,
         relationship: p.relationship,
         category: p.category,
-        // Include first photo only for quiz display
-        photoData: p.photoData,
+        // Use thumbnail for quiz display (much smaller than full photo)
+        photoData: p.thumbnailData || p.photoData,
         photoUrl: p.photoUrl,
       }));
       res.json(quizData);
@@ -168,7 +168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get lightweight data for everyone list (no photos - fast loading)
+  // Get lightweight data for everyone list (uses thumbnails for fast loading)
   app.get("/api/people-list", async (req, res) => {
     try {
       const people = await storage.getAllPeople();
@@ -182,7 +182,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           category: person.category,
           age: person.age,
           location: person.location,
-          // Don't include photoData - just photoUrl as fallback
+          // Use thumbnail for list display (much smaller than full photo)
+          thumbnailData: person.thumbnailData,
           photoUrl: person.photoUrl,
         };
       });

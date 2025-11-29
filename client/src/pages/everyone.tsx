@@ -11,6 +11,7 @@ interface ListPerson {
   category: string;
   age: number | null;
   location: string | null;
+  thumbnailData: string | null;
   photoUrl: string | null;
 }
 
@@ -78,7 +79,7 @@ export default function Everyone() {
         ) : sortedPeople.length > 0 ? (
           <div className="grid grid-cols-2 gap-3">
             {sortedPeople.map((person) => {
-              const photoSrc = person.photoUrl;
+              const photoSrc = person.thumbnailData || person.photoUrl;
               return (
                 <Link
                   key={person.id}

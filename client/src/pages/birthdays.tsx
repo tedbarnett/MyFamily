@@ -11,6 +11,7 @@ interface BirthdayPerson {
   relationship: string | null;
   born: string | null;
   category: string;
+  thumbnailData: string | null;
   photoUrl: string | null;
 }
 
@@ -123,8 +124,8 @@ export default function Birthdays() {
                   <Card className="hover-elevate active-elevate-2 cursor-pointer">
                     <div className="p-6 flex items-center gap-6">
                       <Avatar className="w-20 h-20 flex-shrink-0">
-                        {person.photoUrl && (
-                          <AvatarImage src={person.photoUrl} alt={person.name} />
+                        {(person.thumbnailData || person.photoUrl) && (
+                          <AvatarImage src={person.thumbnailData || person.photoUrl || ""} alt={person.name} />
                         )}
                         <AvatarFallback className="text-2xl">
                           {getInitials(person.name)}
