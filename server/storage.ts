@@ -1,6 +1,6 @@
 import { type Person, type InsertPerson, type PersonCategory, people, type QuizResult, type InsertQuizResult, quizResults } from "@shared/schema";
 import { db } from "./db";
-import { eq, or, like, sql, desc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 
 export interface IStorage {
   getAllPeople(): Promise<Person[]>;
@@ -15,28 +15,60 @@ export interface IStorage {
   getQuizResults(): Promise<QuizResult[]>;
 }
 
-export class DatabaseStorage implements IStorage {
+export class CachedDatabaseStorage implements IStorage {
+  private peopleCache: Person[] | null = null;
+  private cacheLoading: Promise<Person[]> | null = null;
+  private quizCache: QuizResult[] | null = null;
+
+  private async loadPeopleCache(): Promise<Person[]> {
+    if (this.peopleCache !== null) {
+      return this.peopleCache;
+    }
+    
+    if (this.cacheLoading !== null) {
+      return this.cacheLoading;
+    }
+
+    console.log("Loading people cache from database...");
+    this.cacheLoading = db.select().from(people).orderBy(people.category, people.sortOrder);
+    
+    try {
+      this.peopleCache = await this.cacheLoading;
+      console.log(`Cached ${this.peopleCache.length} people in memory`);
+      return this.peopleCache;
+    } finally {
+      this.cacheLoading = null;
+    }
+  }
+
+  private invalidatePeopleCache(): void {
+    console.log("Invalidating people cache");
+    this.peopleCache = null;
+  }
+
+  private invalidateQuizCache(): void {
+    this.quizCache = null;
+  }
+
   async getAllPeople(): Promise<Person[]> {
-    const result = await db.select().from(people).orderBy(people.category, people.sortOrder);
-    return result;
+    return this.loadPeopleCache();
   }
 
   async getPeopleByCategory(category: PersonCategory): Promise<Person[]> {
-    const result = await db
-      .select()
-      .from(people)
-      .where(eq(people.category, category))
-      .orderBy(people.sortOrder);
-    return result;
+    const allPeople = await this.loadPeopleCache();
+    return allPeople
+      .filter(p => p.category === category)
+      .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
   }
 
   async getPersonById(id: string): Promise<Person | undefined> {
-    const [person] = await db.select().from(people).where(eq(people.id, id));
-    return person || undefined;
+    const allPeople = await this.loadPeopleCache();
+    return allPeople.find(p => p.id === id);
   }
 
   async createPerson(person: InsertPerson): Promise<Person> {
     const [created] = await db.insert(people).values(person).returning();
+    this.invalidatePeopleCache();
     return created;
   }
 
@@ -46,29 +78,31 @@ export class DatabaseStorage implements IStorage {
       .set(updates)
       .where(eq(people.id, id))
       .returning();
+    
+    if (updated) {
+      this.invalidatePeopleCache();
+    }
     return updated || undefined;
   }
 
   async deletePerson(id: string): Promise<boolean> {
     const result = await db.delete(people).where(eq(people.id, id)).returning();
+    if (result.length > 0) {
+      this.invalidatePeopleCache();
+    }
     return result.length > 0;
   }
 
   async searchPeople(query: string): Promise<Person[]> {
-    const searchTerm = `%${query.toLowerCase()}%`;
-    const result = await db
-      .select()
-      .from(people)
-      .where(
-        or(
-          sql`LOWER(${people.name}) LIKE ${searchTerm}`,
-          sql`LOWER(${people.relationship}) LIKE ${searchTerm}`,
-          sql`LOWER(${people.location}) LIKE ${searchTerm}`,
-          sql`LOWER(${people.summary}) LIKE ${searchTerm}`
-        )
-      )
-      .orderBy(people.category, people.sortOrder);
-    return result;
+    const allPeople = await this.loadPeopleCache();
+    const searchTerm = query.toLowerCase();
+    
+    return allPeople.filter(p => 
+      p.name.toLowerCase().includes(searchTerm) ||
+      (p.relationship && p.relationship.toLowerCase().includes(searchTerm)) ||
+      (p.location && p.location.toLowerCase().includes(searchTerm)) ||
+      (p.summary && p.summary.toLowerCase().includes(searchTerm))
+    );
   }
 
   async recordVisit(id: string, visitDate: string): Promise<Person | undefined> {
@@ -86,16 +120,21 @@ export class DatabaseStorage implements IStorage {
 
   async saveQuizResult(result: InsertQuizResult): Promise<QuizResult> {
     const [created] = await db.insert(quizResults).values(result).returning();
+    this.invalidateQuizCache();
     return created;
   }
 
   async getQuizResults(): Promise<QuizResult[]> {
-    const results = await db
+    if (this.quizCache !== null) {
+      return this.quizCache;
+    }
+    
+    this.quizCache = await db
       .select()
       .from(quizResults)
       .orderBy(desc(quizResults.completedAt));
-    return results;
+    return this.quizCache;
   }
 }
 
-export const storage = new DatabaseStorage();
+export const storage = new CachedDatabaseStorage();
