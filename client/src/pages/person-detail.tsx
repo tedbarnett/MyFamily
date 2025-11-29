@@ -487,7 +487,8 @@ export default function PersonDetail() {
             <Button
               onClick={playVoiceNote}
               size="icon"
-              className={`absolute bottom-2 right-2 h-16 w-16 rounded-full shadow-lg z-50 ${isPlaying ? 'bg-green-600 hover:bg-green-700' : 'bg-primary hover:bg-primary/90'}`}
+              className={`h-16 w-16 rounded-full shadow-lg z-50 ${isPlaying ? 'bg-green-600 hover:bg-green-700' : 'bg-primary hover:bg-primary/90'}`}
+              style={{ position: 'absolute', bottom: '8px', right: '8px' }}
               data-testid="button-play-voice"
             >
               <Volume2 className="w-8 h-8" />
