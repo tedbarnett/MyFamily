@@ -122,6 +122,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get lightweight data for birthdays (no photos - fast loading)
+  app.get("/api/birthdays", async (req, res) => {
+    try {
+      const people = await storage.getAllPeople();
+      // Return people with birth dates, minimal data for birthday display
+      const birthdayData = people
+        .filter(p => p.born && !p.passed)
+        .map(p => ({
+          id: p.id,
+          name: p.name,
+          relationship: p.relationship,
+          born: p.born,
+          category: p.category,
+          // Include a small thumbnail version of the photo if needed
+          photoUrl: p.photoUrl,
+          // Don't include photoData - it's too large
+        }));
+      res.json(birthdayData);
+    } catch (error) {
+      console.error("Error fetching birthday data:", error);
+      res.status(500).json({ error: "Failed to fetch birthday data" });
+    }
+  });
+
+  // Get lightweight data for quiz (minimal data - fast loading)
+  app.get("/api/quiz-people", async (req, res) => {
+    try {
+      const people = await storage.getAllPeople();
+      // Return minimal data needed for quiz
+      const quizData = people.map(p => ({
+        id: p.id,
+        name: p.name,
+        relationship: p.relationship,
+        category: p.category,
+        // Include first photo only for quiz display
+        photoData: p.photoData,
+        photoUrl: p.photoUrl,
+      }));
+      res.json(quizData);
+    } catch (error) {
+      console.error("Error fetching quiz data:", error);
+      res.status(500).json({ error: "Failed to fetch quiz data" });
+    }
+  });
+
+  // Get lightweight data for everyone list (no photos - fast loading)
+  app.get("/api/people-list", async (req, res) => {
+    try {
+      const people = await storage.getAllPeople();
+      // Compute ages on the fly
+      const listData = people.map(p => {
+        const person = withComputedAge(p);
+        return {
+          id: person.id,
+          name: person.name,
+          relationship: person.relationship,
+          category: person.category,
+          age: person.age,
+          location: person.location,
+          // Don't include photoData - just photoUrl as fallback
+          photoUrl: person.photoUrl,
+        };
+      });
+      res.json(listData);
+    } catch (error) {
+      console.error("Error fetching people list:", error);
+      res.status(500).json({ error: "Failed to fetch people list" });
+    }
+  });
+
   // Get all people
   app.get("/api/people", async (req, res) => {
     try {

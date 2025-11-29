@@ -4,11 +4,20 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, Cake } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import type { Person } from "@shared/schema";
+
+interface BirthdayPerson {
+  id: string;
+  name: string;
+  relationship: string | null;
+  born: string | null;
+  category: string;
+  photoUrl: string | null;
+}
 
 export default function Birthdays() {
-  const { data: allPeople = [] } = useQuery<Person[]>({
-    queryKey: ["/api/people"],
+  // Use lightweight birthday endpoint (no large photos)
+  const { data: allPeople = [] } = useQuery<BirthdayPerson[]>({
+    queryKey: ["/api/birthdays"],
   });
 
   const getInitials = (name: string) => {
@@ -30,9 +39,10 @@ export default function Birthdays() {
   const getUpcomingBirthdays = useMemo(() => {
     const today = new Date();
 
+    // Server already filters to only people with birth dates and not passed
     const peopleWithBirthdays = allPeople
       .filter((person) => {
-        if (!person.born || person.passed) return false;
+        if (!person.born) return false;
         return parseBirthDate(person.born) !== null;
       })
       .map((person) => {
@@ -113,8 +123,8 @@ export default function Birthdays() {
                   <Card className="hover-elevate active-elevate-2 cursor-pointer">
                     <div className="p-6 flex items-center gap-6">
                       <Avatar className="w-20 h-20 flex-shrink-0">
-                        {(person.photoData || person.photoUrl) && (
-                          <AvatarImage src={person.photoData || person.photoUrl || undefined} alt={person.name} />
+                        {person.photoUrl && (
+                          <AvatarImage src={person.photoUrl} alt={person.name} />
                         )}
                         <AvatarFallback className="text-2xl">
                           {getInitials(person.name)}

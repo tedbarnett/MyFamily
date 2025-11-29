@@ -6,12 +6,20 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, RefreshCw, Trophy, Star, PartyPopper, ThumbsUp, ChevronRight } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import type { Person } from "@shared/schema";
 
 const MAX_QUESTIONS = 5;
 
+interface QuizPerson {
+  id: string;
+  name: string;
+  relationship: string | null;
+  category: string;
+  photoData: string | null;
+  photoUrl: string | null;
+}
+
 interface QuizQuestion {
-  person: Person;
+  person: QuizPerson;
   options: string[];
   correctAnswer: string;
 }
@@ -44,8 +52,9 @@ export default function Quiz() {
   const [askedPeople, setAskedPeople] = useState<Set<string>>(new Set());
   const resultSavedRef = useRef(false);
 
-  const { data: allPeople = [], isLoading } = useQuery<Person[]>({
-    queryKey: ["/api/people"],
+  // Use lightweight quiz endpoint (includes photos but minimal data)
+  const { data: allPeople = [], isLoading } = useQuery<QuizPerson[]>({
+    queryKey: ["/api/quiz-people"],
   });
 
   const totalQuestions = Math.min(MAX_QUESTIONS, allPeople.length);
