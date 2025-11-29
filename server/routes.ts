@@ -38,6 +38,17 @@ async function updateAgeIfNeeded(person: Person): Promise<Person> {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Get static home page data (cached, instant)
+  app.get("/api/static/home", async (req, res) => {
+    try {
+      const staticData = await storage.getStaticHomeData();
+      res.json(staticData);
+    } catch (error) {
+      console.error("Error fetching static home data:", error);
+      res.status(500).json({ error: "Failed to fetch home data" });
+    }
+  });
+
   // Get all people
   app.get("/api/people", async (req, res) => {
     try {

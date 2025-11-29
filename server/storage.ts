@@ -2,6 +2,19 @@ import { type Person, type InsertPerson, type PersonCategory, people, type QuizR
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
 
+export interface CategoryStaticData {
+  id: PersonCategory;
+  count: number;
+  backgroundPhoto: string | null;
+  singlePersonId: string | null;
+}
+
+export interface StaticHomeData {
+  categories: CategoryStaticData[];
+  totalPeople: number;
+  generatedAt: string;
+}
+
 export interface IStorage {
   getAllPeople(): Promise<Person[]>;
   getPeopleByCategory(category: PersonCategory): Promise<Person[]>;
@@ -13,12 +26,19 @@ export interface IStorage {
   recordVisit(id: string, visitDate: string): Promise<Person | undefined>;
   saveQuizResult(result: InsertQuizResult): Promise<QuizResult>;
   getQuizResults(): Promise<QuizResult[]>;
+  getStaticHomeData(): Promise<StaticHomeData>;
 }
+
+const ALL_CATEGORIES: PersonCategory[] = [
+  "husband", "children", "grandchildren", "daughters_in_law", 
+  "friends", "caregivers", "other"
+];
 
 export class CachedDatabaseStorage implements IStorage {
   private peopleCache: Person[] | null = null;
   private cacheLoading: Promise<Person[]> | null = null;
   private quizCache: QuizResult[] | null = null;
+  private staticHomeData: StaticHomeData | null = null;
 
   private async loadPeopleCache(): Promise<Person[]> {
     if (this.peopleCache !== null) {
@@ -35,19 +55,59 @@ export class CachedDatabaseStorage implements IStorage {
     try {
       this.peopleCache = await this.cacheLoading;
       console.log(`Cached ${this.peopleCache.length} people in memory`);
+      this.regenerateStaticData();
       return this.peopleCache;
     } finally {
       this.cacheLoading = null;
     }
   }
 
+  private regenerateStaticData(): void {
+    if (!this.peopleCache) return;
+    
+    console.log("Regenerating static home data...");
+    const categories: CategoryStaticData[] = ALL_CATEGORIES.map(categoryId => {
+      const categoryPeople = this.peopleCache!.filter(p => p.category === categoryId);
+      const peopleWithPhotos = categoryPeople.filter(p => p.photoData || p.photoUrl);
+      
+      let backgroundPhoto: string | null = null;
+      if (peopleWithPhotos.length > 0) {
+        const randomPerson = peopleWithPhotos[Math.floor(Math.random() * peopleWithPhotos.length)];
+        backgroundPhoto = randomPerson.photoData || randomPerson.photoUrl || null;
+      }
+      
+      return {
+        id: categoryId,
+        count: categoryPeople.length,
+        backgroundPhoto,
+        singlePersonId: categoryPeople.length === 1 ? categoryPeople[0].id : null,
+      };
+    });
+
+    this.staticHomeData = {
+      categories,
+      totalPeople: this.peopleCache.length,
+      generatedAt: new Date().toISOString(),
+    };
+    console.log("Static home data generated");
+  }
+
   private invalidatePeopleCache(): void {
     console.log("Invalidating people cache");
     this.peopleCache = null;
+    this.staticHomeData = null;
   }
 
   private invalidateQuizCache(): void {
     this.quizCache = null;
+  }
+
+  async getStaticHomeData(): Promise<StaticHomeData> {
+    if (this.staticHomeData) {
+      return this.staticHomeData;
+    }
+    await this.loadPeopleCache();
+    return this.staticHomeData!;
   }
 
   async getAllPeople(): Promise<Person[]> {

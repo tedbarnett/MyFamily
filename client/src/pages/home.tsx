@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,19 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Users, Heart, Baby, Stethoscope, Search, X, HeartHandshake, UsersRound, BrainCircuit, Cake } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { PersonCategory, Person } from "@shared/schema";
+
+interface StaticCategoryData {
+  id: PersonCategory;
+  count: number;
+  backgroundPhoto: string | null;
+  singlePersonId: string | null;
+}
+
+interface StaticHomeData {
+  categories: StaticCategoryData[];
+  totalPeople: number;
+  generatedAt: string;
+}
 
 interface CategoryCard {
   id: PersonCategory;
@@ -90,44 +103,14 @@ export default function Home() {
     enabled: submittedSearch.length > 0,
   });
 
-  const { data: allPeople = [], isLoading: isPeopleLoading } = useQuery<Person[]>({
-    queryKey: ["/api/people"],
+  // Use pre-computed static data for instant loading
+  const { data: staticData } = useQuery<StaticHomeData>({
+    queryKey: ["/api/static/home"],
   });
 
-  const getPeopleByCategory = (categoryId: PersonCategory): Person[] => {
-    return allPeople.filter((person) => person.category === categoryId);
-  };
-
-  const categoryBackgroundPhotos = useMemo(() => {
-    const photos: Record<string, string | null> = {};
-    categories.forEach((category) => {
-      const peopleWithPhotos = allPeople.filter(
-        (p) => p.category === category.id && (p.photoData || p.photoUrl)
-      );
-      if (peopleWithPhotos.length > 0) {
-        const randomPerson = peopleWithPhotos[Math.floor(Math.random() * peopleWithPhotos.length)];
-        photos[category.id] = randomPerson.photoData || randomPerson.photoUrl || null;
-      } else {
-        photos[category.id] = null;
-      }
-    });
-    return photos;
-  }, [allPeople]);
-
-  const getChildrenLabel = (): string => {
-    const children = getPeopleByCategory("children");
-    if (children.length === 0) return "Children";
-    
-    const allSons = children.every(child => 
-      child.relationship?.toLowerCase() === "son"
-    );
-    const allDaughters = children.every(child => 
-      child.relationship?.toLowerCase() === "daughter"
-    );
-    
-    if (allSons) return "Sons";
-    if (allDaughters) return "Daughters";
-    return "Children";
+  // Helper to get category data from static cache
+  const getCategoryData = (categoryId: PersonCategory): StaticCategoryData | undefined => {
+    return staticData?.categories.find(c => c.id === categoryId);
   };
 
   const handleClearSearch = () => {
@@ -164,10 +147,10 @@ export default function Home() {
           <div className="grid grid-cols-1 gap-6">
             {categories.map((category) => {
               const Icon = category.icon;
-              const categoryPeople = getPeopleByCategory(category.id);
-              const backgroundPhoto = categoryBackgroundPhotos[category.id];
-              const linkTarget = categoryPeople.length === 1 
-                ? `/person/${categoryPeople[0].id}` 
+              const categoryData = getCategoryData(category.id);
+              const backgroundPhoto = categoryData?.backgroundPhoto;
+              const linkTarget = categoryData?.singlePersonId 
+                ? `/person/${categoryData.singlePersonId}` 
                 : `/category/${category.id}`;
               return (
                 <Link
@@ -191,7 +174,7 @@ export default function Home() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <h2 className="text-2xl font-bold text-foreground mb-1">
-                          {category.id === "children" ? getChildrenLabel() : category.label}
+                          {category.label}
                         </h2>
                         <p className="text-lg text-muted-foreground">
                           {category.description}
@@ -238,7 +221,7 @@ export default function Home() {
                       Everyone
                     </h2>
                     <p className="text-lg text-muted-foreground">
-                      {isPeopleLoading ? "Loading..." : `${allPeople.length} people`}
+                      {staticData ? `${staticData.totalPeople} people` : "Loading..."}
                     </p>
                   </div>
                 </div>
