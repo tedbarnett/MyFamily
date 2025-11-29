@@ -18,6 +18,7 @@ const categoryLabels: Record<PersonCategory, string> = {
   children: "Children",
   grandchildren: "Grandchildren",
   daughters_in_law: "Daughters in Law",
+  friends: "Friends",
   caregivers: "Caregivers",
   other: "Friends & Neighbors",
 };
@@ -27,6 +28,7 @@ const categoryOrder: PersonCategory[] = [
   "children",
   "grandchildren",
   "daughters_in_law",
+  "friends",
   "other",
   "caregivers",
 ];
@@ -82,6 +84,7 @@ export default function Admin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/people"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/static/home"] });
       toast({
         title: "Saved",
         description: "Changes saved successfully.",
@@ -105,6 +108,7 @@ export default function Admin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/people"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/static/home"] });
       toast({
         title: "Photo Updated",
         description: "Photo saved successfully.",
@@ -126,6 +130,7 @@ export default function Admin() {
     },
     onSuccess: (updatedPerson: Person) => {
       queryClient.invalidateQueries({ queryKey: ["/api/people"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/static/home"] });
       // Update the editing person state so the dialog shows the new photo
       if (editingPerson && editingPerson.id === updatedPerson.id) {
         setEditingPerson(updatedPerson);
@@ -151,6 +156,7 @@ export default function Admin() {
     },
     onSuccess: (updatedPerson: Person) => {
       queryClient.invalidateQueries({ queryKey: ["/api/people"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/static/home"] });
       // Update the editing person state so the dialog shows the change
       if (editingPerson && editingPerson.id === updatedPerson.id) {
         setEditingPerson(updatedPerson);
@@ -176,6 +182,7 @@ export default function Admin() {
     },
     onSuccess: (updatedPerson: Person) => {
       queryClient.invalidateQueries({ queryKey: ["/api/people"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/static/home"] });
       // Update the editing person state so the dialog shows the change
       if (editingPerson && editingPerson.id === updatedPerson.id) {
         setEditingPerson(updatedPerson);
@@ -201,6 +208,7 @@ export default function Admin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/people"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/static/home"] });
       toast({
         title: "Voice Note Updated",
         description: "Voice note saved successfully.",
@@ -222,6 +230,7 @@ export default function Admin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/people"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/static/home"] });
       toast({
         title: "Person Added",
         description: "New person added successfully.",
@@ -247,6 +256,7 @@ export default function Admin() {
       setEditingPerson(null);
       setEditForm({});
       await queryClient.refetchQueries({ queryKey: ["/api/people"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/static/home"] });
       toast({
         title: "Person Deleted",
         description: "Entry has been removed.",

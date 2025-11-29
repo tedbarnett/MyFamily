@@ -65,15 +65,19 @@ export class CachedDatabaseStorage implements IStorage {
   private regenerateStaticData(): void {
     if (!this.peopleCache) return;
     
+    // Only regenerate if not already generated (static data persists until cache invalidation)
+    if (this.staticHomeData) return;
+    
     console.log("Regenerating static home data...");
     const categories: CategoryStaticData[] = ALL_CATEGORIES.map(categoryId => {
       const categoryPeople = this.peopleCache!.filter(p => p.category === categoryId);
       const peopleWithPhotos = categoryPeople.filter(p => p.photoData || p.photoUrl);
       
+      // Use deterministic selection: first person with a photo (sorted by sortOrder)
       let backgroundPhoto: string | null = null;
       if (peopleWithPhotos.length > 0) {
-        const randomPerson = peopleWithPhotos[Math.floor(Math.random() * peopleWithPhotos.length)];
-        backgroundPhoto = randomPerson.photoData || randomPerson.photoUrl || null;
+        const firstPerson = peopleWithPhotos[0];
+        backgroundPhoto = firstPerson.photoData || firstPerson.photoUrl || null;
       }
       
       return {

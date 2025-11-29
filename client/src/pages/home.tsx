@@ -103,9 +103,11 @@ export default function Home() {
     enabled: submittedSearch.length > 0,
   });
 
-  // Use pre-computed static data for instant loading
+  // Use pre-computed static data - cache indefinitely since it only changes on data edits
   const { data: staticData } = useQuery<StaticHomeData>({
     queryKey: ["/api/static/home"],
+    staleTime: Infinity, // Never consider stale - only refetch on cache invalidation
+    gcTime: Infinity, // Keep in cache forever
   });
 
   // Helper to get category data from static cache
