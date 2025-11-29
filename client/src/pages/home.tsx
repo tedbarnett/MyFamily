@@ -81,15 +81,15 @@ export default function Home() {
   const [showAdminDialog, setShowAdminDialog] = useState(false);
   const [, setLocation] = useLocation();
 
-  const formatTodayDate = () => {
+  const getTodayParts = () => {
     const today = new Date();
-    const options: Intl.DateTimeFormatOptions = {
-      weekday: "long",
-      year: "numeric",
+    const dayOfWeek = today.toLocaleDateString("en-US", { weekday: "long" });
+    const dateStr = today.toLocaleDateString("en-US", {
       month: "long",
       day: "numeric",
-    };
-    return today.toLocaleDateString("en-US", options);
+      year: "numeric",
+    });
+    return { dayOfWeek, dateStr };
   };
 
   const handleSearch = () => {
@@ -140,7 +140,9 @@ export default function Home() {
     <div className="min-h-screen bg-background flex flex-col">
       <header className="bg-card border-b border-card-border px-6 py-6">
         <h1 className="text-3xl font-bold text-center text-foreground" data-testid="text-today-date">
-          Today is {formatTodayDate()}
+          Today is {getTodayParts().dayOfWeek}
+          <br />
+          {getTodayParts().dateStr}
         </h1>
       </header>
 

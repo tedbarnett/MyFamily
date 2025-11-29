@@ -367,6 +367,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Prime the cache on startup so the first user request is instant
+  console.log("Priming cache on server startup...");
+  await storage.getStaticHomeData();
+  console.log("Cache primed and ready!");
+
   const httpServer = createServer(app);
   return httpServer;
 }
