@@ -249,25 +249,36 @@ export default function PersonDetail() {
 
   // Helper function to find a person by name and return their ID
   // Supports exact match, first name match, or partial match
+  // Also handles parenthetical notes like "Melanie Craft (fiancée)"
   const findPersonByName = (name: string): string | null => {
-    const searchName = name.toLowerCase().trim();
+    // Remove parenthetical notes like "(fiancée)" or "(partner, programmer)"
+    const cleanName = name.replace(/\s*\([^)]*\)\s*/g, '').trim();
+    const searchName = cleanName.toLowerCase();
     
-    // First try exact match
+    // First try exact match with clean name
     let found = allPeople.find(
       (p) => p.name.toLowerCase() === searchName
     );
     
-    // If no exact match, try matching first name
+    // Try matching if the person's name starts with search name (first name match)
     if (!found) {
       found = allPeople.find(
         (p) => p.name.toLowerCase().startsWith(searchName + " ")
       );
     }
     
-    // If still no match, try partial match (name contains search term)
+    // Try if search name starts with person's name (reverse first name match)
     if (!found) {
       found = allPeople.find(
-        (p) => p.name.toLowerCase().includes(searchName)
+        (p) => searchName.startsWith(p.name.toLowerCase() + " ")
+      );
+    }
+    
+    // Try partial match (name contains search term or vice versa)
+    if (!found) {
+      found = allPeople.find(
+        (p) => p.name.toLowerCase().includes(searchName) || 
+               searchName.includes(p.name.toLowerCase())
       );
     }
     
