@@ -8,7 +8,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import type { Person } from "@shared/schema";
 
-const MAX_QUESTIONS = 10;
+const MAX_QUESTIONS = 5;
 
 interface QuizQuestion {
   person: Person;

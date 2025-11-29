@@ -137,8 +137,13 @@ export default function PersonDetail() {
     return sortedNavPeople.findIndex(p => p.id === personId);
   }, [sortedNavPeople, personId]);
 
-  const prevPerson = currentIndex > 0 ? sortedNavPeople[currentIndex - 1] : null;
-  const nextPerson = currentIndex < sortedNavPeople.length - 1 ? sortedNavPeople[currentIndex + 1] : null;
+  // Wrap around navigation - first person's previous is last person, and vice versa
+  const prevPerson = sortedNavPeople.length > 0 && currentIndex >= 0
+    ? sortedNavPeople[(currentIndex - 1 + sortedNavPeople.length) % sortedNavPeople.length] 
+    : null;
+  const nextPerson = sortedNavPeople.length > 0 && currentIndex >= 0
+    ? sortedNavPeople[(currentIndex + 1) % sortedNavPeople.length] 
+    : null;
 
   // Navigate to previous/next person
   const navigateToPrev = useCallback(() => {
