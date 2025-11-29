@@ -221,7 +221,7 @@ export default function Home() {
                       Everyone
                     </h2>
                     <p className="text-lg text-muted-foreground">
-                      {staticData ? `${staticData.totalPeople} people` : "Loading..."}
+                      {staticData?.totalPeople ? `${staticData.totalPeople} people` : "View all"}
                     </p>
                   </div>
                 </div>
