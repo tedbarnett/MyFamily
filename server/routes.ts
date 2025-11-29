@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import type { PersonCategory, Person } from "@shared/schema";
+import { generateThumbnail } from "./thumbnail";
 
 // Parse birth date string and compute current age (defensive - never throws)
 function computeAgeFromBorn(born: string | null | undefined): number | null {
@@ -288,6 +289,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Person not found" });
       }
 
+      // Generate thumbnail for the new primary photo
+      const thumbnailData = await generateThumbnail(photoData);
+
       // Add to photos array if not already there
       const currentPhotos = currentPerson.photos || [];
       const updatedPhotos = currentPhotos.includes(photoData) 
@@ -296,6 +300,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const person = await storage.updatePerson(id, { 
         photoData,
+        thumbnailData,
         photos: updatedPhotos 
       });
 
@@ -330,10 +335,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const updatedPhotos = [...currentPhotos, photoData];
       
-      // If this is the first photo, also set it as primary
+      // If this is the first photo, also set it as primary and generate thumbnail
       const updates: Partial<Person> = { photos: updatedPhotos };
       if (!currentPerson.photoData) {
         updates.photoData = photoData;
+        updates.thumbnailData = await generateThumbnail(photoData);
       }
 
       const person = await storage.updatePerson(id, updates);
@@ -354,7 +360,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Photo data required" });
       }
 
-      const person = await storage.updatePerson(id, { photoData });
+      // Generate thumbnail for the new primary photo
+      const thumbnailData = await generateThumbnail(photoData);
+
+      const person = await storage.updatePerson(id, { photoData, thumbnailData });
       if (!person) {
         return res.status(404).json({ error: "Person not found" });
       }
