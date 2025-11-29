@@ -419,7 +419,18 @@ export default function Admin() {
   const startRecording = async (personId: string) => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      
+      // Detect supported audio format (Safari uses mp4, Chrome/Firefox use webm)
+      let mimeType = 'audio/webm';
+      if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+        mimeType = 'audio/webm;codecs=opus';
+      } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+        mimeType = 'audio/webm';
+      } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+        mimeType = 'audio/mp4';
+      }
+      
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
@@ -430,7 +441,9 @@ export default function Admin() {
       };
 
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        // Use the actual MIME type from the recorder
+        const actualMimeType = mediaRecorder.mimeType || mimeType;
+        const audioBlob = new Blob(audioChunksRef.current, { type: actualMimeType });
         const reader = new FileReader();
         reader.onloadend = () => {
           const base64 = reader.result as string;

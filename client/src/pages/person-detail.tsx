@@ -479,13 +479,11 @@ export default function PersonDetail() {
           <>
             <audio 
               ref={audioRef} 
-              preload="auto"
+              src={person.voiceNoteData}
+              preload="metadata"
               onEnded={() => setIsPlaying(false)}
               onError={(e) => console.error("Audio error:", e)}
-            >
-              <source src={person.voiceNoteData} type="audio/webm" />
-              <source src={person.voiceNoteData} type="audio/wav" />
-            </audio>
+            />
             <Button
               onClick={playVoiceNote}
               size="icon"
