@@ -48,6 +48,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get lightweight navigation data (just id, name, category - no photos, instant)
+  app.get("/api/people-nav", async (req, res) => {
+    try {
+      const people = await storage.getAllPeople();
+      // Return minimal data for navigation - no photos, no heavy data
+      const navData = people.map(p => ({
+        id: p.id,
+        name: p.name,
+        category: p.category,
+      }));
+      res.json(navData);
+    } catch (error) {
+      console.error("Error fetching navigation data:", error);
+      res.status(500).json({ error: "Failed to fetch navigation data" });
+    }
+  });
+
   // Get all people
   app.get("/api/people", async (req, res) => {
     try {

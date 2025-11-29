@@ -42,7 +42,13 @@ export default function PersonDetail() {
     enabled: !!personId,
   });
 
-  // Fetch all people to enable linking children/grandchildren by name
+  // Fetch lightweight navigation data (just id, name, category - fast)
+  type NavPerson = { id: string; name: string; category: string };
+  const { data: navPeople = [] } = useQuery<NavPerson[]>({
+    queryKey: ["/api/people-nav"],
+  });
+
+  // Fetch all people for linking children/grandchildren by name (can load slower)
   const { data: allPeople = [] } = useQuery<Person[]>({
     queryKey: ["/api/people"],
   });
@@ -112,9 +118,9 @@ export default function PersonDetail() {
     }, 800);
   }, [allPhotos, currentPhotoIndex, isTransitioning, person?.photoData, setPrimaryMutation]);
 
-  // Sort people the same way as the Everyone page
-  const sortedPeople = useMemo(() => {
-    return [...allPeople].sort((a, b) => {
+  // Sort people for navigation (using lightweight data)
+  const sortedNavPeople = useMemo(() => {
+    return [...navPeople].sort((a, b) => {
       const categoryIndexA = categoryOrder.indexOf(a.category as PersonCategory);
       const categoryIndexB = categoryOrder.indexOf(b.category as PersonCategory);
       
@@ -124,15 +130,15 @@ export default function PersonDetail() {
       
       return a.name.localeCompare(b.name);
     });
-  }, [allPeople]);
+  }, [navPeople]);
 
-  // Find current person's index and neighbors
+  // Find current person's index and neighbors (using fast nav data)
   const currentIndex = useMemo(() => {
-    return sortedPeople.findIndex(p => p.id === personId);
-  }, [sortedPeople, personId]);
+    return sortedNavPeople.findIndex(p => p.id === personId);
+  }, [sortedNavPeople, personId]);
 
-  const prevPerson = currentIndex > 0 ? sortedPeople[currentIndex - 1] : null;
-  const nextPerson = currentIndex < sortedPeople.length - 1 ? sortedPeople[currentIndex + 1] : null;
+  const prevPerson = currentIndex > 0 ? sortedNavPeople[currentIndex - 1] : null;
+  const nextPerson = currentIndex < sortedNavPeople.length - 1 ? sortedNavPeople[currentIndex + 1] : null;
 
   // Navigate to previous/next person
   const navigateToPrev = useCallback(() => {
