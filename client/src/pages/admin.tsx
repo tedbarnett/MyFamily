@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { PhotoCropper } from "@/components/photo-cropper";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
-import type { Person, PersonCategory, QuizResult } from "@shared/schema";
+import type { Person, PersonCategory, PersonListItem, QuizResult } from "@shared/schema";
 
 const categoryLabels: Record<PersonCategory, string> = {
   husband: "Husband",
@@ -52,8 +52,9 @@ export default function Admin() {
     window.scrollTo(0, 0);
   }, []);
 
-  const { data: allPeople = [], isLoading } = useQuery<Person[]>({
-    queryKey: ["/api/people"],
+  // Use lightweight endpoint with thumbnails for fast loading
+  const { data: allPeople = [], isLoading } = useQuery<PersonListItem[]>({
+    queryKey: ["/api/people-list"],
   });
 
   const { data: quizResults = [] } = useQuery<QuizResult[]>({
@@ -81,7 +82,7 @@ export default function Admin() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/people"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/people-list"] });
       queryClient.invalidateQueries({ queryKey: ["/api/static/home"] });
       toast({
         title: "Saved",
@@ -105,7 +106,7 @@ export default function Admin() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/people"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/people-list"] });
       queryClient.invalidateQueries({ queryKey: ["/api/static/home"] });
       toast({
         title: "Photo Updated",
@@ -127,7 +128,7 @@ export default function Admin() {
       return response.json();
     },
     onSuccess: (updatedPerson: Person) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/people"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/people-list"] });
       queryClient.invalidateQueries({ queryKey: ["/api/static/home"] });
       // Update the editing person state so the dialog shows the new photo
       if (editingPerson && editingPerson.id === updatedPerson.id) {
@@ -153,7 +154,7 @@ export default function Admin() {
       return response.json();
     },
     onSuccess: (updatedPerson: Person) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/people"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/people-list"] });
       queryClient.invalidateQueries({ queryKey: ["/api/static/home"] });
       // Update the editing person state so the dialog shows the change
       if (editingPerson && editingPerson.id === updatedPerson.id) {
@@ -179,7 +180,7 @@ export default function Admin() {
       return response.json();
     },
     onSuccess: (updatedPerson: Person) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/people"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/people-list"] });
       queryClient.invalidateQueries({ queryKey: ["/api/static/home"] });
       // Update the editing person state so the dialog shows the change
       if (editingPerson && editingPerson.id === updatedPerson.id) {
@@ -205,7 +206,7 @@ export default function Admin() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/people"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/people-list"] });
       queryClient.invalidateQueries({ queryKey: ["/api/static/home"] });
       toast({
         title: "Voice Note Updated",
@@ -227,7 +228,7 @@ export default function Admin() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/people"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/people-list"] });
       queryClient.invalidateQueries({ queryKey: ["/api/static/home"] });
       toast({
         title: "Person Added",
@@ -253,7 +254,7 @@ export default function Admin() {
     onSuccess: async () => {
       setEditingPerson(null);
       setEditForm({});
-      await queryClient.refetchQueries({ queryKey: ["/api/people"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/people-list"] });
       queryClient.invalidateQueries({ queryKey: ["/api/static/home"] });
       toast({
         title: "Person Deleted",
@@ -281,20 +282,32 @@ export default function Admin() {
     return allPeople.filter((p) => p.category === category);
   };
 
-  const handleEditClick = (person: Person) => {
-    setEditingPerson(person);
-    setEditForm({
-      name: person.name,
-      fullName: person.fullName || "",
-      relationship: person.relationship,
-      born: person.born || "",
-      age: person.age || undefined,
-      passed: person.passed || "",
-      location: person.location || "",
-      spouse: person.spouse || "",
-      children: person.children || [],
-      summary: person.summary || "",
-    });
+  // Fetch full person data when opening edit dialog
+  const handleEditClick = async (personId: string) => {
+    try {
+      const response = await fetch(`/api/person/${personId}`);
+      if (!response.ok) throw new Error("Failed to fetch person");
+      const person: Person = await response.json();
+      setEditingPerson(person);
+      setEditForm({
+        name: person.name,
+        fullName: person.fullName || "",
+        relationship: person.relationship,
+        born: person.born || "",
+        age: person.age || undefined,
+        passed: person.passed || "",
+        location: person.location || "",
+        spouse: person.spouse || "",
+        children: person.children || [],
+        summary: person.summary || "",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load person details.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSave = () => {
@@ -581,7 +594,8 @@ export default function Admin() {
               </h2>
               <div className="grid gap-3">
                 {people.map((person) => {
-                  const photoSrc = person.photoData || person.photoUrl || undefined;
+                  // Use thumbnail for list display (much faster loading)
+                  const photoSrc = person.thumbnailData || person.photoUrl || undefined;
                   return (
                     <Card key={person.id} className="p-4">
                       <div className="flex items-center gap-4">
@@ -602,7 +616,7 @@ export default function Admin() {
                         </div>
                         <Button
                           size="icon"
-                          variant={recordingPersonId === person.id ? "destructive" : person.voiceNoteData ? "default" : "outline"}
+                          variant={recordingPersonId === person.id ? "destructive" : person.hasVoiceNote ? "default" : "outline"}
                           className={`h-10 w-10 flex-shrink-0 ${recordingPersonId === person.id ? "animate-pulse" : ""}`}
                           onClick={() => handleVoiceClick(person.id)}
                           data-testid={`button-voice-${person.id}`}
@@ -622,7 +636,7 @@ export default function Admin() {
                               size="icon"
                               variant="ghost"
                               className="h-6 w-6 flex-shrink-0"
-                              onClick={() => handleEditClick(person)}
+                              onClick={() => handleEditClick(person.id)}
                               data-testid={`button-edit-${person.id}`}
                             >
                               <Pencil className="w-3 h-3" />

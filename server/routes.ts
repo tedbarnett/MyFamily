@@ -182,9 +182,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           category: person.category,
           age: person.age,
           location: person.location,
+          summary: person.summary,
+          sortOrder: person.sortOrder,
           // Use thumbnail for list display (much smaller than full photo)
           thumbnailData: person.thumbnailData,
           photoUrl: person.photoUrl,
+          // Boolean flag to indicate if voice note exists (don't send actual data)
+          hasVoiceNote: !!person.voiceNoteData,
         };
       });
       res.json(listData);

@@ -43,6 +43,21 @@ export const insertPersonSchema = createInsertSchema(people).omit({
 export type InsertPerson = z.infer<typeof insertPersonSchema>;
 export type Person = typeof people.$inferSelect;
 
+// Lightweight person list item (for admin/list views - uses thumbnails)
+export interface PersonListItem {
+  id: string;
+  name: string;
+  relationship: string;
+  category: string;
+  age: number | null;
+  location: string | null;
+  summary: string | null;
+  sortOrder: number;
+  thumbnailData: string | null;
+  photoUrl: string | null;
+  hasVoiceNote: boolean;
+}
+
 // Category information for navigation
 export interface CategoryInfo {
   id: PersonCategory;
