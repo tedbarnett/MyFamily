@@ -25,14 +25,13 @@ function computeAgeFromBorn(born: string | null | undefined): number | null {
   return age > 0 ? age : null;
 }
 
-// Update age for a person if they have a parseable born date and haven't passed
-async function updateAgeIfNeeded(person: Person): Promise<Person> {
+// Compute age for display without database updates (fast, read-only)
+function withComputedAge(person: Person): Person {
   if (!person.born || person.passed) return person;
   
   const computedAge = computeAgeFromBorn(person.born);
   if (computedAge !== null && computedAge !== person.age) {
-    const updated = await storage.updatePerson(person.id, { age: computedAge });
-    return updated || person;
+    return { ...person, age: computedAge };
   }
   return person;
 }
@@ -53,9 +52,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/people", async (req, res) => {
     try {
       const people = await storage.getAllPeople();
-      // Update ages for all people with parseable birth dates
-      const updatedPeople = await Promise.all(people.map(updateAgeIfNeeded));
-      res.json(updatedPeople);
+      // Compute ages on-the-fly without database writes (fast, uses cache)
+      const peopleWithAges = people.map(withComputedAge);
+      res.json(peopleWithAges);
     } catch (error) {
       console.error("Error fetching all people:", error);
       res.status(500).json({ error: "Failed to fetch people" });
@@ -73,9 +72,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const people = await storage.getPeopleByCategory(category);
-      // Update ages for all people with parseable birth dates
-      const updatedPeople = await Promise.all(people.map(updateAgeIfNeeded));
-      res.json(updatedPeople);
+      // Compute ages on-the-fly without database writes (fast)
+      const peopleWithAges = people.map(withComputedAge);
+      res.json(peopleWithAges);
     } catch (error) {
       console.error("Error fetching people by category:", error);
       res.status(500).json({ error: "Failed to fetch people" });
@@ -92,9 +91,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Person not found" });
       }
 
-      // Update age if needed
-      const updatedPerson = await updateAgeIfNeeded(person);
-      res.json(updatedPerson);
+      // Compute age on-the-fly without database writes (fast)
+      const personWithAge = withComputedAge(person);
+      res.json(personWithAge);
     } catch (error) {
       console.error("Error fetching person:", error);
       res.status(500).json({ error: "Failed to fetch person" });

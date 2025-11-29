@@ -248,12 +248,13 @@ export default function PersonDetail() {
   }, [allPhotos, currentPhotoIndex, person?.photoData, setPrimaryMutation]);
 
   // Helper function to find a person by name and return their ID
-  // Supports exact match, first name match, or partial match
+  // Supports exact match, first name match, partial match, and nickname variations
   // Also handles parenthetical notes like "Melanie Craft (fiancée)"
   const findPersonByName = (name: string): string | null => {
     // Remove parenthetical notes like "(fiancée)" or "(partner, programmer)"
     const cleanName = name.replace(/\s*\([^)]*\)\s*/g, '').trim();
     const searchName = cleanName.toLowerCase();
+    const searchParts = searchName.split(' ');
     
     // First try exact match with clean name
     let found = allPeople.find(
@@ -272,6 +273,27 @@ export default function PersonDetail() {
       found = allPeople.find(
         (p) => searchName.startsWith(p.name.toLowerCase() + " ")
       );
+    }
+    
+    // Try matching by last name + first name prefix (handles Jon vs Jonathan, Chris vs Christopher)
+    if (!found && searchParts.length >= 2) {
+      const searchLastName = searchParts[searchParts.length - 1];
+      const searchFirstName = searchParts.slice(0, -1).join(' ');
+      
+      found = allPeople.find((p) => {
+        const personParts = p.name.toLowerCase().split(' ');
+        if (personParts.length < 2) return false;
+        
+        const personLastName = personParts[personParts.length - 1];
+        const personFirstName = personParts.slice(0, -1).join(' ');
+        
+        // Last names must match exactly
+        if (personLastName !== searchLastName) return false;
+        
+        // First names: one must be a prefix of the other (Jon/Jonathan, Chris/Christopher)
+        return personFirstName.startsWith(searchFirstName) || 
+               searchFirstName.startsWith(personFirstName);
+      });
     }
     
     // Try partial match (name contains search term or vice versa)
