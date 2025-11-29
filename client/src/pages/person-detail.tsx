@@ -548,7 +548,7 @@ export default function PersonDetail() {
             </Card>
           )}
 
-          {(person.spouse || person.children) && (
+          {(person.spouse || (person.children && person.children.length > 0)) && (
             <Card>
               <div className="p-6 space-y-4">
                 <div className="flex items-start gap-4">
