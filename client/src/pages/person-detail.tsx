@@ -12,8 +12,9 @@ const categoryOrder: PersonCategory[] = [
   "children",
   "grandchildren",
   "daughters_in_law",
-  "other",
+  "friends",
   "caregivers",
+  "other",
 ];
 
 export default function PersonDetail() {
