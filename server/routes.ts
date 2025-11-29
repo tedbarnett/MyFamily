@@ -53,6 +53,47 @@ function withComputedAge(person: Person): Person {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Debug endpoint to check database and cache status
+  app.get("/api/debug/status", async (req, res) => {
+    try {
+      const staticData = await storage.getStaticHomeData();
+      const peopleCount = staticData.totalPeople;
+      
+      // Try to get first person to check if data is accessible
+      let samplePerson = null;
+      let error = null;
+      try {
+        const people = await storage.getAllPeople();
+        if (people.length > 0) {
+          samplePerson = {
+            id: people[0].id,
+            name: people[0].name,
+            hasBorn: !!people[0].born,
+            bornValue: people[0].born,
+          };
+        }
+      } catch (e) {
+        error = e instanceof Error ? e.message : String(e);
+      }
+      
+      res.json({
+        status: "ok",
+        nodeEnv: process.env.NODE_ENV,
+        peopleCount,
+        categoriesCount: staticData.categories.length,
+        samplePerson,
+        error,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      res.status(500).json({
+        status: "error",
+        error: error instanceof Error ? error.message : String(error),
+        nodeEnv: process.env.NODE_ENV,
+      });
+    }
+  });
+
   // Get static home page data (cached, instant)
   app.get("/api/static/home", async (req, res) => {
     try {
@@ -85,11 +126,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/people", async (req, res) => {
     try {
       const people = await storage.getAllPeople();
-      // Compute ages on-the-fly without database writes (fast, uses cache)
-      const peopleWithAges = people.map(withComputedAge);
-      res.json(peopleWithAges);
+      
+      // Safely compute ages - if transformation fails, return raw data
+      let result = people;
+      try {
+        result = people.map(withComputedAge);
+      } catch (transformError) {
+        console.error("Error in age transformation, returning raw data:", transformError);
+        // Fall back to raw data without age computation
+      }
+      
+      res.json(result);
     } catch (error) {
       console.error("Error fetching all people:", error);
+      // Log more details for debugging
+      if (error instanceof Error) {
+        console.error("Error details:", error.message, error.stack);
+      }
       res.status(500).json({ error: "Failed to fetch people" });
     }
   });
