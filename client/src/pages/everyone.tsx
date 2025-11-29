@@ -2,7 +2,17 @@ import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import type { Person, PersonCategory } from "@shared/schema";
+import type { PersonCategory } from "@shared/schema";
+
+interface ListPerson {
+  id: string;
+  name: string;
+  relationship: string | null;
+  category: string;
+  age: number | null;
+  location: string | null;
+  photoUrl: string | null;
+}
 
 const categoryOrder: PersonCategory[] = [
   "husband",
@@ -14,8 +24,9 @@ const categoryOrder: PersonCategory[] = [
 ];
 
 export default function Everyone() {
-  const { data: allPeople = [], isLoading } = useQuery<Person[]>({
-    queryKey: ["/api/people"],
+  // Use lightweight endpoint without large photo data
+  const { data: allPeople = [], isLoading } = useQuery<ListPerson[]>({
+    queryKey: ["/api/people-list"],
   });
 
   const sortedPeople = [...allPeople].sort((a, b) => {
@@ -67,7 +78,7 @@ export default function Everyone() {
         ) : sortedPeople.length > 0 ? (
           <div className="grid grid-cols-2 gap-3">
             {sortedPeople.map((person) => {
-              const photoSrc = person.photoData || person.photoUrl;
+              const photoSrc = person.photoUrl;
               return (
                 <Link
                   key={person.id}
