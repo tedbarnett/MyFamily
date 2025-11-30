@@ -2,10 +2,12 @@ import {
   type Person, type InsertPerson, type PersonCategory, people, 
   type QuizResult, type InsertQuizResult, quizResults,
   type Family, type InsertFamily, families,
-  type FamilyMember, type InsertFamilyMember, familyMembers
+  type FamilyMember, type InsertFamilyMember, familyMembers,
+  type PageView, type InsertPageView, pageViews,
+  type AnalyticsSummary, type DailyPageViews, type PageViewsByRoute
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, gte, sql, count } from "drizzle-orm";
 import bcrypt from "bcrypt";
 
 export interface CategoryStaticData {
@@ -53,6 +55,10 @@ export interface IStorage {
   
   // Static data (now family-scoped)
   getStaticHomeData(familyId?: string): Promise<StaticHomeData>;
+  
+  // Analytics
+  recordPageView(pageView: InsertPageView): Promise<PageView>;
+  getAnalyticsSummary(familyId?: string): Promise<AnalyticsSummary>;
   
   // Cache management
   invalidateCache(): Promise<void>;
@@ -395,6 +401,86 @@ export class CachedDatabaseStorage implements IStorage {
       .from(quizResults)
       .orderBy(desc(quizResults.completedAt));
     return this.quizCache;
+  }
+
+  // ============================================================================
+  // ANALYTICS - Page view tracking
+  // ============================================================================
+
+  async recordPageView(pageView: InsertPageView): Promise<PageView> {
+    const [created] = await db.insert(pageViews).values(pageView).returning();
+    return created;
+  }
+
+  async getAnalyticsSummary(familyId?: string): Promise<AnalyticsSummary> {
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    // Build base condition
+    const familyCondition = familyId ? eq(pageViews.familyId, familyId) : sql`TRUE`;
+
+    // Get total views
+    const [totalResult] = await db
+      .select({ count: count() })
+      .from(pageViews)
+      .where(familyCondition);
+    const totalViews = totalResult?.count || 0;
+
+    // Get views last 7 days
+    const [last7Result] = await db
+      .select({ count: count() })
+      .from(pageViews)
+      .where(and(familyCondition, gte(pageViews.visitedAt, sevenDaysAgo)));
+    const viewsLast7Days = last7Result?.count || 0;
+
+    // Get views last 30 days
+    const [last30Result] = await db
+      .select({ count: count() })
+      .from(pageViews)
+      .where(and(familyCondition, gte(pageViews.visitedAt, thirtyDaysAgo)));
+    const viewsLast30Days = last30Result?.count || 0;
+
+    // Get daily views for last 30 days
+    const dailyViewsRaw = await db
+      .select({
+        date: sql<string>`DATE(${pageViews.visitedAt})`,
+        count: count(),
+      })
+      .from(pageViews)
+      .where(and(familyCondition, gte(pageViews.visitedAt, thirtyDaysAgo)))
+      .groupBy(sql`DATE(${pageViews.visitedAt})`)
+      .orderBy(sql`DATE(${pageViews.visitedAt})`);
+
+    const dailyViews: DailyPageViews[] = dailyViewsRaw.map(row => ({
+      date: row.date,
+      count: row.count,
+    }));
+
+    // Get top pages (last 30 days)
+    const topPagesRaw = await db
+      .select({
+        route: pageViews.route,
+        count: count(),
+      })
+      .from(pageViews)
+      .where(and(familyCondition, gte(pageViews.visitedAt, thirtyDaysAgo)))
+      .groupBy(pageViews.route)
+      .orderBy(desc(count()))
+      .limit(10);
+
+    const topPages: PageViewsByRoute[] = topPagesRaw.map(row => ({
+      route: row.route,
+      count: row.count,
+    }));
+
+    return {
+      totalViews,
+      viewsLast7Days,
+      viewsLast30Days,
+      dailyViews,
+      topPages,
+    };
   }
 }
 
