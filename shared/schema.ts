@@ -77,6 +77,7 @@ export const people = pgTable("people", {
   
   // Basic info - same for everyone
   name: text("name").notNull(),
+  fullName: text("full_name"), // Full legal name
   category: text("category").notNull(),
   relationship: text("relationship").notNull(), // e.g., "Husband", "Son", "Granddaughter"
   

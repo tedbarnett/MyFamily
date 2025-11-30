@@ -847,6 +847,15 @@ export default function Admin() {
               />
             </div>
             <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Full Legal Name</label>
+              <Input
+                value={editForm.fullName || ""}
+                onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
+                placeholder="e.g., John Michael Smith Jr."
+                data-testid="input-edit-full-name"
+              />
+            </div>
+            <div>
               <label className="text-sm font-medium text-foreground mb-1 block">Relationship</label>
               <Input
                 value={editForm.relationship || ""}

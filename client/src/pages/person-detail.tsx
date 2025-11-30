@@ -409,12 +409,21 @@ export default function PersonDetail() {
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
           <div className="absolute bottom-0 left-0 right-0 p-6 text-center pointer-events-none">
             <h2 
-              className="text-4xl font-bold text-white mb-2"
+              className="text-4xl font-bold text-white mb-1"
               style={{ textShadow: "2px 2px 4px rgba(0,0,0,0.8)" }}
               data-testid="text-person-name"
             >
               {person.name}
             </h2>
+            {person.fullName && (
+              <p 
+                className="text-lg text-white/80 mb-1"
+                style={{ textShadow: "1px 1px 3px rgba(0,0,0,0.8)" }}
+                data-testid="text-person-full-name"
+              >
+                {person.fullName}
+              </p>
+            )}
             <p 
               className="text-2xl text-white/90"
               style={{ textShadow: "1px 1px 3px rgba(0,0,0,0.8)" }}
