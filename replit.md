@@ -1,26 +1,32 @@
-# Judy's Family Memory Aid App
+# "My Family" - Memory Aid App
 
-## Version: 1.0 (November 26, 2025)
+## Version: 1.1 (November 30, 2025)
 
 ## Overview
 
-A specialized web application designed to help an 89-year-old user (Judy) identify and remember family members, friends, and caregivers. The app prioritizes extreme accessibility with large touch targets, high-contrast typography, and simple navigation optimized for seniors with potential vision and dexterity challenges.
+A multi-tenant web application designed to help seniors identify and remember family members, friends, and caregivers. The app prioritizes extreme accessibility with large touch targets, high-contrast typography, and simple navigation optimized for seniors with potential vision and dexterity challenges.
 
-### v1.0 Features
-- 32 people across 7 categories (husband, wife, children, grandchildren, partners, other/Friends & Neighbors, caregivers)
+### Current Features
+- Multi-family support with unique URLs per family (e.g., `/smith-family`)
+- 7 customizable categories (husband, wife, children, grandchildren, partners, other/Friends & Neighbors, caregivers)
+- Dark category buttons with vignette-style photos fading in from the right
 - Large square photos with centered name/role overlay
 - Senior-friendly design with large touch targets (56px+) and high contrast
 - Search functionality to find people by name, relationship, or location
-- Admin page (/admin) with full edit and photo upload capabilities
+- Admin page with full edit, photo upload, and category customization
 - Smart name matching for clickable child/spouse links
-- Visit tracking API (available but hidden from UI)
-- PostgreSQL database storage
+- PostgreSQL database storage with in-memory caching
 - Voice notes feature with live microphone recording
 - Automatic age calculation from birthdates
-- **Birthdays tab** - Bottom tab bar on home page shows next 3 upcoming birthdays with photo, name, role, and countdown
+- Full name display (when different from display name)
+- Birthdays page showing upcoming celebrations with countdown
+- Everyone page for viewing all family members
+- Photo Album with swipe navigation
+- Memory Quiz with score tracking over time (chart at bottom of admin page)
 - PWA support with custom Apple Touch Icon for iOS home screen installation
-- **Customizable categories** - Families can rename categories and hide unused categories via Admin settings
-- **Unified Partners category** - Combines daughters-in-law, sons-in-law, and unmarried partners with ability to link each partner to their spouse via dropdown selector in admin
+- **Customizable categories** - Families can rename categories and hide unused ones via Admin settings
+- **Unified Partners category** - Combines daughters-in-law, sons-in-law, and partners with spouse linking
+- No login required for seniors; family members authenticate with join codes for admin access
 
 ## User Preferences
 
@@ -38,17 +44,18 @@ Preferred communication style: Simple, everyday language.
 - Typography scaled large: 28-32px for names, 20-24px for relationships, 18-20px for details
 
 **Routing**: Wouter for lightweight client-side routing
-- Three main routes: Home (category selection), Category listing, Person detail view
+- Routes: Home, Category listing, Person detail, Everyone, Photo Album, Birthdays, Quiz, Admin
 
 **State Management**: TanStack Query (React Query) for server state
 - Single-page navigation with prefetched data
+- Static home data cached indefinitely for fast loading
 - No complex client state - all data flows from API endpoints
 
 **Design System Principles**:
 - Mobile-first, single-column layouts only
 - Recognition over recall: heavy use of photos and visual cues
 - One clear action per screen to minimize cognitive load
-- Apple HIG + Material Design guidelines adapted for accessibility
+- Dark category buttons with vignette photo effect on home page
 
 ### Backend Architecture
 
@@ -56,10 +63,19 @@ Preferred communication style: Simple, everyday language.
 - Development mode: Vite dev server with HMR
 - Production mode: Static file serving from `dist/public`
 
-**API Design**: Simple REST endpoints
-- `GET /api/people` - Fetch all people
-- `GET /api/people/:category` - Filter by category (husband, children, grandchildren, friends, caregivers)
+**API Design**: REST endpoints with family scoping
+- `GET /api/people` - Fetch all people (scoped by family)
+- `GET /api/people/:category` - Filter by category
 - `GET /api/person/:id` - Get individual person details
+- `GET /api/static/home` - Pre-computed home page data for fast loading
+- `GET /api/category-settings` - Custom category labels and visibility
+- `PUT /api/category-settings` - Update category customization
+- `GET /api/birthdays` - Upcoming birthdays
+- `GET /api/quiz-results` - Memory quiz score history
+- `POST /api/quiz-result` - Save quiz result
+- `PUT /api/person/:id/photo` - Update person's primary photo
+- `POST /api/person/:id/photos` - Add additional photo
+- `DELETE /api/person/:id/photos` - Remove a photo
 
 **Data Storage Strategy**: 
 - PostgreSQL database with Drizzle ORM (`server/storage.ts`)
@@ -71,33 +87,41 @@ Preferred communication style: Simple, everyday language.
 people table:
 - id (UUID primary key)
 - familyId (UUID foreign key to families)
-- name, category, relationship
+- name, fullName (display name and full legal name)
+- category, relationship
 - born, passed (nullable dates)
 - location, summary (nullable text)
 - phone, email (nullable contact info)
 - spouseId, parentIds (relationship references - nullable)
 - photoData, thumbnailData (base64 encoded images - nullable)
 - photos (JSONB array for additional photos)
-- voiceNote, voiceNoteUrl (nullable audio data)
+- voiceNoteData (base64 audio - nullable)
 - sortOrder (for consistent ordering)
 
 families table:
 - id (UUID primary key)
-- slug (unique URL-friendly name, e.g., "demo-family")
+- slug (unique URL-friendly name, e.g., "smith-family")
 - name (display name)
 - joinCode (8-char code for family member authentication)
 - createdAt, updatedAt (timestamps)
 - categorySettings (JSONB for custom category labels and visibility)
+
+quiz_results table:
+- id (UUID primary key)
+- familyId (UUID foreign key to families)
+- score, totalQuestions (integers)
+- completedAt (timestamp)
 
 Note: Age is computed dynamically from `born` date, not stored in database.
 ```
 
 ### Key Architectural Decisions
 
-**Why In-Memory Storage Currently**:
-- Rapid prototyping and testing without database setup
-- Easy transition path: Drizzle schema already defined
-- All CRUD operations abstracted behind `IStorage` interface for easy swapping
+**Why PostgreSQL with In-Memory Cache**:
+- PostgreSQL for reliable persistent storage
+- In-memory cache primed on startup for instant reads
+- Cache invalidated on data changes for consistency
+- All CRUD operations abstracted behind `IStorage` interface
 
 **Why Vite Over Create React App**:
 - Faster HMR and build times
@@ -126,23 +150,28 @@ Note: Age is computed dynamically from `born` date, not stored in database.
 - Tailwind CSS - Utility-first styling with custom design tokens
 - class-variance-authority - Type-safe component variants
 - Lucide React - Icon library with consistent sizing
+- Framer Motion - Animations for photo album
 
 **Data Layer**:
 - Drizzle ORM - Type-safe database toolkit (PostgreSQL dialect configured)
-- @neondatabase/serverless - Serverless PostgreSQL driver for future deployment
+- @neondatabase/serverless - Serverless PostgreSQL driver
 - Zod - Runtime type validation (via drizzle-zod)
 
 **State & Forms**:
 - TanStack Query - Server state management and caching
-- React Hook Form - Form state management (if needed for admin features)
+- React Hook Form - Form state management for admin features
 - @hookform/resolvers - Validation resolver integration
+
+**Media Processing**:
+- Sharp - Server-side image resizing for thumbnails
+- react-easy-crop - Photo cropping in admin
 
 **Development Tools**:
 - TypeScript - Type safety across full stack
 - ESBuild - Production bundling for server code
 - PostCSS with Autoprefixer - CSS processing
 
-**Notable Absences**:
-- No authentication system (single-user app for Judy)
-- No real-time features (static content doesn't change frequently)
-- No complex state management (Redux/Zustand) - TanStack Query handles all server state
+**Authentication**:
+- Express sessions with connect-pg-simple for PostgreSQL session storage
+- Simple join code authentication for family members (admin access only)
+- No authentication required for senior users viewing the app
