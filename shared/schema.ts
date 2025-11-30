@@ -166,3 +166,42 @@ export const insertQuizResultSchema = createInsertSchema(quizResults).omit({
 
 export type InsertQuizResult = z.infer<typeof insertQuizResultSchema>;
 export type QuizResult = typeof quizResults.$inferSelect;
+
+// ============================================================================
+// PAGE VIEWS - Analytics tracking for page visits
+// ============================================================================
+
+export const pageViews = pgTable("page_views", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  familyId: varchar("family_id").references(() => families.id),
+  route: text("route").notNull(), // e.g., "/", "/category/children", "/person/abc123"
+  visitedAt: timestamp("visited_at").notNull().defaultNow(),
+  sessionHash: text("session_hash"), // Hashed session identifier (privacy-preserving)
+});
+
+export const insertPageViewSchema = createInsertSchema(pageViews).omit({
+  id: true,
+  visitedAt: true,
+});
+
+export type InsertPageView = z.infer<typeof insertPageViewSchema>;
+export type PageView = typeof pageViews.$inferSelect;
+
+// Analytics summary types
+export interface DailyPageViews {
+  date: string;
+  count: number;
+}
+
+export interface PageViewsByRoute {
+  route: string;
+  count: number;
+}
+
+export interface AnalyticsSummary {
+  totalViews: number;
+  viewsLast7Days: number;
+  viewsLast30Days: number;
+  dailyViews: DailyPageViews[];
+  topPages: PageViewsByRoute[];
+}
