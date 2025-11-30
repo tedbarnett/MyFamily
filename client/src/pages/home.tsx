@@ -170,7 +170,12 @@ export default function Home() {
       <main className="flex-1 max-w-2xl mx-auto px-4 py-8 w-full">
         {!showSearchResults && (
           <div className="grid grid-cols-1 gap-6">
-            {categories.map((category) => {
+            {categories
+              .filter((category) => {
+                const categoryData = getCategoryData(category.id);
+                return categoryData && categoryData.count > 0;
+              })
+              .map((category) => {
               const Icon = category.icon;
               const categoryData = getCategoryData(category.id);
               const backgroundPhoto = getRandomPhoto(category.id);
