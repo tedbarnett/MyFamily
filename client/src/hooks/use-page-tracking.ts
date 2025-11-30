@@ -5,37 +5,38 @@ function generateSessionHash(): string {
   const storedHash = sessionStorage.getItem("analytics_session");
   if (storedHash) return storedHash;
   
-  const hash = Math.random().toString(36).substring(2) + Date.now().toString(36);
+  // Generate a simple session hash (alphanumeric only)
+  const hash = Math.random().toString(36).substring(2, 12) + Date.now().toString(36);
   sessionStorage.setItem("analytics_session", hash);
   return hash;
 }
 
-async function trackPageView(route: string, familyId?: string) {
+async function trackPageView(route: string) {
   try {
     const sessionHash = generateSessionHash();
     
+    // Only send route and session hash - server derives familyId from route
     await fetch("/api/page-view", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         route,
-        familyId: familyId || null,
         sessionHash,
       }),
     });
-  } catch (error) {
-    console.error("Failed to track page view:", error);
+  } catch {
+    // Silently fail - analytics should never block user experience
   }
 }
 
-export function usePageTracking(familyId?: string) {
+export function usePageTracking() {
   const [location] = useLocation();
   const lastTrackedRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (location !== lastTrackedRef.current) {
       lastTrackedRef.current = location;
-      trackPageView(location, familyId);
+      trackPageView(location);
     }
-  }, [location, familyId]);
+  }, [location]);
 }

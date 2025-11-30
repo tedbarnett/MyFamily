@@ -58,7 +58,7 @@ export interface IStorage {
   
   // Analytics
   recordPageView(pageView: InsertPageView): Promise<PageView>;
-  getAnalyticsSummary(familyId?: string): Promise<AnalyticsSummary>;
+  getAnalyticsSummary(familyId: string): Promise<AnalyticsSummary>;
   
   // Cache management
   invalidateCache(): Promise<void>;
@@ -412,13 +412,13 @@ export class CachedDatabaseStorage implements IStorage {
     return created;
   }
 
-  async getAnalyticsSummary(familyId?: string): Promise<AnalyticsSummary> {
+  async getAnalyticsSummary(familyId: string): Promise<AnalyticsSummary> {
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    // Build base condition
-    const familyCondition = familyId ? eq(pageViews.familyId, familyId) : sql`TRUE`;
+    // Always scope to family for multi-tenant isolation
+    const familyCondition = eq(pageViews.familyId, familyId);
 
     // Get total views
     const [totalResult] = await db

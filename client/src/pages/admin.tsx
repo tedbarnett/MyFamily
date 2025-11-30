@@ -9,14 +9,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Home, Camera, Loader2, Save, X, Pencil, Plus, Trash2, BrainCircuit, Mic, Square, Images, Check, LogOut, Settings, Eye, EyeOff } from "lucide-react";
+import { Home, Camera, Loader2, Save, X, Pencil, Plus, Trash2, BrainCircuit, Mic, Square, Images, Check, LogOut, Settings, Eye, EyeOff, BarChart3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { PhotoCropper } from "@/components/photo-cropper";
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, BarChart, Bar } from "recharts";
 import { useAuth } from "@/lib/auth-context";
 import { useFamilySlug } from "@/lib/use-family-slug";
-import type { Person, PersonCategory, PersonListItem, QuizResult, CategorySettings } from "@shared/schema";
+import type { Person, PersonCategory, PersonListItem, QuizResult, CategorySettings, AnalyticsSummary } from "@shared/schema";
 
 const categoryLabels: Record<PersonCategory, string> = {
   husband: "Husband",
@@ -106,6 +106,11 @@ export default function Admin() {
   // Fetch category settings
   const { data: categorySettings = {} } = useQuery<CategorySettings>({
     queryKey: ["/api/category-settings"],
+  });
+
+  // Fetch analytics data
+  const { data: analytics } = useQuery<AnalyticsSummary>({
+    queryKey: ["/api/analytics"],
   });
 
   // Initialize form when settings change or dialog opens
@@ -803,6 +808,115 @@ export default function Admin() {
             <p className="text-sm text-muted-foreground mt-2 text-center">
               Last {chartData.length} quiz{chartData.length !== 1 ? "zes" : ""} • 
               Latest: {chartData.length > 0 ? `${chartData[chartData.length - 1].score}/${chartData[chartData.length - 1].total}` : "—"}
+            </p>
+          </Card>
+        )}
+
+        {/* Visit Insights - Privacy-preserving analytics */}
+        {analytics && (
+          <Card className="mt-8 p-4" data-testid="card-visit-insights">
+            <div className="flex items-center gap-2 mb-4">
+              <BarChart3 className="w-5 h-5 text-primary" />
+              <h2 className="text-lg font-bold text-foreground">Visit Insights</h2>
+            </div>
+            
+            {/* Summary stats */}
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              <div className="text-center p-3 bg-muted/50 rounded-lg">
+                <p className="text-2xl font-bold text-foreground" data-testid="stat-total-views">
+                  {analytics.totalViews}
+                </p>
+                <p className="text-xs text-muted-foreground">Total Visits</p>
+              </div>
+              <div className="text-center p-3 bg-muted/50 rounded-lg">
+                <p className="text-2xl font-bold text-foreground" data-testid="stat-7day-views">
+                  {analytics.viewsLast7Days}
+                </p>
+                <p className="text-xs text-muted-foreground">Last 7 Days</p>
+              </div>
+              <div className="text-center p-3 bg-muted/50 rounded-lg">
+                <p className="text-2xl font-bold text-foreground" data-testid="stat-30day-views">
+                  {analytics.viewsLast30Days}
+                </p>
+                <p className="text-xs text-muted-foreground">Last 30 Days</p>
+              </div>
+            </div>
+
+            {/* Daily views chart */}
+            {analytics.dailyViews.length > 0 && (
+              <div className="mb-6">
+                <p className="text-sm font-medium text-foreground mb-2">Daily Page Views</p>
+                <div className="h-32">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={analytics.dailyViews}>
+                      <XAxis 
+                        dataKey="date" 
+                        tick={{ fontSize: 10 }} 
+                        tickLine={false}
+                        axisLine={false}
+                        tickFormatter={(value) => {
+                          const date = new Date(value);
+                          return `${date.getMonth() + 1}/${date.getDate()}`;
+                        }}
+                      />
+                      <YAxis 
+                        tick={{ fontSize: 10 }} 
+                        tickLine={false}
+                        axisLine={false}
+                        width={30}
+                      />
+                      <Tooltip 
+                        formatter={(value: number) => [value, "Views"]}
+                        labelFormatter={(label) => {
+                          const date = new Date(label);
+                          return date.toLocaleDateString("en-US", { 
+                            weekday: "short", 
+                            month: "short", 
+                            day: "numeric" 
+                          });
+                        }}
+                        contentStyle={{ 
+                          backgroundColor: "hsl(var(--card))", 
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "8px"
+                        }}
+                      />
+                      <Bar 
+                        dataKey="count" 
+                        fill="hsl(var(--primary))" 
+                        radius={[4, 4, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
+            {/* Top pages */}
+            {analytics.topPages.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-foreground mb-2">Most Visited Pages</p>
+                <div className="space-y-2">
+                  {analytics.topPages.slice(0, 5).map((page, index) => (
+                    <div 
+                      key={page.route} 
+                      className="flex items-center justify-between text-sm"
+                      data-testid={`stat-top-page-${index}`}
+                    >
+                      <span className="text-muted-foreground truncate flex-1">
+                        {page.route === "/" ? "Home" : page.route.replace(/^\//, "")}
+                      </span>
+                      <span className="font-medium text-foreground ml-2">
+                        {page.count} visits
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <p className="text-xs text-muted-foreground mt-4 text-center">
+              Privacy-preserving analytics (no personal data collected)
             </p>
           </Card>
         )}

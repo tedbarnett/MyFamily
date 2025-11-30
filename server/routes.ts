@@ -814,18 +814,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============================================================================
 
   // Track page view - called by frontend on navigation
+  // familySlug is extracted from route to derive familyId server-side (never trust client)
   app.post("/api/page-view", async (req, res) => {
     try {
-      const { route, familyId, sessionHash } = req.body;
+      const { route, sessionHash } = req.body;
 
       if (!route || typeof route !== "string") {
         return res.status(400).json({ error: "Route is required" });
       }
 
+      // Derive familyId from route path (e.g., "/smith-family/category/children" -> "smith-family")
+      let familyId: string | null = null;
+      const routeMatch = route.match(/^\/([^\/]+)/);
+      if (routeMatch) {
+        const potentialSlug = routeMatch[1];
+        // Check if this is a valid family slug (not a system route)
+        const systemRoutes = ["api", "category", "person", "admin", "everyone", "quiz", "photo-album", "birthdays", "login", "register", "new-family"];
+        if (!systemRoutes.includes(potentialSlug)) {
+          const family = await storage.getFamilyBySlug(potentialSlug);
+          if (family) {
+            familyId = family.id;
+          }
+        }
+      }
+
+      // Validate session hash format (alphanumeric, reasonable length)
+      const validSessionHash = sessionHash && typeof sessionHash === "string" && /^[a-z0-9]{10,50}$/i.test(sessionHash) 
+        ? sessionHash 
+        : null;
+
       await storage.recordPageView({
-        route,
-        familyId: familyId || null,
-        sessionHash: sessionHash || null,
+        route: route.substring(0, 500), // Limit route length
+        familyId,
+        sessionHash: validSessionHash,
       });
 
       res.status(201).json({ success: true });
@@ -836,10 +857,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get analytics summary (for admin page)
-  app.get("/api/analytics", async (req, res) => {
+  // Get analytics summary (for admin page) - requires authentication
+  app.get("/api/analytics", requireAuth, async (req, res) => {
     try {
-      const familyId = req.query.familyId as string | undefined;
+      // Use authenticated user's family ID for proper tenant scoping
+      const familyId = req.session.familyId;
+      if (!familyId) {
+        return res.status(403).json({ error: "Family context required" });
+      }
+      
       const analytics = await storage.getAnalyticsSummary(familyId);
       res.json(analytics);
     } catch (error) {
