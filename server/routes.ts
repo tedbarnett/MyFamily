@@ -809,6 +809,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============================================================================
+  // ANALYTICS - Page view tracking (privacy-preserving, in-house)
+  // ============================================================================
+
+  // Track page view - called by frontend on navigation
+  app.post("/api/page-view", async (req, res) => {
+    try {
+      const { route, familyId, sessionHash } = req.body;
+
+      if (!route || typeof route !== "string") {
+        return res.status(400).json({ error: "Route is required" });
+      }
+
+      await storage.recordPageView({
+        route,
+        familyId: familyId || null,
+        sessionHash: sessionHash || null,
+      });
+
+      res.status(201).json({ success: true });
+    } catch (error) {
+      console.error("Error recording page view:", error);
+      // Don't fail the response - analytics should never block user experience
+      res.status(200).json({ success: false });
+    }
+  });
+
+  // Get analytics summary (for admin page)
+  app.get("/api/analytics", async (req, res) => {
+    try {
+      const familyId = req.query.familyId as string | undefined;
+      const analytics = await storage.getAnalyticsSummary(familyId);
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+      res.status(500).json({ error: "Failed to fetch analytics" });
+    }
+  });
+
   // Prime the cache on startup so the first user request is instant
   console.log("Priming cache on server startup...");
   await storage.getStaticHomeData();
