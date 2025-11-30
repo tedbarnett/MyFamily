@@ -64,6 +64,10 @@ export default function PhotoAlbum() {
   }
 
   const peopleWithPhotos = people.filter((p) => p.photoData);
+  
+  // Find the starting index for grandchildren
+  const grandchildrenStartIndex = peopleWithPhotos.findIndex((p) => p.category === "grandchildren");
+  const startIndex = grandchildrenStartIndex >= 0 ? grandchildrenStartIndex : 0;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -100,6 +104,7 @@ export default function PhotoAlbum() {
               opts={{
                 align: "center",
                 loop: true,
+                startIndex: startIndex,
               }}
             >
               <CarouselContent>
