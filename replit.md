@@ -19,7 +19,8 @@ A specialized web application designed to help an 89-year-old user (Judy) identi
 - Automatic age calculation from birthdates
 - **Birthdays tab** - Bottom tab bar on home page shows next 3 upcoming birthdays with photo, name, role, and countdown
 - PWA support with custom Apple Touch Icon for iOS home screen installation
-- **Customizable categories** - Families can rename categories (e.g., "Daughters in Law" → "Partners") and hide unused categories via Admin settings
+- **Customizable categories** - Families can rename categories and hide unused categories via Admin settings
+- **Unified Partners category** - Combines daughters-in-law, sons-in-law, and unmarried partners with ability to link each partner to their spouse via dropdown selector in admin
 
 ## User Preferences
 
