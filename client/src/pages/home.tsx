@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, Heart, Baby, Stethoscope, Search, X, HeartHandshake, UsersRound, BrainCircuit, Cake } from "lucide-react";
+import { Users, Heart, Baby, Stethoscope, Search, X, HeartHandshake, UsersRound, BrainCircuit, Cake, Images } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useFamilySlug } from "@/lib/use-family-slug";
 import type { PersonCategory, Person } from "@shared/schema";
@@ -293,6 +293,27 @@ export default function Home() {
                     </h2>
                     <p className="text-lg text-muted-foreground">
                       Practice remembering names
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            </Link>
+
+            <Link
+              href={tenantUrl("/photo-album")}
+              data-testid="link-photo-album"
+            >
+              <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all bg-primary/5 border-primary/20">
+                <div className="p-6 flex items-center gap-4">
+                  <div className="text-primary flex-shrink-0">
+                    <Images className="w-14 h-14" strokeWidth={1.5} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-2xl font-bold text-foreground mb-1">
+                      Photo Album
+                    </h2>
+                    <p className="text-lg text-muted-foreground">
+                      Swipe through everyone
                     </p>
                   </div>
                 </div>

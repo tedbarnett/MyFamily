@@ -10,6 +10,7 @@ import PersonDetail from "@/pages/person-detail";
 import Admin from "@/pages/admin";
 import Everyone from "@/pages/everyone";
 import Quiz from "@/pages/quiz";
+import PhotoAlbum from "@/pages/photo-album";
 import Birthdays from "@/pages/birthdays";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
@@ -27,6 +28,7 @@ function Router() {
       <Route path="/admin" component={Admin} />
       <Route path="/everyone" component={Everyone} />
       <Route path="/quiz" component={Quiz} />
+      <Route path="/photo-album" component={PhotoAlbum} />
       <Route path="/birthdays" component={Birthdays} />
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
@@ -39,6 +41,7 @@ function Router() {
       <Route path="/:familySlug/person/:id" component={PersonDetail} />
       <Route path="/:familySlug/everyone" component={Everyone} />
       <Route path="/:familySlug/quiz" component={Quiz} />
+      <Route path="/:familySlug/photo-album" component={PhotoAlbum} />
       <Route path="/:familySlug/birthdays" component={Birthdays} />
       <Route path="/:familySlug" component={Home} />
       
