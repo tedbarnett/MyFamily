@@ -2,20 +2,22 @@ import { useRoute, Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import type { Person, PersonCategory } from "@shared/schema";
+import type { Person, PersonCategory, CategorySettings } from "@shared/schema";
 import { useEffect } from "react";
 import { useFamilySlug } from "@/lib/use-family-slug";
 
 const categoryLabels: Record<PersonCategory, string> = {
   husband: "Husband",
+  wife: "Wife",
   children: "Children",
   grandchildren: "Grandchildren",
   daughters_in_law: "Daughters in Law",
+  sons_in_law: "Sons in Law",
   caregivers: "Caregivers",
   other: "Friends & Neighbors",
 };
 
-const validCategories: PersonCategory[] = ["husband", "children", "grandchildren", "daughters_in_law", "other", "caregivers"];
+const validCategories: PersonCategory[] = ["husband", "wife", "children", "grandchildren", "daughters_in_law", "sons_in_law", "other", "caregivers"];
 
 export default function Category() {
   const [, routeParams] = useRoute("/category/:category");
@@ -34,22 +36,33 @@ export default function Category() {
     queryKey: [`/api/people/${category}`],
   });
 
-  // Get dynamic label for children category based on gender
+  // Fetch category settings for custom labels
+  const { data: categorySettings = {} } = useQuery<CategorySettings>({
+    queryKey: ["/api/category-settings"],
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
+
+  // Get dynamic label for category - prioritize custom labels
   const getCategoryLabel = (): string => {
-    if (category !== "children" || !people || people.length === 0) {
-      return categoryLabels[category] || "Family";
+    // First check for custom label in settings
+    const customLabel = categorySettings[category]?.label;
+    if (customLabel) return customLabel;
+
+    // Then check for dynamic children label based on gender
+    if (category === "children" && people && people.length > 0) {
+      const allSons = people.every(child => 
+        child.relationship?.toLowerCase() === "son"
+      );
+      const allDaughters = people.every(child => 
+        child.relationship?.toLowerCase() === "daughter"
+      );
+      
+      if (allSons) return "Sons";
+      if (allDaughters) return "Daughters";
     }
     
-    const allSons = people.every(child => 
-      child.relationship?.toLowerCase() === "son"
-    );
-    const allDaughters = people.every(child => 
-      child.relationship?.toLowerCase() === "daughter"
-    );
-    
-    if (allSons) return "Sons";
-    if (allDaughters) return "Daughters";
-    return "Children";
+    return categoryLabels[category] || "Family";
   };
 
   const getInitials = (name: string) => {

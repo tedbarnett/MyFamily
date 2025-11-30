@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Users, Heart, Baby, Stethoscope, Search, X, HeartHandshake, UsersRound, BrainCircuit, Cake, Images } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useFamilySlug } from "@/lib/use-family-slug";
-import type { PersonCategory, Person } from "@shared/schema";
+import type { PersonCategory, Person, CategorySettings } from "@shared/schema";
 
 interface StaticCategoryData {
   id: PersonCategory;
@@ -125,6 +125,23 @@ export default function Home() {
     gcTime: Infinity, // Keep in cache forever
   });
 
+  // Fetch category settings for custom labels and visibility
+  const { data: categorySettings = {} } = useQuery<CategorySettings>({
+    queryKey: ["/api/category-settings"],
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
+
+  // Get custom label for a category (or default if not customized)
+  const getCategoryLabel = (categoryId: PersonCategory, defaultLabel: string): string => {
+    return categorySettings[categoryId]?.label || defaultLabel;
+  };
+
+  // Check if a category is hidden
+  const isCategoryHidden = (categoryId: PersonCategory): boolean => {
+    return categorySettings[categoryId]?.hidden || false;
+  };
+
   // Helper to get category data from static cache
   const getCategoryData = (categoryId: PersonCategory): StaticCategoryData | undefined => {
     return staticData?.categories.find(c => c.id === categoryId);
@@ -200,7 +217,8 @@ export default function Home() {
             {!isStaticDataLoading && categories
               .filter((category) => {
                 const categoryData = getCategoryData(category.id);
-                return categoryData && categoryData.count > 0;
+                // Hide categories with no people or that are marked as hidden
+                return categoryData && categoryData.count > 0 && !isCategoryHidden(category.id);
               })
               .map((category) => {
               const Icon = category.icon;
@@ -231,7 +249,7 @@ export default function Home() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <h2 className="text-2xl font-bold text-foreground mb-1">
-                          {category.label}
+                          {getCategoryLabel(category.id, category.label)}
                         </h2>
                         <p className="text-lg text-muted-foreground">
                           {categoryData?.description || category.description}

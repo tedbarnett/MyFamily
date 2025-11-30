@@ -6,15 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Home, Camera, Loader2, Save, X, Pencil, Plus, Trash2, BrainCircuit, Mic, Square, Images, Check, LogOut } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
+import { Home, Camera, Loader2, Save, X, Pencil, Plus, Trash2, BrainCircuit, Mic, Square, Images, Check, LogOut, Settings, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { PhotoCropper } from "@/components/photo-cropper";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 import { useAuth } from "@/lib/auth-context";
 import { useFamilySlug } from "@/lib/use-family-slug";
-import type { Person, PersonCategory, PersonListItem, QuizResult } from "@shared/schema";
+import type { Person, PersonCategory, PersonListItem, QuizResult, CategorySettings } from "@shared/schema";
 
 const categoryLabels: Record<PersonCategory, string> = {
   husband: "Husband",
@@ -56,6 +57,8 @@ export default function Admin() {
   const audioChunksRef = useRef<Blob[]>([]);
   const [isAddingPhoto, setIsAddingPhoto] = useState(false);
   const addPhotoInputRef = useRef<HTMLInputElement>(null);
+  const [showCategorySettings, setShowCategorySettings] = useState(false);
+  const [categorySettingsForm, setCategorySettingsForm] = useState<CategorySettings>({});
   
   // Compute tenant-aware URLs - preserve the URL structure the user is in
   const loginPath = tenantUrl("/login");
@@ -100,6 +103,28 @@ export default function Admin() {
   const { data: quizResults = [] } = useQuery<QuizResult[]>({
     queryKey: ["/api/quiz-results"],
   });
+
+  // Fetch category settings
+  const { data: categorySettings = {} } = useQuery<CategorySettings>({
+    queryKey: ["/api/category-settings"],
+  });
+
+  // Initialize form when settings change or dialog opens
+  useEffect(() => {
+    if (showCategorySettings) {
+      setCategorySettingsForm(categorySettings);
+    }
+  }, [showCategorySettings, categorySettings]);
+
+  // Get display label for a category (custom or default)
+  const getCategoryLabel = (category: PersonCategory): string => {
+    return categorySettings[category]?.label || categoryLabels[category];
+  };
+
+  // Check if a category is hidden
+  const isCategoryHidden = (category: PersonCategory): boolean => {
+    return categorySettings[category]?.hidden || false;
+  };
 
   // Format quiz results for chart - show last 20 results, oldest first
   const chartData = quizResults
@@ -309,6 +334,43 @@ export default function Admin() {
       });
     },
   });
+
+  const categorySettingsMutation = useMutation({
+    mutationFn: async (settings: CategorySettings) => {
+      const response = await apiRequest("PUT", "/api/category-settings", settings);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/category-settings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/static/home"] });
+      toast({
+        title: "Settings Saved",
+        description: "Category settings updated successfully.",
+      });
+      setShowCategorySettings(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save category settings.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSaveCategorySettings = () => {
+    categorySettingsMutation.mutate(categorySettingsForm);
+  };
+
+  const updateCategorySetting = (category: PersonCategory, field: 'label' | 'hidden', value: string | boolean) => {
+    setCategorySettingsForm(prev => ({
+      ...prev,
+      [category]: {
+        ...prev[category],
+        [field]: value,
+      },
+    }));
+  };
 
   const getInitials = (name: string) => {
     const parts = name.split(" ");
@@ -638,14 +700,35 @@ export default function Admin() {
           </Card>
         )}
 
+        {/* Category Settings Button */}
+        <div className="flex justify-end mb-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowCategorySettings(true)}
+            data-testid="button-category-settings"
+          >
+            <Settings className="w-4 h-4 mr-2" />
+            Customize Categories
+          </Button>
+        </div>
+
         {categoryOrder.map((category) => {
           const people = getPeopleByCategory(category);
+          const isHidden = isCategoryHidden(category);
 
           return (
-            <div key={category} className="mb-8">
-              <h2 className="text-xl font-bold text-foreground mb-4 border-b border-border pb-2">
-                {categoryLabels[category]}
-              </h2>
+            <div key={category} className={`mb-8 ${isHidden ? 'opacity-50' : ''}`}>
+              <div className="flex items-center gap-2 mb-4 border-b border-border pb-2">
+                <h2 className={`text-xl font-bold ${isHidden ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
+                  {getCategoryLabel(category)}
+                </h2>
+                {isHidden && (
+                  <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded">
+                    Hidden
+                  </span>
+                )}
+              </div>
               <div className="grid gap-3">
                 {people.map((person) => {
                   // Use thumbnail for list display (much faster loading)
@@ -716,12 +799,7 @@ export default function Admin() {
                   data-testid={`button-add-${category}`}
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  Add {categoryLabels[category] === "Children" ? "Child" : 
-                       categoryLabels[category] === "Grandchildren" ? "Grandchild" :
-                       categoryLabels[category] === "Daughters in Law" ? "Daughter in Law" :
-                       categoryLabels[category] === "Friends" ? "Friend" :
-                       categoryLabels[category] === "Caregivers" ? "Caregiver" :
-                       categoryLabels[category] === "Other" ? "Person" : "Person"}
+                  Add Person
                 </Button>
               </div>
             </div>
@@ -969,7 +1047,7 @@ export default function Admin() {
       <Dialog open={!!addingToCategory} onOpenChange={(open) => !open && setAddingToCategory(null)}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-xl">Add New Person to {addingToCategory && categoryLabels[addingToCategory]}</DialogTitle>
+            <DialogTitle className="text-xl">Add New Person to {addingToCategory && getCategoryLabel(addingToCategory)}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
@@ -1021,6 +1099,68 @@ export default function Admin() {
                 <Plus className="w-4 h-4 mr-2" />
               )}
               Add Person
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Category Settings Dialog */}
+      <Dialog open={showCategorySettings} onOpenChange={setShowCategorySettings}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl">Customize Categories</DialogTitle>
+            <DialogDescription>
+              Rename categories or hide ones you don't need. Hidden categories won't show on the home page.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {categoryOrder.map((category) => (
+              <div key={category} className="space-y-2 pb-4 border-b border-border last:border-0">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <label className="text-sm font-medium text-muted-foreground mb-1 block">
+                      {categoryLabels[category]}
+                    </label>
+                    <Input
+                      value={categorySettingsForm[category]?.label || ''}
+                      onChange={(e) => updateCategorySetting(category, 'label', e.target.value)}
+                      placeholder={categoryLabels[category]}
+                      data-testid={`input-category-label-${category}`}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 pt-6">
+                    <Switch
+                      checked={!categorySettingsForm[category]?.hidden}
+                      onCheckedChange={(checked) => updateCategorySetting(category, 'hidden', !checked)}
+                      data-testid={`switch-category-visible-${category}`}
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      {categorySettingsForm[category]?.hidden ? 'Hidden' : 'Visible'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-3 justify-end">
+            <Button
+              variant="outline"
+              onClick={() => setShowCategorySettings(false)}
+              data-testid="button-cancel-category-settings"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveCategorySettings}
+              disabled={categorySettingsMutation.isPending}
+              data-testid="button-save-category-settings"
+            >
+              {categorySettingsMutation.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4 mr-2" />
+              )}
+              Save Changes
             </Button>
           </div>
         </DialogContent>

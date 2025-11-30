@@ -157,6 +157,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get category settings for a family (public - needed for display)
+  app.get("/api/category-settings", async (req, res) => {
+    try {
+      // Get family from session or default demo family
+      let family;
+      if (req.session.familyId) {
+        family = await storage.getFamilyById(req.session.familyId);
+      } else {
+        // Fall back to demo-family for non-authenticated users
+        family = await storage.getFamilyBySlug("demo-family");
+      }
+      
+      if (!family) {
+        return res.json({}); // Return empty settings if no family
+      }
+      
+      const settings = family.categorySettings ? JSON.parse(family.categorySettings) : {};
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching category settings:", error);
+      res.status(500).json({ error: "Failed to fetch category settings" });
+    }
+  });
+
+  // Update category settings (requires auth)
+  app.put("/api/category-settings", requireAuth, async (req, res) => {
+    try {
+      const familyId = req.session.familyId;
+      if (!familyId) {
+        return res.status(401).json({ error: "No family in session" });
+      }
+      
+      const settings = req.body;
+      
+      // Validate the settings object
+      if (typeof settings !== 'object' || Array.isArray(settings)) {
+        return res.status(400).json({ error: "Invalid settings format" });
+      }
+      
+      const updated = await storage.updateFamily(familyId, {
+        categorySettings: JSON.stringify(settings),
+      });
+      
+      if (!updated) {
+        return res.status(404).json({ error: "Family not found" });
+      }
+      
+      // Invalidate the cache so home page shows updated labels
+      await storage.invalidateCache();
+      
+      res.json(settings);
+    } catch (error) {
+      console.error("Error updating category settings:", error);
+      res.status(500).json({ error: "Failed to update category settings" });
+    }
+  });
+
   // Login as family member
   app.post("/api/auth/login", async (req, res) => {
     try {

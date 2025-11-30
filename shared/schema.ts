@@ -14,9 +14,18 @@ export const families = pgTable("families", {
   seniorName: text("senior_name").notNull(), // Name of the elderly user (e.g., "Mom")
   passwordHash: text("password_hash"), // Optional password for family admin access
   joinCode: text("join_code").unique(), // Code for inviting new family members
+  categorySettings: text("category_settings"), // JSON: custom labels and visibility per category
   createdAt: timestamp("created_at").notNull().defaultNow(),
   isActive: boolean("is_active").notNull().default(true),
 });
+
+// Category customization settings per family
+export interface CategorySetting {
+  label?: string; // Custom display label (e.g., "Partner" instead of "Husband")
+  hidden?: boolean; // Whether to hide this category
+}
+
+export type CategorySettings = Partial<Record<PersonCategory, CategorySetting>>;
 
 export const insertFamilySchema = createInsertSchema(families).omit({
   id: true,

@@ -53,6 +53,9 @@ export interface IStorage {
   
   // Static data (now family-scoped)
   getStaticHomeData(familyId?: string): Promise<StaticHomeData>;
+  
+  // Cache management
+  invalidateCache(): Promise<void>;
 }
 
 const ALL_CATEGORIES: PersonCategory[] = [
@@ -255,6 +258,12 @@ export class CachedDatabaseStorage implements IStorage {
     console.log("Invalidating people cache");
     this.peopleCache = null;
     this.staticHomeDataCache.clear();
+  }
+  
+  // Public cache invalidation
+  async invalidateCache(): Promise<void> {
+    this.invalidatePeopleCache();
+    this.invalidateQuizCache();
   }
 
   private invalidateQuizCache(): void {
