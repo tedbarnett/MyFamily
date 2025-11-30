@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Home, Camera, Loader2, Save, X, Pencil, Plus, Trash2, BrainCircuit, Mic, Square, Images, Check, LogOut, Settings, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -391,6 +392,7 @@ export default function Admin() {
       setEditingPerson(person);
       setEditForm({
         name: person.name,
+        fullName: person.fullName || "",
         relationship: person.relationship,
         born: person.born || "",
         passed: person.passed || "",
@@ -398,6 +400,7 @@ export default function Admin() {
         phone: person.phone || "",
         email: person.email || "",
         summary: person.summary || "",
+        spouseId: person.spouseId || "",
       });
     } catch (error) {
       toast({
@@ -996,6 +999,30 @@ export default function Admin() {
                 data-testid="input-edit-summary"
               />
             </div>
+            {editingPerson?.category === "partners" && (
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1 block">Partner to</label>
+                <Select
+                  value={editForm.spouseId || ""}
+                  onValueChange={(value) => setEditForm({ ...editForm, spouseId: value === "none" ? "" : value })}
+                  data-testid="select-partner"
+                >
+                  <SelectTrigger data-testid="select-partner">
+                    <SelectValue placeholder="Not specified" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Not specified</SelectItem>
+                    {allPeople
+                      .filter((p) => p.id !== editingPerson?.id)
+                      .map((person) => (
+                        <SelectItem key={person.id} value={person.id}>
+                          {person.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
           <div className="border-t border-border pt-4 mt-4">
             <Button
