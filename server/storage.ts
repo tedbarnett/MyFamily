@@ -59,8 +59,8 @@ export interface IStorage {
 }
 
 const ALL_CATEGORIES: PersonCategory[] = [
-  "husband", "children", "grandchildren", "daughters_in_law", 
-  "sons_in_law", "other", "caregivers"
+  "husband", "wife", "children", "grandchildren", "partners", 
+  "other", "caregivers"
 ];
 
 const SALT_ROUNDS = 10;
@@ -212,10 +212,8 @@ export class CachedDatabaseStorage implements IStorage {
         return `${count} ${count === 1 ? "Son" : "Sons"}`;
       case "grandchildren":
         return `${count} ${count === 1 ? "Grandchild" : "Grandchildren"}`;
-      case "daughters_in_law":
-        return `${count} ${count === 1 ? "Daughter in Law" : "Daughters in Law"}`;
-      case "sons_in_law":
-        return `${count} ${count === 1 ? "Son in Law" : "Sons in Law"}`;
+      case "partners":
+        return `${count} ${count === 1 ? "Partner" : "Partners"}`;
       case "other":
         return `${count} ${count === 1 ? "Friend" : "Friends"}`;
       case "caregivers":

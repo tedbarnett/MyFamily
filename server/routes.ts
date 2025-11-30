@@ -499,7 +499,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/people/:category", async (req, res) => {
     try {
       const category = req.params.category as PersonCategory;
-      const validCategories = ["husband", "children", "grandchildren", "daughters_in_law", "other", "caregivers"];
+      const validCategories = ["husband", "wife", "children", "grandchildren", "partners", "other", "caregivers"];
       
       if (!validCategories.includes(category)) {
         return res.status(400).json({ error: "Invalid category" });

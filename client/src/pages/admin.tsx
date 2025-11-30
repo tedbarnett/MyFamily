@@ -22,8 +22,7 @@ const categoryLabels: Record<PersonCategory, string> = {
   wife: "Wife",
   children: "Children",
   grandchildren: "Grandchildren",
-  daughters_in_law: "Daughters in Law",
-  sons_in_law: "Sons in Law",
+  partners: "Partners",
   caregivers: "Caregivers",
   other: "Friends & Neighbors",
 };
@@ -33,8 +32,7 @@ const categoryOrder: PersonCategory[] = [
   "wife",
   "children",
   "grandchildren",
-  "daughters_in_law",
-  "sons_in_law",
+  "partners",
   "other",
   "caregivers",
 ];
@@ -424,7 +422,7 @@ export default function Admin() {
       category === "husband" ? "Husband" : 
       category === "children" ? "Son" :
       category === "grandchildren" ? "Grandchild" :
-      category === "daughters_in_law" ? "Daughter in Law" :
+      category === "partners" ? "Partner" :
       category === "caregivers" ? "Caregiver" : 
       "Family Member";
     setAddForm({

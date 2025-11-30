@@ -11,13 +11,12 @@ const categoryLabels: Record<PersonCategory, string> = {
   wife: "Wife",
   children: "Children",
   grandchildren: "Grandchildren",
-  daughters_in_law: "Daughters in Law",
-  sons_in_law: "Sons in Law",
+  partners: "Partners",
   caregivers: "Caregivers",
   other: "Friends & Neighbors",
 };
 
-const validCategories: PersonCategory[] = ["husband", "wife", "children", "grandchildren", "daughters_in_law", "sons_in_law", "other", "caregivers"];
+const validCategories: PersonCategory[] = ["husband", "wife", "children", "grandchildren", "partners", "other", "caregivers"];
 
 export default function Category() {
   const [, routeParams] = useRoute("/category/:category");

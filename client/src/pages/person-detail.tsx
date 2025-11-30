@@ -12,7 +12,7 @@ const categoryOrder: PersonCategory[] = [
   "husband",
   "children",
   "grandchildren",
-  "daughters_in_law",
+  "partners",
   "other",
   "caregivers",
 ];

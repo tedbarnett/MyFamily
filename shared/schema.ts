@@ -72,8 +72,7 @@ export type PersonCategory =
   | "wife"
   | "children" 
   | "grandchildren" 
-  | "daughters_in_law"
-  | "sons_in_law"
+  | "partners"  // Unified category for daughters-in-law, sons-in-law, and unmarried partners
   | "caregivers"
   | "other";
 
