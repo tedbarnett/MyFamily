@@ -107,6 +107,7 @@ export const people = pgTable("people", {
   photoData: text("photo_data"), // Primary photo (base64)
   thumbnailData: text("thumbnail_data"), // 512x512 thumbnail (base64)
   photos: text("photos").array(), // Additional photos (base64)
+  eyeCenterY: text("eye_center_y"), // Normalized eye position (0=bottom, 1=top) for background positioning
   
   // Notes & extras
   summary: text("summary"),
