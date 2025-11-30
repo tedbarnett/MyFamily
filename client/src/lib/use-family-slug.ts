@@ -25,6 +25,7 @@ const NON_FAMILY_PREFIXES = [
   'everyone',
   'quiz',
   'birthdays',
+  'photo-album', // Photo album page
   'api',      // API routes
   'assets',   // Static assets
   'static',   // Static files

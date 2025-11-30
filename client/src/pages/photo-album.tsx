@@ -138,9 +138,19 @@ export default function PhotoAlbum() {
                   className="static translate-y-0 h-14 w-14"
                   data-testid="button-prev"
                 />
-                <span className="text-xl text-muted-foreground min-w-[80px] text-center">
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    const currentPerson = peopleWithPhotos[current - 1];
+                    if (currentPerson) {
+                      setLocation(tenantUrl(`/person/${currentPerson.id}`));
+                    }
+                  }}
+                  className="text-xl text-muted-foreground min-w-[80px] h-14 px-4"
+                  data-testid="button-view-person"
+                >
                   {current} / {count}
-                </span>
+                </Button>
                 <CarouselNext
                   className="static translate-y-0 h-14 w-14"
                   data-testid="button-next"
