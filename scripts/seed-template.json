@@ -1,0 +1,89 @@
+{
+  "exportedAt": "2025-01-01T00:00:00.000Z",
+  "version": "1.0",
+  "_instructions": [
+    "This is a template for seeding your own family data.",
+    "1. Copy this file and rename it (e.g., my-family-seed.json)",
+    "2. Replace the example data with your family information",
+    "3. For photos, use base64 encoded images (data:image/jpeg;base64,...)",
+    "4. Run: npx tsx scripts/import-family-data.ts my-family-seed.json --clear",
+    "5. Delete this _instructions field before importing"
+  ],
+  "families": [
+    {
+      "id": "your-family-uuid-here",
+      "slug": "your-family-name",
+      "name": "Your Family Name",
+      "seniorName": "Mom",
+      "passwordHash": null,
+      "joinCode": "ABCD1234",
+      "categorySettings": null,
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "isActive": true
+    }
+  ],
+  "familyMembers": [
+    {
+      "id": "member-uuid-here",
+      "familyId": "your-family-uuid-here",
+      "email": "admin@example.com",
+      "name": "Admin User",
+      "passwordHash": null,
+      "role": "admin",
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "lastLoginAt": null,
+      "isActive": true
+    }
+  ],
+  "people": [
+    {
+      "id": "person-1-uuid",
+      "familyId": "your-family-uuid-here",
+      "name": "John",
+      "fullName": "John Smith",
+      "category": "husband",
+      "relationship": "Husband",
+      "born": "January 15, 1950",
+      "passed": null,
+      "location": "New York, NY",
+      "phone": "555-123-4567",
+      "email": "john@example.com",
+      "spouseId": null,
+      "parentIds": null,
+      "photoData": null,
+      "thumbnailData": null,
+      "photos": null,
+      "eyeCenterY": null,
+      "summary": "Retired teacher who loves gardening",
+      "sortOrder": 0,
+      "voiceNoteData": null,
+      "lastVisit": null,
+      "visitHistory": null
+    },
+    {
+      "id": "person-2-uuid",
+      "familyId": "your-family-uuid-here",
+      "name": "Sarah",
+      "fullName": "Sarah Smith",
+      "category": "children",
+      "relationship": "Daughter",
+      "born": "March 22, 1975",
+      "passed": null,
+      "location": "Boston, MA",
+      "phone": "555-234-5678",
+      "email": null,
+      "spouseId": null,
+      "parentIds": ["person-1-uuid"],
+      "photoData": null,
+      "thumbnailData": null,
+      "photos": null,
+      "eyeCenterY": null,
+      "summary": "Works as a nurse at Boston General",
+      "sortOrder": 1,
+      "voiceNoteData": null,
+      "lastVisit": null,
+      "visitHistory": null
+    }
+  ],
+  "quizResults": []
+}
