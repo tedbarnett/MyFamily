@@ -21,6 +21,7 @@ const categoryLabels: Record<PersonCategory, string> = {
   children: "Children",
   grandchildren: "Grandchildren",
   daughters_in_law: "Daughters in Law",
+  sons_in_law: "Sons in Law",
   caregivers: "Caregivers",
   other: "Friends & Neighbors",
 };
@@ -30,6 +31,7 @@ const categoryOrder: PersonCategory[] = [
   "children",
   "grandchildren",
   "daughters_in_law",
+  "sons_in_law",
   "other",
   "caregivers",
 ];

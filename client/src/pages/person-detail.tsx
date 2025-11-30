@@ -17,6 +17,17 @@ const categoryOrder: PersonCategory[] = [
   "caregivers",
 ];
 
+function formatDate(dateStr: string | null | undefined): string | null {
+  if (!dateStr) return null;
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
+  return date.toLocaleDateString("en-US", { 
+    month: "long", 
+    day: "numeric", 
+    year: "numeric" 
+  });
+}
+
 function computeAge(born: string | null | undefined): number | null {
   if (!born) return null;
   const birthDate = new Date(born);
@@ -469,12 +480,12 @@ export default function PersonDetail() {
                     )}
                     {person.born && (
                       <p className="text-lg text-foreground">
-                        <span className="font-medium">Born:</span> {person.born}
+                        <span className="font-medium">Born:</span> {formatDate(person.born)}
                       </p>
                     )}
                     {person.passed && (
                       <p className="text-lg text-muted-foreground mt-2">
-                        Passed: {person.passed}
+                        Passed: {formatDate(person.passed)}
                       </p>
                     )}
                   </div>
