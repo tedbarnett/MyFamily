@@ -23,7 +23,7 @@ export default function PhotoAlbum() {
   const [count, setCount] = useState(0);
 
   const { data: people = [], isLoading } = useQuery<Person[]>({
-    queryKey: ["/api/people-list"],
+    queryKey: ["/api/people"],
   });
 
   useEffect(() => {
