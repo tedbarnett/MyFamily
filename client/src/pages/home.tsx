@@ -226,25 +226,33 @@ export default function Home() {
                   href={linkTarget}
                   data-testid={`link-category-${category.id}`}
                 >
-                  <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all relative overflow-hidden">
+                  <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all relative overflow-hidden bg-gray-900 dark:bg-gray-950 border-gray-800">
+                    {/* Vignette photo on right 1/3 */}
                     {backgroundPhoto && (
                       <div 
-                        className="absolute inset-0 bg-cover opacity-30"
+                        className="absolute right-0 top-0 bottom-0 w-1/3 bg-cover bg-center"
                         style={{ 
                           backgroundImage: `url(${backgroundPhoto})`,
-                          backgroundPosition: 'center'
                         }}
-                      />
+                      >
+                        {/* Gradient fade from dark to transparent (left to right) */}
+                        <div 
+                          className="absolute inset-0"
+                          style={{
+                            background: 'linear-gradient(to right, rgb(17 24 39) 0%, rgb(17 24 39 / 0.7) 30%, transparent 100%)'
+                          }}
+                        />
+                      </div>
                     )}
                     <div className="p-6 flex items-center gap-4 relative z-10">
-                      <div className={`${category.color} flex-shrink-0`}>
+                      <div className="text-white/90 flex-shrink-0">
                         <Icon className="w-14 h-14" strokeWidth={1.5} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h2 className="text-2xl font-bold text-foreground mb-1">
+                        <h2 className="text-2xl font-bold text-white mb-1">
                           {getCategoryLabel(category.id, category.label)}
                         </h2>
-                        <p className="text-lg text-muted-foreground">
+                        <p className="text-lg text-white/70">
                           {categoryData?.description || category.description}
                         </p>
                       </div>
