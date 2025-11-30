@@ -226,7 +226,7 @@ export default function Home() {
                   href={linkTarget}
                   data-testid={`link-category-${category.id}`}
                 >
-                  <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all relative overflow-hidden bg-gray-900 dark:bg-gray-950 border-gray-800">
+                  <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all relative overflow-hidden bg-blue-900 dark:bg-blue-950 border-blue-800">
                     {/* Vignette photo on right 1/3 */}
                     {backgroundPhoto && (
                       <div 
@@ -235,11 +235,11 @@ export default function Home() {
                           backgroundImage: `url(${backgroundPhoto})`,
                         }}
                       >
-                        {/* Gradient fade from dark to transparent (left to right) */}
+                        {/* Gradient fade from dark blue to transparent (left to right) */}
                         <div 
                           className="absolute inset-0"
                           style={{
-                            background: 'linear-gradient(to right, rgb(17 24 39) 0%, rgb(17 24 39 / 0.7) 30%, transparent 100%)'
+                            background: 'linear-gradient(to right, rgb(30 58 138) 0%, rgb(30 58 138 / 0.7) 30%, transparent 100%)'
                           }}
                         />
                       </div>
