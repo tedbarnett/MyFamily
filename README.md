@@ -70,7 +70,7 @@ The app organizes people into these groups:
 
 | Category | Description |
 |----------|-------------|
-| Husband | Neil Barnett |
+| Husband | Neil Smith |
 | Children | Your 4 sons |
 | Grandchildren | Your 8 grandchildren |
 | Daughters in Law | Your sons' wives |
