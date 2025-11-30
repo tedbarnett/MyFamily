@@ -90,7 +90,7 @@ export default function Category() {
         ) : people && people.length > 0 ? (
           <div className="grid grid-cols-2 gap-3">
             {people.map((person) => {
-              const photoSrc = person.photoData || person.photoUrl;
+              const photoSrc = person.photoData;
               return (
                 <Link
                   key={person.id}

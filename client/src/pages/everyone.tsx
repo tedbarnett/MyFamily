@@ -82,7 +82,7 @@ export default function Everyone() {
         ) : sortedPeople.length > 0 ? (
           <div className="grid grid-cols-2 gap-3">
             {sortedPeople.map((person) => {
-              const photoSrc = person.thumbnailData || person.photoUrl;
+              const photoSrc = person.thumbnailData;
               return (
                 <Link
                   key={person.id}
