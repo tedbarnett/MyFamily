@@ -1,4 +1,4 @@
-# Mom's Family Memory Aid App
+# "Judy's Family" - Memory Aid App (Private Repo)
 
 A mobile-friendly web application designed to help seniors identify and remember family members, friends, and caregivers through photos and simple navigation.
 
