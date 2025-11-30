@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,7 @@ import type { PersonCategory, Person } from "@shared/schema";
 interface StaticCategoryData {
   id: PersonCategory;
   count: number;
-  backgroundPhoto: string | null;
+  backgroundPhotos: string[];
   singlePersonId: string | null;
 }
 
@@ -114,6 +114,26 @@ export default function Home() {
     return staticData?.categories.find(c => c.id === categoryId);
   };
 
+  // Generate random photo selections that persist until page refresh
+  // Uses useMemo with empty deps to only compute once per component mount
+  const randomPhotoSelections = useMemo(() => {
+    const selections: Record<string, number> = {};
+    categories.forEach(cat => {
+      selections[cat.id] = Math.random();
+    });
+    return selections;
+  }, []);
+
+  // Pick a random photo from the available photos for a category
+  const getRandomPhoto = (categoryId: PersonCategory): string | null => {
+    const categoryData = getCategoryData(categoryId);
+    if (!categoryData || categoryData.backgroundPhotos.length === 0) return null;
+    
+    const randomValue = randomPhotoSelections[categoryId] || 0;
+    const index = Math.floor(randomValue * categoryData.backgroundPhotos.length);
+    return categoryData.backgroundPhotos[index];
+  };
+
   const handleClearSearch = () => {
     setSearchInput("");
     setSubmittedSearch("");
@@ -146,7 +166,7 @@ export default function Home() {
             {categories.map((category) => {
               const Icon = category.icon;
               const categoryData = getCategoryData(category.id);
-              const backgroundPhoto = categoryData?.backgroundPhoto;
+              const backgroundPhoto = getRandomPhoto(category.id);
               const linkTarget = categoryData?.singlePersonId 
                 ? tenantUrl(`/person/${categoryData.singlePersonId}`)
                 : tenantUrl(`/category/${category.id}`);

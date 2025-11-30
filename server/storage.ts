@@ -11,7 +11,7 @@ import bcrypt from "bcrypt";
 export interface CategoryStaticData {
   id: PersonCategory;
   count: number;
-  backgroundPhoto: string | null;
+  backgroundPhotos: string[]; // All available photos for randomization
   singlePersonId: string | null;
 }
 
@@ -201,16 +201,15 @@ export class CachedDatabaseStorage implements IStorage {
       const categoryPeople = familyPeople.filter(p => p.category === categoryId);
       const peopleWithPhotos = categoryPeople.filter(p => p.photoData || p.photoUrl);
       
-      let backgroundPhoto: string | null = null;
-      if (peopleWithPhotos.length > 0) {
-        const firstPerson = peopleWithPhotos[0];
-        backgroundPhoto = firstPerson.photoData || firstPerson.photoUrl || null;
-      }
+      // Collect all available photos for randomization
+      const backgroundPhotos = peopleWithPhotos
+        .map(p => p.photoData || p.photoUrl)
+        .filter((photo): photo is string => photo !== null);
       
       return {
         id: categoryId,
         count: categoryPeople.length,
-        backgroundPhoto,
+        backgroundPhotos,
         singlePersonId: categoryPeople.length === 1 ? categoryPeople[0].id : null,
       };
     });
