@@ -60,21 +60,33 @@ Preferred communication style: Simple, everyday language.
 - `GET /api/person/:id` - Get individual person details
 
 **Data Storage Strategy**: 
-- Currently using in-memory storage (`MemStorage` class in `server/storage.ts`)
-- Schema defined with Drizzle ORM for future PostgreSQL migration
+- PostgreSQL database with Drizzle ORM (`server/storage.ts`)
+- In-memory cache for fast reads (primed on startup)
 - Data structure optimized for flat, denormalized reads (no complex joins needed)
 
-**Database Schema** (Drizzle/PostgreSQL ready):
+**Database Schema** (PostgreSQL with Drizzle ORM):
 ```
 people table:
 - id (UUID primary key)
+- familyId (UUID foreign key to families)
 - name, category, relationship
-- photoUrl (nullable)
-- born, age, passed (nullable)
-- location, spouse
-- children (text array)
-- summary
+- born, passed (nullable dates)
+- location, summary (nullable text)
+- phone, email (nullable contact info)
+- spouseId, parentIds (relationship references - nullable)
+- photoData, thumbnailData (base64 encoded images - nullable)
+- photos (JSONB array for additional photos)
+- voiceNote, voiceNoteUrl (nullable audio data)
 - sortOrder (for consistent ordering)
+
+families table:
+- id (UUID primary key)
+- slug (unique URL-friendly name, e.g., "demo-family")
+- name (display name)
+- joinCode (8-char code for family member authentication)
+- createdAt, updatedAt (timestamps)
+
+Note: Age is computed dynamically from `born` date, not stored in database.
 ```
 
 ### Key Architectural Decisions
