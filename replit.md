@@ -175,3 +175,10 @@ Note: Age is computed dynamically from `born` date, not stored in database.
 - Express sessions with connect-pg-simple for PostgreSQL session storage
 - Simple join code authentication for family members (admin access only)
 - No authentication required for senior users viewing the app
+
+**Data Export/Import Scripts**:
+- `scripts/export-family-data.ts` - Export family data to JSON for backup/migration
+- `scripts/import-family-data.ts` - Import family data from JSON file
+- `scripts/seed-template.json` - Template for creating custom seed data
+- Usage: `npx tsx scripts/export-family-data.ts [family-slug]`
+- Usage: `npx tsx scripts/import-family-data.ts <json-file> [--clear]`

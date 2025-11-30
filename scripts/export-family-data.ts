@@ -4,12 +4,18 @@
  * Exports all data for a family (or all families) to a JSON file.
  * This can be used for backup, migration, or seeding a new project.
  * 
+ * Note: Analytics data (page views) is NOT exported as it's not meaningful
+ * when migrating to a new instance. Password hashes are excluded for security.
+ * 
  * Usage:
  *   npx tsx scripts/export-family-data.ts [family-slug]
  * 
  * Examples:
  *   npx tsx scripts/export-family-data.ts              # Export all families
  *   npx tsx scripts/export-family-data.ts demo-family  # Export specific family
+ * 
+ * Requirements:
+ *   - DATABASE_URL environment variable must be set
  */
 
 import { Pool, neonConfig } from '@neondatabase/serverless';
@@ -18,13 +24,14 @@ import { eq } from 'drizzle-orm';
 import ws from 'ws';
 import * as fs from 'fs';
 import * as path from 'path';
-import { families, familyMembers, people, quizResults, pageViews } from '../shared/schema';
+import { families, familyMembers, people, quizResults } from '../shared/schema';
 
 neonConfig.webSocketConstructor = ws;
 
 interface ExportData {
   exportedAt: string;
   version: string;
+  notes: string[];
   families: any[];
   familyMembers: any[];
   people: any[];
@@ -34,6 +41,7 @@ interface ExportData {
 async function exportFamilyData(familySlug?: string) {
   if (!process.env.DATABASE_URL) {
     console.error('ERROR: DATABASE_URL environment variable is not set');
+    console.error('Make sure you are running this in the Replit environment or have set DATABASE_URL');
     process.exit(1);
   }
 
@@ -85,23 +93,69 @@ async function exportFamilyData(familySlug?: string) {
     }
     console.log(`Found ${quizData.length} quiz result(s)`);
 
-    // Prepare export data (remove sensitive fields)
+    // Sanitize families - remove password hashes for security
     const sanitizedFamilies = familyData.map(f => ({
-      ...f,
-      passwordHash: null, // Don't export password hashes
+      id: f.id,
+      slug: f.slug,
+      name: f.name,
+      seniorName: f.seniorName,
+      joinCode: f.joinCode,
+      categorySettings: f.categorySettings,
+      createdAt: f.createdAt,
+      isActive: f.isActive,
+      // Note: passwordHash is intentionally excluded for security
     }));
 
+    // Sanitize family members - remove password hashes for security
     const sanitizedMembers = membersData.map(m => ({
-      ...m,
-      passwordHash: null, // Don't export password hashes
+      id: m.id,
+      familyId: m.familyId,
+      email: m.email,
+      name: m.name,
+      role: m.role,
+      createdAt: m.createdAt,
+      lastLoginAt: m.lastLoginAt,
+      isActive: m.isActive,
+      // Note: passwordHash is intentionally excluded for security
+    }));
+
+    // Export all person fields
+    const exportedPeople = peopleData.map(p => ({
+      id: p.id,
+      familyId: p.familyId,
+      name: p.name,
+      fullName: p.fullName,
+      category: p.category,
+      relationship: p.relationship,
+      born: p.born,
+      passed: p.passed,
+      location: p.location,
+      phone: p.phone,
+      email: p.email,
+      spouseId: p.spouseId,
+      parentIds: p.parentIds,
+      photoData: p.photoData,
+      thumbnailData: p.thumbnailData,
+      photos: p.photos,
+      eyeCenterY: p.eyeCenterY,
+      summary: p.summary,
+      sortOrder: p.sortOrder,
+      voiceNoteData: p.voiceNoteData,
+      lastVisit: p.lastVisit,
+      visitHistory: p.visitHistory,
     }));
 
     const exportData: ExportData = {
       exportedAt: new Date().toISOString(),
       version: '1.0',
+      notes: [
+        'Password hashes are excluded for security - users will need to set new passwords',
+        'Analytics data (page views) is not exported',
+        'To import: npx tsx scripts/import-family-data.ts <this-file.json>',
+      ],
       families: sanitizedFamilies,
       familyMembers: sanitizedMembers,
-      people: peopleData,
+      people: exportedPeople,
       quizResults: quizData,
     };
 
@@ -120,13 +174,18 @@ async function exportFamilyData(familySlug?: string) {
     console.log(`\nSummary:`);
     console.log(`  - Families: ${sanitizedFamilies.length}`);
     console.log(`  - Family Members: ${sanitizedMembers.length}`);
-    console.log(`  - People: ${peopleData.length}`);
+    console.log(`  - People: ${exportedPeople.length}`);
     console.log(`  - Quiz Results: ${quizData.length}`);
 
     // Calculate file size
     const stats = fs.statSync(outputPath);
     const fileSizeMB = (stats.size / (1024 * 1024)).toFixed(2);
     console.log(`  - File Size: ${fileSizeMB} MB`);
+    
+    console.log(`\nNotes:`);
+    console.log(`  - Password hashes were NOT exported (security)`);
+    console.log(`  - Analytics data was NOT exported`);
+    console.log(`  - After importing, set new join codes and passwords as needed`);
 
   } catch (error) {
     console.error('Export failed:', error);

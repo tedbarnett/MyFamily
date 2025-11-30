@@ -161,6 +161,50 @@ At the bottom of the admin page, you'll find a chart showing Memory Quiz perform
 
 Tap the **"Home"** button at the top of the admin page to return to the main app view.
 
+## Forking & Data Migration
+
+This app is designed to be easily forked and customized for your own family.
+
+**Requirements**: The `DATABASE_URL` environment variable must be set (automatically available in Replit).
+
+### Exporting Data
+
+To export your family data for backup or migration:
+
+```bash
+# Export all families
+npx tsx scripts/export-family-data.ts
+
+# Export a specific family
+npx tsx scripts/export-family-data.ts your-family-slug
+```
+
+This creates a JSON file with all your family data, including people, photos, and quiz results. Password hashes and analytics are NOT exported for security.
+
+### Importing Data
+
+To seed a new project with family data:
+
+```bash
+# Import data (preserves existing data)
+npx tsx scripts/import-family-data.ts family-export.json
+
+# Clear existing data and import fresh (use with caution!)
+npx tsx scripts/import-family-data.ts family-export.json --clear
+```
+
+**Note**: After importing, you'll need to set new passwords/join codes since these are not exported.
+
+### Creating Your Own Seed File
+
+1. Copy `scripts/seed-template.json` to a new file
+2. Customize it with your family information
+3. Generate UUIDs for each person and family (use uuidgenerator.net)
+4. For photos, encode them as base64 data URIs
+5. Import: `npx tsx scripts/import-family-data.ts your-seed.json --clear`
+
+**Tip**: The easiest way to set up your data is to use the admin page to add everyone, then export it as a backup.
+
 ## Technical Notes
 
 - The app works on phones, tablets, and computers
