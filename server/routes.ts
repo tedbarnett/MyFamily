@@ -127,7 +127,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       req.session.isAuthenticated = true;
 
       res.status(201).json({
-        family: { id: family.id, slug: family.slug, name: family.name, seniorName: family.seniorName },
+        family: { 
+          id: family.id, 
+          slug: family.slug, 
+          name: family.name, 
+          seniorName: family.seniorName,
+          joinCode: family.joinCode,
+        },
         member: { id: member.id, name: member.name, email: member.email, role: member.role },
       });
     } catch (error) {

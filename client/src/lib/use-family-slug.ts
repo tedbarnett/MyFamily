@@ -18,6 +18,7 @@ import { useLocation } from "wouter";
 const NON_FAMILY_PREFIXES = [
   'login',
   'register', 
+  'new-family', // Create new family signup
   'admin',
   'category',
   'person',

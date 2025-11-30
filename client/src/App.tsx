@@ -13,6 +13,7 @@ import Quiz from "@/pages/quiz";
 import Birthdays from "@/pages/birthdays";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
+import NewFamily from "@/pages/new-family";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -20,6 +21,7 @@ function Router() {
     <Switch>
       {/* Default routes (for backward compatibility with barnett-family) */}
       <Route path="/" component={Home} />
+      <Route path="/new-family" component={NewFamily} />
       <Route path="/category/:category" component={Category} />
       <Route path="/person/:id" component={PersonDetail} />
       <Route path="/admin" component={Admin} />
