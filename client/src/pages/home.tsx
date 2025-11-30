@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Users, Heart, Baby, Stethoscope, Search, X, HeartHandshake, UsersRound, BrainCircuit, Cake } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useFamilySlug } from "@/lib/use-family-slug";
@@ -111,7 +112,7 @@ export default function Home() {
   });
 
   // Use pre-computed static data - cache indefinitely since it only changes on data edits
-  const { data: staticData } = useQuery<StaticHomeData>({
+  const { data: staticData, isPending: isStaticDataLoading } = useQuery<StaticHomeData>({
     queryKey: ["/api/static/home"],
     staleTime: Infinity, // Never consider stale - only refetch on cache invalidation
     gcTime: Infinity, // Keep in cache forever
@@ -171,7 +172,25 @@ export default function Home() {
       <main className="flex-1 max-w-2xl mx-auto px-4 py-8 w-full">
         {!showSearchResults && (
           <div className="grid grid-cols-1 gap-6">
-            {categories
+            {/* Show skeleton cards while loading */}
+            {isStaticDataLoading && (
+              <>
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Card key={`skeleton-${i}`} className="relative overflow-hidden">
+                    <div className="p-6 flex items-center gap-4">
+                      <Skeleton className="w-14 h-14 rounded-full flex-shrink-0" />
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <Skeleton className="h-7 w-32" />
+                        <Skeleton className="h-5 w-24" />
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </>
+            )}
+            
+            {/* Show actual category cards once loaded */}
+            {!isStaticDataLoading && categories
               .filter((category) => {
                 const categoryData = getCategoryData(category.id);
                 return categoryData && categoryData.count > 0;

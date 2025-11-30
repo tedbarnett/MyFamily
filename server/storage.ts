@@ -225,11 +225,11 @@ export class CachedDatabaseStorage implements IStorage {
   private generateStaticDataForFamily(familyPeople: Person[]): StaticHomeData {
     const categories: CategoryStaticData[] = ALL_CATEGORIES.map(categoryId => {
       const categoryPeople = familyPeople.filter(p => p.category === categoryId);
-      const peopleWithPhotos = categoryPeople.filter(p => p.photoData);
+      const peopleWithPhotos = categoryPeople.filter(p => p.thumbnailData || p.photoData);
       
-      // Collect all available photos for randomization
+      // Use thumbnails for faster loading (much smaller than full photos)
       const backgroundPhotos = peopleWithPhotos
-        .map(p => p.photoData)
+        .map(p => p.thumbnailData || p.photoData)
         .filter((photo): photo is string => photo !== null);
       
       // Generate dynamic description based on category and people
