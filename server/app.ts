@@ -6,6 +6,8 @@ import express, {
   Response,
   NextFunction,
 } from "express";
+import session from "express-session";
+import MemoryStore from "memorystore";
 
 import { registerRoutes } from "./routes";
 
@@ -21,6 +23,34 @@ export function log(message: string, source = "express") {
 }
 
 export const app = express();
+
+// Session configuration
+const MemStore = MemoryStore(session);
+
+declare module "express-session" {
+  interface SessionData {
+    memberId?: string;
+    familyId?: string;
+    isAuthenticated?: boolean;
+  }
+}
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "family-memory-app-secret-key-change-in-production",
+    resave: false,
+    saveUninitialized: false,
+    store: new MemStore({
+      checkPeriod: 86400000, // prune expired entries every 24h
+    }),
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      sameSite: "lax",
+    },
+  })
+);
 
 declare module 'http' {
   interface IncomingMessage {

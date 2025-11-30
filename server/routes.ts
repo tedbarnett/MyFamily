@@ -1,8 +1,29 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import type { PersonCategory, Person } from "@shared/schema";
 import { generateThumbnail } from "./thumbnail";
+
+// Middleware to check if user is authenticated for a specific family
+function requireAuth(req: Request, res: Response, next: NextFunction) {
+  if (!req.session.isAuthenticated || !req.session.familyId) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+  next();
+}
+
+// Middleware to get family context from URL or session
+async function familyContext(req: Request, res: Response, next: NextFunction) {
+  const slug = req.params.familySlug;
+  if (slug) {
+    const family = await storage.getFamilyBySlug(slug);
+    if (!family) {
+      return res.status(404).json({ error: "Family not found" });
+    }
+    (req as any).family = family;
+  }
+  next();
+}
 
 // Parse birth date string and compute current age (defensive - never throws)
 function computeAgeFromBorn(born: string | null | undefined): number | null {
@@ -54,6 +75,206 @@ function withComputedAge(person: Person): Person {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // ============================================================================
+  // AUTHENTICATION ROUTES
+  // ============================================================================
+
+  // Create a new family (with first admin member)
+  app.post("/api/families", async (req, res) => {
+    try {
+      const { slug, name, seniorName, email, memberName, password } = req.body;
+
+      if (!slug || !name || !seniorName || !email || !memberName || !password) {
+        return res.status(400).json({ 
+          error: "All fields required: slug, name, seniorName, email, memberName, password" 
+        });
+      }
+
+      // Sanitize slug FIRST, then check uniqueness
+      const sanitizedSlug = slug.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+      
+      if (sanitizedSlug.length < 3) {
+        return res.status(400).json({ error: "Family URL must be at least 3 characters" });
+      }
+
+      // Check if sanitized slug is already taken
+      const existing = await storage.getFamilyBySlug(sanitizedSlug);
+      if (existing) {
+        return res.status(409).json({ error: "This family URL is already taken" });
+      }
+
+      // Create the family with sanitized slug
+      const family = await storage.createFamily({
+        slug: sanitizedSlug,
+        name,
+        seniorName,
+        isActive: true,
+      });
+
+      // Create the first admin member
+      const member = await storage.createFamilyMember({
+        familyId: family.id,
+        email: email.toLowerCase(),
+        name: memberName,
+        password,
+        role: "admin",
+        isActive: true,
+      });
+
+      // Set session
+      req.session.memberId = member.id;
+      req.session.familyId = family.id;
+      req.session.isAuthenticated = true;
+
+      res.status(201).json({
+        family: { id: family.id, slug: family.slug, name: family.name, seniorName: family.seniorName },
+        member: { id: member.id, name: member.name, email: member.email, role: member.role },
+      });
+    } catch (error) {
+      console.error("Error creating family:", error);
+      res.status(500).json({ error: "Failed to create family" });
+    }
+  });
+
+  // Get family info by slug (public - for loading the app)
+  app.get("/api/families/:slug", async (req, res) => {
+    try {
+      const family = await storage.getFamilyBySlug(req.params.slug);
+      if (!family || !family.isActive) {
+        return res.status(404).json({ error: "Family not found" });
+      }
+
+      res.json({
+        id: family.id,
+        slug: family.slug,
+        name: family.name,
+        seniorName: family.seniorName,
+      });
+    } catch (error) {
+      console.error("Error fetching family:", error);
+      res.status(500).json({ error: "Failed to fetch family" });
+    }
+  });
+
+  // Login as family member
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { email, password, familySlug } = req.body;
+
+      if (!email || !password || !familySlug) {
+        return res.status(400).json({ error: "Email, password, and family are required" });
+      }
+
+      const family = await storage.getFamilyBySlug(familySlug);
+      if (!family || !family.isActive) {
+        return res.status(404).json({ error: "Family not found" });
+      }
+
+      const member = await storage.authenticateMember(email, password, family.id);
+      if (!member) {
+        return res.status(401).json({ error: "Invalid email or password" });
+      }
+
+      req.session.memberId = member.id;
+      req.session.familyId = family.id;
+      req.session.isAuthenticated = true;
+
+      res.json({
+        member: { id: member.id, name: member.name, email: member.email, role: member.role },
+        family: { id: family.id, slug: family.slug, name: family.name },
+      });
+    } catch (error) {
+      console.error("Error logging in:", error);
+      res.status(500).json({ error: "Failed to login" });
+    }
+  });
+
+  // Register a new family member (requires join code)
+  app.post("/api/families/:slug/members", async (req, res) => {
+    try {
+      const { slug } = req.params;
+      const { email, name, password, joinCode } = req.body;
+
+      if (!email || !name || !password || !joinCode) {
+        return res.status(400).json({ error: "Email, name, password, and join code are required" });
+      }
+
+      const family = await storage.getFamilyBySlug(slug);
+      if (!family || !family.isActive) {
+        return res.status(404).json({ error: "Family not found" });
+      }
+
+      if (family.joinCode !== joinCode.toUpperCase()) {
+        return res.status(403).json({ error: "Invalid join code" });
+      }
+
+      // Check if email already registered
+      const existing = await storage.getFamilyMemberByEmail(email, family.id);
+      if (existing) {
+        return res.status(409).json({ error: "This email is already registered" });
+      }
+
+      const member = await storage.createFamilyMember({
+        familyId: family.id,
+        email: email.toLowerCase(),
+        name,
+        password,
+        role: "editor",
+        isActive: true,
+      });
+
+      req.session.memberId = member.id;
+      req.session.familyId = family.id;
+      req.session.isAuthenticated = true;
+
+      res.status(201).json({
+        member: { id: member.id, name: member.name, email: member.email, role: member.role },
+      });
+    } catch (error) {
+      console.error("Error registering member:", error);
+      res.status(500).json({ error: "Failed to register" });
+    }
+  });
+
+  // Logout
+  app.post("/api/auth/logout", (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ error: "Failed to logout" });
+      }
+      res.json({ success: true });
+    });
+  });
+
+  // Get current session info
+  app.get("/api/auth/me", async (req, res) => {
+    try {
+      if (!req.session.isAuthenticated || !req.session.memberId) {
+        return res.json({ authenticated: false });
+      }
+
+      const member = await storage.getFamilyMemberById(req.session.memberId);
+      if (!member) {
+        return res.json({ authenticated: false });
+      }
+
+      const family = await storage.getFamilyById(req.session.familyId!);
+
+      res.json({
+        authenticated: true,
+        member: { id: member.id, name: member.name, email: member.email, role: member.role },
+        family: family ? { id: family.id, slug: family.slug, name: family.name } : null,
+      });
+    } catch (error) {
+      console.error("Error fetching session:", error);
+      res.status(500).json({ error: "Failed to fetch session" });
+    }
+  });
+
+  // ============================================================================
+  // DEBUG/STATUS ROUTES
+  // ============================================================================
+
   // Debug endpoint to check database and cache status
   app.get("/api/debug/status", async (req, res) => {
     try {

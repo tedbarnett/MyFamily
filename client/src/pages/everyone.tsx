@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import type { PersonCategory } from "@shared/schema";
+import { useFamilySlug } from "@/lib/use-family-slug";
 
 interface ListPerson {
   id: string;
@@ -25,6 +26,8 @@ const categoryOrder: PersonCategory[] = [
 ];
 
 export default function Everyone() {
+  const { familySlug, isFamilyScoped, tenantUrl } = useFamilySlug();
+
   // Use lightweight endpoint without large photo data
   const { data: allPeople = [], isLoading } = useQuery<ListPerson[]>({
     queryKey: ["/api/people-list"],
@@ -51,7 +54,7 @@ export default function Everyone() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Link href="/">
+      <Link href={tenantUrl("/")}>
         <header 
           className="bg-card border-b border-card-border px-6 py-6 sticky top-0 z-10 cursor-pointer hover-elevate active-elevate-2"
           data-testid="header-back"
@@ -83,7 +86,7 @@ export default function Everyone() {
               return (
                 <Link
                   key={person.id}
-                  href={`/person/${person.id}`}
+                  href={tenantUrl(`/person/${person.id}`)}
                   data-testid={`link-person-${person.id}`}
                 >
                   <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all overflow-hidden">

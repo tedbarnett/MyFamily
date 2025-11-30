@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, RefreshCw, Trophy, Star, PartyPopper, ThumbsUp, ChevronRight } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { useFamilySlug } from "@/lib/use-family-slug";
 
 const MAX_QUESTIONS = 5;
 
@@ -44,6 +45,8 @@ const tryAgainMessages = [
 ];
 
 export default function Quiz() {
+  const { familySlug, isFamilyScoped, tenantUrl } = useFamilySlug();
+
   const [currentQuestion, setCurrentQuestion] = useState<QuizQuestion | null>(null);
   const [score, setScore] = useState(0);
   const [questionsAsked, setQuestionsAsked] = useState(0);
@@ -179,7 +182,7 @@ export default function Quiz() {
   if (allPeople.length < 4) {
     return (
       <div className="min-h-screen bg-background">
-        <Link href="/">
+        <Link href={tenantUrl("/")}>
           <header 
             className="bg-card border-b border-card-border px-6 py-6 cursor-pointer hover-elevate active-elevate-2"
             data-testid="header-back"
@@ -201,7 +204,7 @@ export default function Quiz() {
             <p className="text-xl text-muted-foreground">
               Need at least 4 people to start the quiz. Add more people first!
             </p>
-            <Link href="/" data-testid="link-go-home">
+            <Link href={tenantUrl("/")} data-testid="link-go-home">
               <Button className="mt-6 h-14 text-xl px-8">
                 Back to Home
               </Button>
@@ -215,7 +218,7 @@ export default function Quiz() {
   if (quizComplete) {
     return (
       <div className="min-h-screen bg-background">
-        <Link href="/">
+        <Link href={tenantUrl("/")}>
           <header 
             className="bg-card border-b border-card-border px-6 py-6 cursor-pointer hover-elevate active-elevate-2"
             data-testid="header-back"
@@ -256,7 +259,7 @@ export default function Quiz() {
                 <RefreshCw className="w-5 h-5 mr-2" />
                 Practice Again
               </Button>
-              <Link href="/" data-testid="link-go-home-complete">
+              <Link href={tenantUrl("/")} data-testid="link-go-home-complete">
                 <Button variant="outline" className="w-full h-14 text-xl">
                   Back to Home
                 </Button>
@@ -270,7 +273,7 @@ export default function Quiz() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Link href="/">
+      <Link href={tenantUrl("/")}>
         <header 
           className="bg-card border-b border-card-border px-6 py-6 cursor-pointer hover-elevate active-elevate-2"
           data-testid="header-back"

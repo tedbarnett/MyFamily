@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Users, Heart, Baby, Stethoscope, Search, X, HeartHandshake, UsersRound, BrainCircuit, Cake } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useFamilySlug } from "@/lib/use-family-slug";
 import type { PersonCategory, Person } from "@shared/schema";
 
 interface StaticCategoryData {
@@ -76,10 +76,9 @@ const categories: CategoryCard[] = [
 ];
 
 export default function Home() {
+  const { familySlug, isFamilyScoped, tenantUrl } = useFamilySlug();
   const [searchInput, setSearchInput] = useState("");
   const [submittedSearch, setSubmittedSearch] = useState("");
-  const [showAdminDialog, setShowAdminDialog] = useState(false);
-  const [, setLocation] = useLocation();
 
   const getTodayParts = () => {
     const today = new Date();
@@ -120,11 +119,6 @@ export default function Home() {
     setSubmittedSearch("");
   };
 
-  const handleAdminProceed = () => {
-    setShowAdminDialog(false);
-    setLocation("/admin");
-  };
-
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -154,8 +148,8 @@ export default function Home() {
               const categoryData = getCategoryData(category.id);
               const backgroundPhoto = categoryData?.backgroundPhoto;
               const linkTarget = categoryData?.singlePersonId 
-                ? `/person/${categoryData.singlePersonId}` 
-                : `/category/${category.id}`;
+                ? tenantUrl(`/person/${categoryData.singlePersonId}`)
+                : tenantUrl(`/category/${category.id}`);
               return (
                 <Link
                   key={category.id}
@@ -191,7 +185,7 @@ export default function Home() {
             })}
 
             <Link
-              href="/birthdays"
+              href={tenantUrl("/birthdays")}
               data-testid="link-birthdays"
             >
               <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all">
@@ -212,7 +206,7 @@ export default function Home() {
             </Link>
 
             <Link
-              href="/everyone"
+              href={tenantUrl("/everyone")}
               data-testid="link-everyone"
             >
               <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all bg-muted/70 dark:bg-muted/50">
@@ -233,7 +227,7 @@ export default function Home() {
             </Link>
 
             <Link
-              href="/quiz"
+              href={tenantUrl("/quiz")}
               data-testid="link-quiz"
             >
               <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all bg-primary/5 border-primary/20">
@@ -288,15 +282,6 @@ export default function Home() {
               </Button>
             </div>
 
-            <div className="mt-8 text-center">
-              <button
-                className="text-xs text-white/20"
-                onClick={() => setShowAdminDialog(true)}
-                data-testid="button-admin"
-              >
-                Admin view
-              </button>
-            </div>
           </div>
         )}
 
@@ -318,7 +303,7 @@ export default function Home() {
                 {searchResults.map((person) => (
                   <Link
                     key={person.id}
-                    href={`/person/${person.id}`}
+                    href={tenantUrl(`/person/${person.id}`)}
                     data-testid={`link-person-${person.id}`}
                   >
                     <Card className="hover-elevate active-elevate-2 cursor-pointer">
@@ -362,33 +347,6 @@ export default function Home() {
         )}
       </main>
 
-      <Dialog open={showAdminDialog} onOpenChange={setShowAdminDialog}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-2xl text-center">Admin edits?</DialogTitle>
-            <DialogDescription className="text-center text-lg">
-              This will open the admin page where you can edit people and photos.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex flex-col sm:flex-row gap-3 mt-4">
-            <Button
-              onClick={() => setShowAdminDialog(false)}
-              className="flex-1 h-14 text-lg"
-              data-testid="button-admin-cancel"
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleAdminProceed}
-              className="flex-1 h-14 text-lg"
-              data-testid="button-admin-proceed"
-            >
-              Proceed
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

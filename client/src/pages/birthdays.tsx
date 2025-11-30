@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, Cake } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useFamilySlug } from "@/lib/use-family-slug";
 
 interface BirthdayPerson {
   id: string;
@@ -16,6 +17,8 @@ interface BirthdayPerson {
 }
 
 export default function Birthdays() {
+  const { familySlug, isFamilyScoped, tenantUrl } = useFamilySlug();
+
   // Use lightweight birthday endpoint (no large photos)
   const { data: allPeople = [] } = useQuery<BirthdayPerson[]>({
     queryKey: ["/api/birthdays"],
@@ -82,7 +85,7 @@ export default function Birthdays() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Link href="/">
+      <Link href={tenantUrl("/")}>
         <header 
           className="bg-card border-b border-card-border px-6 py-6 cursor-pointer hover-elevate active-elevate-2"
           data-testid="header-back"
@@ -118,7 +121,7 @@ export default function Birthdays() {
               {getUpcomingBirthdays.map(({ person, daysUntil, birthdayString }) => (
                 <Link
                   key={person.id}
-                  href={`/person/${person.id}`}
+                  href={tenantUrl(`/person/${person.id}`)}
                   data-testid={`link-birthday-${person.id}`}
                 >
                   <Card className="hover-elevate active-elevate-2 cursor-pointer">

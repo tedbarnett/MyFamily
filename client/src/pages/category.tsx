@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import type { Person, PersonCategory } from "@shared/schema";
 import { useEffect } from "react";
+import { useFamilySlug } from "@/lib/use-family-slug";
 
 const categoryLabels: Record<PersonCategory, string> = {
   husband: "Husband",
@@ -17,16 +18,17 @@ const categoryLabels: Record<PersonCategory, string> = {
 const validCategories: PersonCategory[] = ["husband", "children", "grandchildren", "daughters_in_law", "other", "caregivers"];
 
 export default function Category() {
-  const [, params] = useRoute("/category/:category");
+  const [, routeParams] = useRoute("/category/:category");
   const [, setLocation] = useLocation();
-  const category = params?.category as PersonCategory;
+  const { familySlug, isFamilyScoped, tenantUrl } = useFamilySlug();
+  const category = routeParams?.category as PersonCategory;
 
   // Validate category and redirect if invalid
   useEffect(() => {
     if (category && !validCategories.includes(category)) {
-      setLocation("/");
+      setLocation(tenantUrl("/"));
     }
-  }, [category, setLocation]);
+  }, [category, setLocation, tenantUrl]);
 
   const { data: people, isLoading } = useQuery<Person[]>({
     queryKey: [`/api/people/${category}`],
@@ -60,7 +62,7 @@ export default function Category() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Link href="/">
+      <Link href={tenantUrl("/")}>
         <header 
           className="bg-card border-b border-card-border px-6 py-6 sticky top-0 z-10 cursor-pointer hover-elevate active-elevate-2"
           data-testid="header-back"
@@ -92,7 +94,7 @@ export default function Category() {
               return (
                 <Link
                   key={person.id}
-                  href={`/person/${person.id}`}
+                  href={tenantUrl(`/person/${person.id}`)}
                   data-testid={`link-person-${person.id}`}
                 >
                   <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all overflow-hidden">

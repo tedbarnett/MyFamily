@@ -1,6 +1,12 @@
-import { type Person, type InsertPerson, type PersonCategory, people, type QuizResult, type InsertQuizResult, quizResults } from "@shared/schema";
+import { 
+  type Person, type InsertPerson, type PersonCategory, people, 
+  type QuizResult, type InsertQuizResult, quizResults,
+  type Family, type InsertFamily, families,
+  type FamilyMember, type InsertFamilyMember, familyMembers
+} from "@shared/schema";
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
+import bcrypt from "bcrypt";
 
 export interface CategoryStaticData {
   id: PersonCategory;
@@ -16,17 +22,36 @@ export interface StaticHomeData {
 }
 
 export interface IStorage {
-  getAllPeople(): Promise<Person[]>;
-  getPeopleByCategory(category: PersonCategory): Promise<Person[]>;
+  // Family management
+  createFamily(family: InsertFamily & { password?: string }): Promise<Family>;
+  getFamilyById(id: string): Promise<Family | undefined>;
+  getFamilyBySlug(slug: string): Promise<Family | undefined>;
+  updateFamily(id: string, updates: Partial<Family>): Promise<Family | undefined>;
+  verifyFamilyPassword(familyId: string, password: string): Promise<boolean>;
+  
+  // Family member management
+  createFamilyMember(member: Omit<InsertFamilyMember, 'passwordHash'> & { password: string }): Promise<FamilyMember>;
+  getFamilyMemberById(id: string): Promise<FamilyMember | undefined>;
+  getFamilyMemberByEmail(email: string, familyId: string): Promise<FamilyMember | undefined>;
+  authenticateMember(email: string, password: string, familyId: string): Promise<FamilyMember | undefined>;
+  getFamilyMembers(familyId: string): Promise<FamilyMember[]>;
+  
+  // People management (now family-scoped)
+  getAllPeople(familyId?: string): Promise<Person[]>;
+  getPeopleByCategory(category: PersonCategory, familyId?: string): Promise<Person[]>;
   getPersonById(id: string): Promise<Person | undefined>;
   createPerson(person: InsertPerson): Promise<Person>;
   updatePerson(id: string, updates: Partial<Person>): Promise<Person | undefined>;
   deletePerson(id: string): Promise<boolean>;
-  searchPeople(query: string): Promise<Person[]>;
+  searchPeople(query: string, familyId?: string): Promise<Person[]>;
   recordVisit(id: string, visitDate: string): Promise<Person | undefined>;
+  
+  // Quiz results (now family-scoped)
   saveQuizResult(result: InsertQuizResult): Promise<QuizResult>;
-  getQuizResults(): Promise<QuizResult[]>;
-  getStaticHomeData(): Promise<StaticHomeData>;
+  getQuizResults(familyId?: string): Promise<QuizResult[]>;
+  
+  // Static data (now family-scoped)
+  getStaticHomeData(familyId?: string): Promise<StaticHomeData>;
 }
 
 const ALL_CATEGORIES: PersonCategory[] = [
@@ -34,11 +59,121 @@ const ALL_CATEGORIES: PersonCategory[] = [
   "other", "caregivers"
 ];
 
+const SALT_ROUNDS = 10;
+
 export class CachedDatabaseStorage implements IStorage {
   private peopleCache: Person[] | null = null;
   private cacheLoading: Promise<Person[]> | null = null;
   private quizCache: QuizResult[] | null = null;
-  private staticHomeData: StaticHomeData | null = null;
+  private staticHomeDataCache: Map<string, StaticHomeData> = new Map();
+
+  // ============================================================================
+  // FAMILY MANAGEMENT
+  // ============================================================================
+
+  async createFamily(input: InsertFamily & { password?: string }): Promise<Family> {
+    const { password, ...familyData } = input;
+    
+    let passwordHash: string | null = null;
+    if (password) {
+      passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+    }
+    
+    // Generate a random join code
+    const joinCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+    
+    const [created] = await db.insert(families).values({
+      ...familyData,
+      passwordHash,
+      joinCode,
+    }).returning();
+    
+    return created;
+  }
+
+  async getFamilyById(id: string): Promise<Family | undefined> {
+    const [family] = await db.select().from(families).where(eq(families.id, id));
+    return family || undefined;
+  }
+
+  async getFamilyBySlug(slug: string): Promise<Family | undefined> {
+    const [family] = await db.select().from(families).where(eq(families.slug, slug));
+    return family || undefined;
+  }
+
+  async updateFamily(id: string, updates: Partial<Family>): Promise<Family | undefined> {
+    const [updated] = await db
+      .update(families)
+      .set(updates)
+      .where(eq(families.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async verifyFamilyPassword(familyId: string, password: string): Promise<boolean> {
+    const family = await this.getFamilyById(familyId);
+    if (!family || !family.passwordHash) return false;
+    return bcrypt.compare(password, family.passwordHash);
+  }
+
+  // ============================================================================
+  // FAMILY MEMBER MANAGEMENT
+  // ============================================================================
+
+  async createFamilyMember(input: Omit<InsertFamilyMember, 'passwordHash'> & { password: string }): Promise<FamilyMember> {
+    const { password, ...memberData } = input;
+    const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+    
+    const [created] = await db.insert(familyMembers).values({
+      ...memberData,
+      passwordHash,
+    }).returning();
+    
+    return created;
+  }
+
+  async getFamilyMemberById(id: string): Promise<FamilyMember | undefined> {
+    const [member] = await db.select().from(familyMembers).where(eq(familyMembers.id, id));
+    return member || undefined;
+  }
+
+  async getFamilyMemberByEmail(email: string, familyId: string): Promise<FamilyMember | undefined> {
+    const [member] = await db
+      .select()
+      .from(familyMembers)
+      .where(and(
+        eq(familyMembers.email, email.toLowerCase()),
+        eq(familyMembers.familyId, familyId)
+      ));
+    return member || undefined;
+  }
+
+  async authenticateMember(email: string, password: string, familyId: string): Promise<FamilyMember | undefined> {
+    const member = await this.getFamilyMemberByEmail(email.toLowerCase(), familyId);
+    if (!member || !member.isActive) return undefined;
+    
+    const valid = await bcrypt.compare(password, member.passwordHash);
+    if (!valid) return undefined;
+    
+    // Update last login
+    await db
+      .update(familyMembers)
+      .set({ lastLoginAt: new Date() })
+      .where(eq(familyMembers.id, member.id));
+    
+    return member;
+  }
+
+  async getFamilyMembers(familyId: string): Promise<FamilyMember[]> {
+    return db
+      .select()
+      .from(familyMembers)
+      .where(eq(familyMembers.familyId, familyId));
+  }
+
+  // ============================================================================
+  // PEOPLE CACHE MANAGEMENT
+  // ============================================================================
 
   private async loadPeopleCache(): Promise<Person[]> {
     if (this.peopleCache !== null) {
@@ -55,25 +190,17 @@ export class CachedDatabaseStorage implements IStorage {
     try {
       this.peopleCache = await this.cacheLoading;
       console.log(`Cached ${this.peopleCache.length} people in memory`);
-      this.regenerateStaticData();
       return this.peopleCache;
     } finally {
       this.cacheLoading = null;
     }
   }
 
-  private regenerateStaticData(): void {
-    if (!this.peopleCache) return;
-    
-    // Only regenerate if not already generated (static data persists until cache invalidation)
-    if (this.staticHomeData) return;
-    
-    console.log("Regenerating static home data...");
+  private generateStaticDataForFamily(familyPeople: Person[]): StaticHomeData {
     const categories: CategoryStaticData[] = ALL_CATEGORIES.map(categoryId => {
-      const categoryPeople = this.peopleCache!.filter(p => p.category === categoryId);
+      const categoryPeople = familyPeople.filter(p => p.category === categoryId);
       const peopleWithPhotos = categoryPeople.filter(p => p.photoData || p.photoUrl);
       
-      // Use deterministic selection: first person with a photo (sorted by sortOrder)
       let backgroundPhoto: string | null = null;
       if (peopleWithPhotos.length > 0) {
         const firstPerson = peopleWithPhotos[0];
@@ -88,40 +215,61 @@ export class CachedDatabaseStorage implements IStorage {
       };
     });
 
-    this.staticHomeData = {
+    return {
       categories,
-      totalPeople: this.peopleCache.length,
+      totalPeople: familyPeople.length,
       generatedAt: new Date().toISOString(),
     };
-    console.log("Static home data generated");
   }
 
   private invalidatePeopleCache(): void {
     console.log("Invalidating people cache");
     this.peopleCache = null;
-    this.staticHomeData = null;
+    this.staticHomeDataCache.clear();
   }
 
   private invalidateQuizCache(): void {
     this.quizCache = null;
   }
 
-  async getStaticHomeData(): Promise<StaticHomeData> {
-    if (this.staticHomeData) {
-      return this.staticHomeData;
+  // ============================================================================
+  // STATIC DATA
+  // ============================================================================
+
+  async getStaticHomeData(familyId?: string): Promise<StaticHomeData> {
+    const cacheKey = familyId || '__all__';
+    
+    if (this.staticHomeDataCache.has(cacheKey)) {
+      return this.staticHomeDataCache.get(cacheKey)!;
     }
-    await this.loadPeopleCache();
-    return this.staticHomeData!;
+    
+    const allPeople = await this.loadPeopleCache();
+    const filteredPeople = familyId 
+      ? allPeople.filter(p => p.familyId === familyId)
+      : allPeople;
+    
+    const staticData = this.generateStaticDataForFamily(filteredPeople);
+    this.staticHomeDataCache.set(cacheKey, staticData);
+    
+    return staticData;
   }
 
-  async getAllPeople(): Promise<Person[]> {
-    return this.loadPeopleCache();
+  // ============================================================================
+  // PEOPLE CRUD OPERATIONS
+  // ============================================================================
+
+  async getAllPeople(familyId?: string): Promise<Person[]> {
+    const allPeople = await this.loadPeopleCache();
+    if (familyId) {
+      return allPeople.filter(p => p.familyId === familyId);
+    }
+    return allPeople;
   }
 
-  async getPeopleByCategory(category: PersonCategory): Promise<Person[]> {
+  async getPeopleByCategory(category: PersonCategory, familyId?: string): Promise<Person[]> {
     const allPeople = await this.loadPeopleCache();
     return allPeople
-      .filter(p => p.category === category)
+      .filter(p => p.category === category && (!familyId || p.familyId === familyId))
       .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
   }
 
@@ -157,15 +305,16 @@ export class CachedDatabaseStorage implements IStorage {
     return result.length > 0;
   }
 
-  async searchPeople(query: string): Promise<Person[]> {
+  async searchPeople(query: string, familyId?: string): Promise<Person[]> {
     const allPeople = await this.loadPeopleCache();
     const searchTerm = query.toLowerCase();
     
     return allPeople.filter(p => 
-      p.name.toLowerCase().includes(searchTerm) ||
+      (!familyId || p.familyId === familyId) &&
+      (p.name.toLowerCase().includes(searchTerm) ||
       (p.relationship && p.relationship.toLowerCase().includes(searchTerm)) ||
       (p.location && p.location.toLowerCase().includes(searchTerm)) ||
-      (p.summary && p.summary.toLowerCase().includes(searchTerm))
+      (p.summary && p.summary.toLowerCase().includes(searchTerm)))
     );
   }
 
@@ -182,13 +331,25 @@ export class CachedDatabaseStorage implements IStorage {
     });
   }
 
+  // ============================================================================
+  // QUIZ RESULTS
+  // ============================================================================
+
   async saveQuizResult(result: InsertQuizResult): Promise<QuizResult> {
     const [created] = await db.insert(quizResults).values(result).returning();
     this.invalidateQuizCache();
     return created;
   }
 
-  async getQuizResults(): Promise<QuizResult[]> {
+  async getQuizResults(familyId?: string): Promise<QuizResult[]> {
+    if (familyId) {
+      return db
+        .select()
+        .from(quizResults)
+        .where(eq(quizResults.familyId, familyId))
+        .orderBy(desc(quizResults.completedAt));
+    }
+    
     if (this.quizCache !== null) {
       return this.quizCache;
     }

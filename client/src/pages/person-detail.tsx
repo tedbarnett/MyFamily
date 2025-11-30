@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2, MapPin, Calendar, Briefcase, Heart, ChevronLeft, ChevronRight, Volume2 } from "lucide-react";
 import type { Person, PersonCategory } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useFamilySlug } from "@/lib/use-family-slug";
 
 const categoryOrder: PersonCategory[] = [
   "husband",
@@ -17,9 +18,10 @@ const categoryOrder: PersonCategory[] = [
 ];
 
 export default function PersonDetail() {
-  const [, params] = useRoute("/person/:id");
+  const [, routeParams] = useRoute("/person/:id");
   const [, setLocation] = useLocation();
-  const personId = params?.id;
+  const { familySlug, isFamilyScoped, tenantUrl } = useFamilySlug();
+  const personId = routeParams?.id;
   
   // Touch/swipe state
   const touchStartX = useRef<number | null>(null);
@@ -148,15 +150,15 @@ export default function PersonDetail() {
   // Navigate to previous/next person
   const navigateToPrev = useCallback(() => {
     if (prevPerson) {
-      setLocation(`/person/${prevPerson.id}`);
+      setLocation(tenantUrl(`/person/${prevPerson.id}`));
     }
-  }, [prevPerson, setLocation]);
+  }, [prevPerson, setLocation, tenantUrl]);
 
   const navigateToNext = useCallback(() => {
     if (nextPerson) {
-      setLocation(`/person/${nextPerson.id}`);
+      setLocation(tenantUrl(`/person/${nextPerson.id}`));
     }
-  }, [nextPerson, setLocation]);
+  }, [nextPerson, setLocation, tenantUrl]);
 
   // Swipe gesture handlers for cycling through photos
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -347,7 +349,7 @@ export default function PersonDetail() {
   // Check if this person is the only one in their category
   const peopleInCategory = allPeople.filter(p => p.category === person.category);
   const isOnlyOneInCategory = peopleInCategory.length === 1;
-  const backLink = isOnlyOneInCategory ? "/" : `/category/${person.category}`;
+  const backLink = isOnlyOneInCategory ? tenantUrl("/") : tenantUrl(`/category/${person.category}`);
 
   const playVoiceNote = async () => {
     if (person.voiceNoteData && audioRef.current) {
@@ -574,7 +576,7 @@ export default function PersonDetail() {
                           const spouseId = findPersonByName(person.spouse);
                           return spouseId ? (
                             <Link
-                              href={`/person/${spouseId}`}
+                              href={tenantUrl(`/person/${spouseId}`)}
                               className="text-primary underline font-medium hover:text-primary/80"
                               data-testid="link-spouse"
                             >
@@ -598,7 +600,7 @@ export default function PersonDetail() {
                               <li key={index} className="text-lg break-words">
                                 {childId ? (
                                   <Link
-                                    href={`/person/${childId}`}
+                                    href={tenantUrl(`/person/${childId}`)}
                                     className="text-primary underline font-medium hover:text-primary/80"
                                     data-testid={`link-child-${index}`}
                                   >

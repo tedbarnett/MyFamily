@@ -1,16 +1,19 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Home, Camera, Loader2, Save, X, Pencil, Plus, Trash2, BrainCircuit, Mic, Square, Images, Check } from "lucide-react";
+import { Home, Camera, Loader2, Save, X, Pencil, Plus, Trash2, BrainCircuit, Mic, Square, Images, Check, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { PhotoCropper } from "@/components/photo-cropper";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
+import { useAuth } from "@/lib/auth-context";
+import { useFamilySlug } from "@/lib/use-family-slug";
 import type { Person, PersonCategory, PersonListItem, QuizResult } from "@shared/schema";
 
 const categoryLabels: Record<PersonCategory, string> = {
@@ -32,7 +35,10 @@ const categoryOrder: PersonCategory[] = [
 ];
 
 export default function Admin() {
+  const { familySlug, isFamilyScoped, tenantUrl } = useFamilySlug();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
+  const { authenticated, isLoading: authLoading, member, logout } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [editingPerson, setEditingPerson] = useState<Person | null>(null);
   const [editForm, setEditForm] = useState<Partial<Person>>({});
@@ -46,11 +52,41 @@ export default function Admin() {
   const audioChunksRef = useRef<Blob[]>([]);
   const [isAddingPhoto, setIsAddingPhoto] = useState(false);
   const addPhotoInputRef = useRef<HTMLInputElement>(null);
+  
+  // Compute tenant-aware URLs - preserve the URL structure the user is in
+  const loginPath = tenantUrl("/login");
+  const homePath = tenantUrl("/").replace(/\/$/, "") || "/";
 
   // Scroll to top when page opens
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !authenticated) {
+      setLocation(loginPath);
+    }
+  }, [authLoading, authenticated, setLocation, loginPath]);
+
+  const handleLogout = async () => {
+    await logout();
+    setLocation(homePath);
+  };
+
+  // Show loading state while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // Don't render admin content if not authenticated
+  if (!authenticated) {
+    return null;
+  }
 
   // Use lightweight endpoint with thumbnails for fast loading
   const { data: allPeople = [], isLoading } = useQuery<PersonListItem[]>({
@@ -524,9 +560,25 @@ export default function Admin() {
             <Home className="w-10 h-10" strokeWidth={2} />
             <span className="text-xs font-bold">Home</span>
           </Button>
-          <h1 className="text-2xl font-bold text-foreground flex-1">
-            Admin - Edit People
-          </h1>
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold text-foreground">
+              Admin - Edit People
+            </h1>
+            {member && (
+              <p className="text-sm text-muted-foreground">
+                Signed in as {member.name}
+              </p>
+            )}
+          </div>
+          <Button
+            variant="ghost"
+            className="flex-shrink-0 h-auto py-2 px-3 flex flex-col items-center gap-1 text-muted-foreground"
+            onClick={handleLogout}
+            data-testid="button-logout"
+          >
+            <LogOut className="w-8 h-8" strokeWidth={2} />
+            <span className="text-xs">Logout</span>
+          </Button>
         </div>
       </header>
 
