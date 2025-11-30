@@ -648,59 +648,6 @@ export default function Admin() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-6">
-        {/* Quiz Results Chart - Mental Acuity Tracking */}
-        {chartData.length > 0 && (
-          <Card className="mb-8 p-4">
-            <div className="flex items-center gap-2 mb-4">
-              <BrainCircuit className="w-5 h-5 text-primary" />
-              <h2 className="text-lg font-bold text-foreground">Memory Quiz Results</h2>
-            </div>
-            <div className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
-                  <XAxis 
-                    dataKey="date" 
-                    tick={{ fontSize: 12 }} 
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis 
-                    domain={[0, 100]} 
-                    tick={{ fontSize: 12 }} 
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(value) => `${value}%`}
-                  />
-                  <Tooltip 
-                    formatter={(value: number, name: string) => {
-                      if (name === "percentage") return [`${value}%`, "Score"];
-                      return [value, name];
-                    }}
-                    labelFormatter={(label) => `Date: ${label}`}
-                    contentStyle={{ 
-                      backgroundColor: "hsl(var(--card))", 
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px"
-                    }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="percentage" 
-                    stroke="hsl(var(--primary))" 
-                    strokeWidth={2}
-                    dot={{ fill: "hsl(var(--primary))", strokeWidth: 0, r: 4 }}
-                    activeDot={{ r: 6, fill: "hsl(var(--primary))" }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-            <p className="text-sm text-muted-foreground mt-2 text-center">
-              Last {chartData.length} quiz{chartData.length !== 1 ? "zes" : ""} • 
-              Latest: {chartData.length > 0 ? `${chartData[chartData.length - 1].score}/${chartData[chartData.length - 1].total}` : "—"}
-            </p>
-          </Card>
-        )}
-
         {/* Category Settings Button */}
         <div className="flex justify-end mb-4">
           <Button
@@ -806,6 +753,59 @@ export default function Admin() {
             </div>
           );
         })}
+
+        {/* Quiz Results Chart - Mental Acuity Tracking */}
+        {chartData.length > 0 && (
+          <Card className="mt-8 p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <BrainCircuit className="w-5 h-5 text-primary" />
+              <h2 className="text-lg font-bold text-foreground">Memory Quiz Results</h2>
+            </div>
+            <div className="h-48">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 12 }} 
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis 
+                    domain={[0, 100]} 
+                    tick={{ fontSize: 12 }} 
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => `${value}%`}
+                  />
+                  <Tooltip 
+                    formatter={(value: number, name: string) => {
+                      if (name === "percentage") return [`${value}%`, "Score"];
+                      return [value, name];
+                    }}
+                    labelFormatter={(label) => `Date: ${label}`}
+                    contentStyle={{ 
+                      backgroundColor: "hsl(var(--card))", 
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px"
+                    }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="percentage" 
+                    stroke="hsl(var(--primary))" 
+                    strokeWidth={2}
+                    dot={{ fill: "hsl(var(--primary))", strokeWidth: 0, r: 4 }}
+                    activeDot={{ r: 6, fill: "hsl(var(--primary))" }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="text-sm text-muted-foreground mt-2 text-center">
+              Last {chartData.length} quiz{chartData.length !== 1 ? "zes" : ""} • 
+              Latest: {chartData.length > 0 ? `${chartData[chartData.length - 1].score}/${chartData[chartData.length - 1].total}` : "—"}
+            </p>
+          </Card>
+        )}
       </main>
 
       <input
