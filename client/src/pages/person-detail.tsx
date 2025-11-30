@@ -3,7 +3,7 @@ import { useRoute, Link, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, MapPin, Calendar, Briefcase, Heart, ChevronLeft, ChevronRight, Volume2 } from "lucide-react";
+import { ArrowLeft, Loader2, MapPin, Calendar, Briefcase, ChevronLeft, ChevronRight, Volume2 } from "lucide-react";
 import type { Person, PersonCategory } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useFamilySlug } from "@/lib/use-family-slug";
@@ -16,6 +16,19 @@ const categoryOrder: PersonCategory[] = [
   "other",
   "caregivers",
 ];
+
+function computeAge(born: string | null | undefined): number | null {
+  if (!born) return null;
+  const birthDate = new Date(born);
+  if (isNaN(birthDate.getTime())) return null;
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age > 0 ? age : null;
+}
 
 export default function PersonDetail() {
   const [, routeParams] = useRoute("/person/:id");
@@ -62,8 +75,6 @@ export default function PersonDetail() {
     // Include primary photo
     if (person.photoData) {
       photos.push(person.photoData);
-    } else if (person.photoUrl) {
-      photos.push(person.photoUrl);
     }
     // Add any additional photos from the photos array
     if (person.photos && person.photos.length > 0) {
@@ -259,66 +270,6 @@ export default function PersonDetail() {
     touchEndX.current = null;
   }, [allPhotos, currentPhotoIndex, person?.photoData, setPrimaryMutation]);
 
-  // Helper function to find a person by name and return their ID
-  // Supports exact match, first name match, partial match, and nickname variations
-  // Also handles parenthetical notes like "Name (fiancée)"
-  const findPersonByName = (name: string): string | null => {
-    // Remove parenthetical notes like "(fiancée)" or "(partner, programmer)"
-    const cleanName = name.replace(/\s*\([^)]*\)\s*/g, '').trim();
-    const searchName = cleanName.toLowerCase();
-    const searchParts = searchName.split(' ');
-    
-    // First try exact match with clean name
-    let found = allPeople.find(
-      (p) => p.name.toLowerCase() === searchName
-    );
-    
-    // Try matching if the person's name starts with search name (first name match)
-    if (!found) {
-      found = allPeople.find(
-        (p) => p.name.toLowerCase().startsWith(searchName + " ")
-      );
-    }
-    
-    // Try if search name starts with person's name (reverse first name match)
-    if (!found) {
-      found = allPeople.find(
-        (p) => searchName.startsWith(p.name.toLowerCase() + " ")
-      );
-    }
-    
-    // Try matching by last name + first name prefix (handles Jon vs Jonathan, Chris vs Christopher)
-    if (!found && searchParts.length >= 2) {
-      const searchLastName = searchParts[searchParts.length - 1];
-      const searchFirstName = searchParts.slice(0, -1).join(' ');
-      
-      found = allPeople.find((p) => {
-        const personParts = p.name.toLowerCase().split(' ');
-        if (personParts.length < 2) return false;
-        
-        const personLastName = personParts[personParts.length - 1];
-        const personFirstName = personParts.slice(0, -1).join(' ');
-        
-        // Last names must match exactly
-        if (personLastName !== searchLastName) return false;
-        
-        // First names: one must be a prefix of the other (Jon/Jonathan, Chris/Christopher)
-        return personFirstName.startsWith(searchFirstName) || 
-               searchFirstName.startsWith(personFirstName);
-      });
-    }
-    
-    // Try partial match (name contains search term or vice versa)
-    if (!found) {
-      found = allPeople.find(
-        (p) => p.name.toLowerCase().includes(searchName) || 
-               searchName.includes(p.name.toLowerCase())
-      );
-    }
-    
-    return found?.id || null;
-  };
-
   const getInitials = (name: string) => {
     const parts = name.split(" ");
     if (parts.length >= 2) {
@@ -502,17 +453,7 @@ export default function PersonDetail() {
       <main className="max-w-2xl mx-auto px-4 py-8">
         <div className="space-y-8">
 
-          {person.fullName && person.fullName !== person.name && (
-            <Card>
-              <div className="p-6">
-                <p className="text-2xl font-bold text-foreground text-center" data-testid="text-fullname">
-                  {person.fullName}
-                </p>
-              </div>
-            </Card>
-          )}
-
-          {(person.age || person.born) && (
+          {(computeAge(person.born) || person.born) && (
             <Card>
               <div className="p-6 space-y-4">
                 <div className="flex items-start gap-4">
@@ -521,9 +462,9 @@ export default function PersonDetail() {
                     <h3 className="text-xl font-semibold text-foreground mb-2">
                       Age & Birthday
                     </h3>
-                    {person.age && (
+                    {computeAge(person.born) && (
                       <p className="text-lg text-foreground mb-1">
-                        <span className="font-medium">Age:</span> {person.age}
+                        <span className="font-medium">Age:</span> {computeAge(person.born)}
                       </p>
                     )}
                     {person.born && (
@@ -554,67 +495,6 @@ export default function PersonDetail() {
                     <p className="text-lg text-foreground break-words">
                       {person.location}
                     </p>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          )}
-
-          {(person.spouse || (person.children && person.children.length > 0)) && (
-            <Card>
-              <div className="p-6 space-y-4">
-                <div className="flex items-start gap-4">
-                  <Heart className="w-8 h-8 text-primary flex-shrink-0 mt-1" />
-                  <div className="flex-1">
-                    <h3 className="text-xl font-semibold text-foreground mb-2">
-                      Family
-                    </h3>
-                    {person.spouse && (
-                      <p className="text-lg text-foreground mb-2 break-words">
-                        <span className="font-medium">Spouse:</span>{" "}
-                        {(() => {
-                          const spouseId = findPersonByName(person.spouse);
-                          return spouseId ? (
-                            <Link
-                              href={tenantUrl(`/person/${spouseId}`)}
-                              className="text-primary underline font-medium hover:text-primary/80"
-                              data-testid="link-spouse"
-                            >
-                              {person.spouse}
-                            </Link>
-                          ) : (
-                            person.spouse
-                          );
-                        })()}
-                      </p>
-                    )}
-                    {person.children && person.children.length > 0 && (
-                      <div>
-                        <p className="text-lg font-medium text-foreground mb-1">
-                          Children:
-                        </p>
-                        <ul className="list-disc list-inside space-y-2">
-                          {person.children.map((child, index) => {
-                            const childId = findPersonByName(child);
-                            return (
-                              <li key={index} className="text-lg break-words">
-                                {childId ? (
-                                  <Link
-                                    href={tenantUrl(`/person/${childId}`)}
-                                    className="text-primary underline font-medium hover:text-primary/80"
-                                    data-testid={`link-child-${index}`}
-                                  >
-                                    {child}
-                                  </Link>
-                                ) : (
-                                  <span className="text-foreground">{child}</span>
-                                )}
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>

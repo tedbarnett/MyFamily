@@ -327,14 +327,12 @@ export default function Admin() {
       setEditingPerson(person);
       setEditForm({
         name: person.name,
-        fullName: person.fullName || "",
         relationship: person.relationship,
         born: person.born || "",
-        age: person.age || undefined,
         passed: person.passed || "",
         location: person.location || "",
-        spouse: person.spouse || "",
-        children: person.children || [],
+        phone: person.phone || "",
+        email: person.email || "",
         summary: person.summary || "",
       });
     } catch (error) {
@@ -647,7 +645,7 @@ export default function Admin() {
               <div className="grid gap-3">
                 {people.map((person) => {
                   // Use thumbnail for list display (much faster loading)
-                  const photoSrc = person.thumbnailData || person.photoUrl || undefined;
+                  const photoSrc = person.thumbnailData || undefined;
                   return (
                     <Card key={person.id} className="p-4">
                       <div className="flex items-center gap-4">
@@ -776,7 +774,6 @@ export default function Admin() {
                   {(() => {
                     const photos: string[] = [];
                     if (editingPerson.photoData) photos.push(editingPerson.photoData);
-                    else if (editingPerson.photoUrl) photos.push(editingPerson.photoUrl);
                     if (editingPerson.photos) {
                       editingPerson.photos.forEach(p => {
                         if (!photos.includes(p)) photos.push(p);
@@ -793,13 +790,13 @@ export default function Admin() {
                             className="w-20 h-20 object-cover rounded-md border border-border"
                             data-testid={`photo-thumbnail-${index}`}
                           />
-                          {photo === (editingPerson.photoData || editingPerson.photoUrl) && (
+                          {photo === editingPerson.photoData && (
                             <div className="absolute top-1 left-1 bg-primary rounded-full p-0.5">
                               <Check className="w-3 h-3 text-primary-foreground" />
                             </div>
                           )}
                           <div className="absolute top-1 right-1 flex gap-1">
-                            {photo !== (editingPerson.photoData || editingPerson.photoUrl) && (
+                            {photo !== editingPerson.photoData && (
                               <Button
                                 size="icon"
                                 variant="secondary"
@@ -847,17 +844,6 @@ export default function Admin() {
                 data-testid="input-edit-name"
               />
             </div>
-            {editingPerson && ["husband", "children", "grandchildren"].includes(editingPerson.category) && (
-              <div>
-                <label className="text-sm font-medium text-foreground mb-1 block">Full Name</label>
-                <Input
-                  value={editForm.fullName || ""}
-                  onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
-                  placeholder="Full legal name"
-                  data-testid="input-edit-fullname"
-                />
-              </div>
-            )}
             <div>
               <label className="text-sm font-medium text-foreground mb-1 block">Relationship</label>
               <Input
@@ -866,25 +852,14 @@ export default function Admin() {
                 data-testid="input-edit-relationship"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-foreground mb-1 block">Born</label>
-                <Input
-                  value={editForm.born || ""}
-                  onChange={(e) => setEditForm({ ...editForm, born: e.target.value })}
-                  placeholder="e.g., January 15, 1950"
-                  data-testid="input-edit-born"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground mb-1 block">Age</label>
-                <Input
-                  type="number"
-                  value={editForm.age || ""}
-                  onChange={(e) => setEditForm({ ...editForm, age: e.target.value ? parseInt(e.target.value) : undefined })}
-                  data-testid="input-edit-age"
-                />
-              </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Born</label>
+              <Input
+                value={editForm.born || ""}
+                onChange={(e) => setEditForm({ ...editForm, born: e.target.value })}
+                placeholder="e.g., January 15, 1950"
+                data-testid="input-edit-born"
+              />
             </div>
             <div>
               <label className="text-sm font-medium text-foreground mb-1 block">Passed</label>
@@ -903,25 +878,25 @@ export default function Admin() {
                 data-testid="input-edit-location"
               />
             </div>
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1 block">Spouse</label>
-              <Input
-                value={editForm.spouse || ""}
-                onChange={(e) => setEditForm({ ...editForm, spouse: e.target.value })}
-                data-testid="input-edit-spouse"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1 block">Children (comma separated)</label>
-              <Input
-                value={(editForm.children || []).join(", ")}
-                onChange={(e) => setEditForm({ 
-                  ...editForm, 
-                  children: e.target.value.split(",").map(s => s.trim()).filter(s => s) 
-                })}
-                placeholder="e.g., Sam, Audrey, Jack"
-                data-testid="input-edit-children"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1 block">Phone</label>
+                <Input
+                  value={editForm.phone || ""}
+                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                  placeholder="e.g., (555) 123-4567"
+                  data-testid="input-edit-phone"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1 block">Email</label>
+                <Input
+                  value={editForm.email || ""}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  placeholder="e.g., name@email.com"
+                  data-testid="input-edit-email"
+                />
+              </div>
             </div>
             <div>
               <label className="text-sm font-medium text-foreground mb-1 block">Summary / About</label>
@@ -993,17 +968,6 @@ export default function Admin() {
                 data-testid="input-add-name"
               />
             </div>
-            {addingToCategory && ["husband", "children", "grandchildren"].includes(addingToCategory) && (
-              <div>
-                <label className="text-sm font-medium text-foreground mb-1 block">Full Name</label>
-                <Input
-                  value={addForm.fullName || ""}
-                  onChange={(e) => setAddForm({ ...addForm, fullName: e.target.value })}
-                  placeholder="Full legal name"
-                  data-testid="input-add-fullname"
-                />
-              </div>
-            )}
             <div>
               <label className="text-sm font-medium text-foreground mb-1 block">Relationship *</label>
               <Input
