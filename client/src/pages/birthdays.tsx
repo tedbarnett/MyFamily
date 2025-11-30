@@ -90,15 +90,15 @@ export default function Birthdays() {
           className="bg-card border-b border-card-border px-6 py-6 cursor-pointer hover-elevate active-elevate-2"
           data-testid="header-back"
         >
-          <div className="max-w-2xl mx-auto flex items-center gap-4">
+          <div className="max-w-2xl mx-auto relative flex items-center justify-center">
             <div
-              className="flex-shrink-0 flex items-center gap-1 text-primary mt-0.5"
+              className="absolute left-0 flex items-center gap-1 text-primary"
               data-testid="button-back"
             >
-              <ArrowLeft className="w-8 h-8" strokeWidth={2.5} />
+              <ArrowLeft className="w-10 h-10" strokeWidth={2.5} />
               <span className="text-sm font-bold">Back</span>
             </div>
-            <h1 className="text-3xl font-bold text-foreground flex-1 ml-2" data-testid="text-page-title">
+            <h1 className="text-3xl font-bold text-foreground text-center" data-testid="text-page-title">
               Upcoming Birthdays
             </h1>
           </div>
