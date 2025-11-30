@@ -11,6 +11,7 @@ import bcrypt from "bcrypt";
 export interface CategoryStaticData {
   id: PersonCategory;
   count: number;
+  description: string; // Dynamic description based on database (e.g., "John" for husband, "3 Sons" for children)
   backgroundPhotos: string[]; // All available photos for randomization
   singlePersonId: string | null;
 }
@@ -56,7 +57,7 @@ export interface IStorage {
 
 const ALL_CATEGORIES: PersonCategory[] = [
   "husband", "children", "grandchildren", "daughters_in_law", 
-  "other", "caregivers"
+  "sons_in_law", "other", "caregivers"
 ];
 
 const SALT_ROUNDS = 10;
@@ -196,6 +197,31 @@ export class CachedDatabaseStorage implements IStorage {
     }
   }
 
+  private generateCategoryDescription(categoryId: PersonCategory, categoryPeople: Person[]): string {
+    const count = categoryPeople.length;
+    
+    if (count === 0) return "";
+    
+    switch (categoryId) {
+      case "husband":
+        return categoryPeople[0]?.name || "";
+      case "children":
+        return `${count} ${count === 1 ? "Son" : "Sons"}`;
+      case "grandchildren":
+        return `${count} ${count === 1 ? "Grandchild" : "Grandchildren"}`;
+      case "daughters_in_law":
+        return `${count} ${count === 1 ? "Daughter in Law" : "Daughters in Law"}`;
+      case "sons_in_law":
+        return `${count} ${count === 1 ? "Son in Law" : "Sons in Law"}`;
+      case "other":
+        return `${count} ${count === 1 ? "Friend" : "Friends"}`;
+      case "caregivers":
+        return `${count} ${count === 1 ? "Caregiver" : "Caregivers"}`;
+      default:
+        return `${count}`;
+    }
+  }
+
   private generateStaticDataForFamily(familyPeople: Person[]): StaticHomeData {
     const categories: CategoryStaticData[] = ALL_CATEGORIES.map(categoryId => {
       const categoryPeople = familyPeople.filter(p => p.category === categoryId);
@@ -206,9 +232,13 @@ export class CachedDatabaseStorage implements IStorage {
         .map(p => p.photoData)
         .filter((photo): photo is string => photo !== null);
       
+      // Generate dynamic description based on category and people
+      const description = this.generateCategoryDescription(categoryId, categoryPeople);
+      
       return {
         id: categoryId,
         count: categoryPeople.length,
+        description,
         backgroundPhotos,
         singlePersonId: categoryPeople.length === 1 ? categoryPeople[0].id : null,
       };

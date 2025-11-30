@@ -12,6 +12,7 @@ import type { PersonCategory, Person } from "@shared/schema";
 interface StaticCategoryData {
   id: PersonCategory;
   count: number;
+  description: string;
   backgroundPhotos: string[];
   singlePersonId: string | null;
 }
@@ -207,7 +208,7 @@ export default function Home() {
                           {category.label}
                         </h2>
                         <p className="text-lg text-muted-foreground">
-                          {category.description}
+                          {categoryData?.description || category.description}
                         </p>
                       </div>
                     </div>
