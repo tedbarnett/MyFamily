@@ -226,27 +226,27 @@ export default function Home() {
                   href={linkTarget}
                   data-testid={`link-category-${category.id}`}
                 >
-                  <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all relative overflow-hidden bg-blue-900 dark:bg-blue-950 border-blue-800">
+                  <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all relative overflow-hidden">
                     {/* Faint full-width background photo */}
                     {backgroundPhoto && (
                       <div 
-                        className="absolute inset-0 bg-cover bg-center opacity-30"
+                        className="absolute inset-0 bg-cover bg-center opacity-25"
                         style={{ 
                           backgroundImage: `url(${backgroundPhoto})`,
                         }}
                       />
                     )}
-                    {/* Dark overlay for text readability */}
-                    <div className="absolute inset-0 bg-blue-900/50" />
+                    {/* Light overlay for text readability */}
+                    <div className="absolute inset-0 bg-white/60 dark:bg-black/40" />
                     <div className="p-6 flex items-center gap-4 relative z-10">
-                      <div className="text-white/90 flex-shrink-0">
+                      <div className="text-foreground/80 flex-shrink-0">
                         <Icon className="w-14 h-14" strokeWidth={1.5} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h2 className="text-2xl font-bold text-white mb-1">
+                        <h2 className="text-2xl font-bold text-foreground mb-1">
                           {getCategoryLabel(category.id, category.label)}
                         </h2>
-                        <p className="text-lg text-white/70">
+                        <p className="text-lg text-muted-foreground">
                           {categoryData?.description || category.description}
                         </p>
                       </div>
