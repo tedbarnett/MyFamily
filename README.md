@@ -1,10 +1,12 @@
-# Judy's Family Memory Aid App
+# Mom's Family Memory Aid App
 
 A mobile-friendly web application designed to help seniors identify and remember family members, friends, and caregivers through photos and simple navigation.
 
+![Home Page](attached_assets/homepage_screenshot.png)
+
 ## About This App
 
-This app was created specifically for Judy, an 89-year-old user who wants an easy way to look up and remember the people in her life. The design prioritizes:
+This app was created specifically for Mom, an 89-year-old user who wants an easy way to look up and remember the people in her life. The design prioritizes:
 
 - **Extra-large text** that's easy to read
 - **Big touch buttons** that are easy to tap
@@ -16,10 +18,12 @@ This app was created specifically for Judy, an 89-year-old user who wants an eas
 
 ### Home Screen
 
-When you open the app, you'll see a search bar and category buttons:
+When you open the app, you'll see a search bar, category buttons, and special feature buttons:
 
 - **Search**: Type any name, relationship, or location to find someone
 - **Categories**: Tap a category (like "Children" or "Grandchildren") to see everyone in that group
+- **Birthdays**: Shows the next 3 upcoming birthdays with photos, names, and countdown to their special day
+- **Memory Quiz**: A fun 5-question game to practice remembering family members - see a photo and guess who it is!
 
 ### Viewing a Category
 
@@ -41,6 +45,24 @@ The detail page shows everything about a person:
 - A summary about them
 
 Tap the blue **Back** button to return.
+
+### Birthdays
+
+The Birthdays page shows the next 3 upcoming birthdays in your family and friends. Each birthday card displays:
+- The person's photo
+- Their name and relationship
+- How many days until their birthday
+
+This helps you never miss an important celebration!
+
+### Memory Quiz
+
+The Memory Quiz is a fun way to practice remembering everyone:
+- You'll see 5 random photos one at a time
+- Tap the name you think matches the photo
+- Get instant feedback on whether you're right
+- See your final score at the end
+- Quiz results are tracked over time on the admin page
 
 ## Categories
 
@@ -91,6 +113,10 @@ The admin page lets you edit information and upload photos. To access it:
 - Drag and zoom to position the face in the center
 - The preview shows how the photo will look
 
+### Quiz Results Chart
+
+The admin page includes a chart showing Memory Quiz performance over time, so you can track progress.
+
 ### Returning to Main App
 
 Tap the **"Home"** button at the top of the admin page to return to the main app view.
@@ -108,4 +134,4 @@ Tap the **"Home"** button at the top of the admin page to return to the main app
 
 ---
 
-*Built with love for Judy*
+*Built with love for Mom*
