@@ -261,7 +261,7 @@ export default function PersonDetail() {
 
   // Helper function to find a person by name and return their ID
   // Supports exact match, first name match, partial match, and nickname variations
-  // Also handles parenthetical notes like "Melanie Craft (fiancée)"
+  // Also handles parenthetical notes like "Name (fiancée)"
   const findPersonByName = (name: string): string | null => {
     // Remove parenthetical notes like "(fiancée)" or "(partner, programmer)"
     const cleanName = name.replace(/\s*\([^)]*\)\s*/g, '').trim();

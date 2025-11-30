@@ -8,7 +8,7 @@ import { useLocation } from "wouter";
  * them to the NON_FAMILY_PREFIXES array below to prevent misclassification.
  * 
  * Returns:
- * - familySlug: The family slug from the URL, or "barnett-family" as default
+ * - familySlug: The family slug from the URL, or "demo-family" as default
  * - isFamilyScoped: Whether the current URL is a family-scoped route
  * - tenantUrl: Helper function to create tenant-aware URLs
  */
@@ -57,7 +57,7 @@ export function useFamilySlug() {
   
   // If first segment is not a known route and path is not empty, assume it's a family slug
   const isFamilyScoped = !isEmpty && !isNonFamilyRoute;
-  const familySlug = isFamilyScoped ? firstSegment : "barnett-family";
+  const familySlug = isFamilyScoped ? firstSegment : "demo-family";
   
   // Helper function to create tenant-aware URLs
   const basePath = isFamilyScoped ? `/${familySlug}` : "";

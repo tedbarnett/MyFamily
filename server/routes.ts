@@ -58,19 +58,14 @@ function computeAgeFromBorn(born: string | null | undefined): number | null {
 }
 
 // Compute age for display without database updates (fast, read-only, never throws)
-function withComputedAge(person: Person): Person {
+// Returns person with computed age for API response
+function withComputedAge(person: Person): Person & { computedAge: number | null } {
   try {
-    if (!person.born || person.passed) return person;
-    
-    const computedAge = computeAgeFromBorn(person.born);
-    if (computedAge !== null && computedAge !== person.age) {
-      return { ...person, age: computedAge };
-    }
-    return person;
+    const computedAge = (!person.born || person.passed) ? null : computeAgeFromBorn(person.born);
+    return { ...person, computedAge };
   } catch (error) {
-    // If anything fails, just return the original person
     console.error("Error computing age for person:", person.id, error);
-    return person;
+    return { ...person, computedAge: null };
   }
 }
 
@@ -363,9 +358,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           relationship: p.relationship,
           born: p.born,
           category: p.category,
-          // Use thumbnail for birthday display (much smaller than full photo)
           thumbnailData: p.thumbnailData,
-          photoUrl: p.photoUrl,
         }));
       res.json(birthdayData);
     } catch (error) {
@@ -384,9 +377,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: p.name,
         relationship: p.relationship,
         category: p.category,
-        // Use thumbnail for quiz display (much smaller than full photo)
         photoData: p.thumbnailData || p.photoData,
-        photoUrl: p.photoUrl,
       }));
       res.json(quizData);
     } catch (error) {
@@ -407,14 +398,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           name: person.name,
           relationship: person.relationship,
           category: person.category,
-          age: person.age,
+          born: person.born,
           location: person.location,
           summary: person.summary,
           sortOrder: person.sortOrder,
-          // Use thumbnail for list display (much smaller than full photo)
           thumbnailData: person.thumbnailData,
-          photoUrl: person.photoUrl,
-          // Boolean flag to indicate if voice note exists (don't send actual data)
           hasVoiceNote: !!person.voiceNoteData,
         };
       });

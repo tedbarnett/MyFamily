@@ -19,7 +19,7 @@ import NotFound from "@/pages/not-found";
 function Router() {
   return (
     <Switch>
-      {/* Default routes (for backward compatibility with barnett-family) */}
+      {/* Default routes (for backward compatibility) */}
       <Route path="/" component={Home} />
       <Route path="/new-family" component={NewFamily} />
       <Route path="/category/:category" component={Category} />

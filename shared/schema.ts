@@ -9,9 +9,9 @@ import { z } from "zod";
 
 export const families = pgTable("families", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  slug: text("slug").notNull().unique(), // URL-friendly identifier (e.g., "barnett-family")
-  name: text("name").notNull(), // Display name (e.g., "The Barnett Family")
-  seniorName: text("senior_name").notNull(), // Name of the elderly user (e.g., "Judy")
+  slug: text("slug").notNull().unique(), // URL-friendly identifier (e.g., "demo-family")
+  name: text("name").notNull(), // Display name (e.g., "Demo Family")
+  seniorName: text("senior_name").notNull(), // Name of the elderly user (e.g., "Mom")
   passwordHash: text("password_hash"), // Optional password for family admin access
   joinCode: text("join_code").unique(), // Code for inviting new family members
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -72,26 +72,39 @@ export type PersonCategory =
 
 export const people = pgTable("people", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  familyId: varchar("family_id").references(() => families.id), // Multi-tenant: which family this person belongs to
+  familyId: varchar("family_id").references(() => families.id),
+  
+  // Basic info - same for everyone
   name: text("name").notNull(),
-  fullName: text("full_name"), // Full legal name (for husband, children, grandchildren)
   category: text("category").notNull(),
   relationship: text("relationship").notNull(), // e.g., "Husband", "Son", "Granddaughter"
-  photoUrl: text("photo_url"),
-  photoData: text("photo_data"), // Base64 encoded photo for uploads (primary/active photo)
-  thumbnailData: text("thumbnail_data"), // 512x512 thumbnail version of primary photo (base64)
-  photos: text("photos").array(), // Array of base64 encoded photos for multiple images
+  
+  // Dates
   born: text("born"),
-  age: integer("age"),
   passed: text("passed"),
+  
+  // Contact info
   location: text("location"),
-  spouse: text("spouse"),
-  children: text("children").array(),
+  phone: text("phone"),
+  email: text("email"),
+  
+  // Relationships - use IDs instead of text names
+  spouseId: varchar("spouse_id"), // References another person's ID
+  parentIds: varchar("parent_ids").array(), // Array of parent person IDs
+  
+  // Photos
+  photoData: text("photo_data"), // Primary photo (base64)
+  thumbnailData: text("thumbnail_data"), // 512x512 thumbnail (base64)
+  photos: text("photos").array(), // Additional photos (base64)
+  
+  // Notes & extras
   summary: text("summary"),
   sortOrder: integer("sort_order").notNull().default(0),
-  lastVisit: text("last_visit"), // ISO date string of last visit
-  visitHistory: text("visit_history").array(), // Array of ISO date strings
-  voiceNoteData: text("voice_note_data"), // Base64 encoded audio for uploads
+  voiceNoteData: text("voice_note_data"), // Audio note (base64)
+  
+  // Visit tracking
+  lastVisit: text("last_visit"),
+  visitHistory: text("visit_history").array(),
 });
 
 export const insertPersonSchema = createInsertSchema(people).omit({
@@ -107,12 +120,11 @@ export interface PersonListItem {
   name: string;
   relationship: string;
   category: string;
-  age: number | null;
+  born: string | null;
   location: string | null;
   summary: string | null;
   sortOrder: number;
   thumbnailData: string | null;
-  photoUrl: string | null;
   hasVoiceNote: boolean;
 }
 

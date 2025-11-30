@@ -199,11 +199,11 @@ export class CachedDatabaseStorage implements IStorage {
   private generateStaticDataForFamily(familyPeople: Person[]): StaticHomeData {
     const categories: CategoryStaticData[] = ALL_CATEGORIES.map(categoryId => {
       const categoryPeople = familyPeople.filter(p => p.category === categoryId);
-      const peopleWithPhotos = categoryPeople.filter(p => p.photoData || p.photoUrl);
+      const peopleWithPhotos = categoryPeople.filter(p => p.photoData);
       
       // Collect all available photos for randomization
       const backgroundPhotos = peopleWithPhotos
-        .map(p => p.photoData || p.photoUrl)
+        .map(p => p.photoData)
         .filter((photo): photo is string => photo !== null);
       
       return {
