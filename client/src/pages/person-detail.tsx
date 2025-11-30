@@ -3,7 +3,7 @@ import { useRoute, Link, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, MapPin, Calendar, Briefcase, ChevronLeft, ChevronRight, Volume2 } from "lucide-react";
+import { ArrowLeft, Loader2, MapPin, Calendar, Briefcase, ChevronLeft, ChevronRight, Volume2, User } from "lucide-react";
 import type { Person, PersonCategory } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useFamilySlug } from "@/lib/use-family-slug";
@@ -472,6 +472,24 @@ export default function PersonDetail() {
 
       <main className="max-w-2xl mx-auto px-4 py-8">
         <div className="space-y-8">
+
+          {person.fullName && person.fullName !== person.name && (
+            <Card>
+              <div className="p-6 space-y-4">
+                <div className="flex items-start gap-4">
+                  <User className="w-8 h-8 text-primary flex-shrink-0 mt-1" />
+                  <div className="flex-1">
+                    <h3 className="text-xl font-semibold text-foreground mb-2">
+                      Full Name
+                    </h3>
+                    <p className="text-lg text-foreground" data-testid="text-full-name">
+                      {person.fullName}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
 
           {(computeAge(person.born) || person.born) && (
             <Card>
