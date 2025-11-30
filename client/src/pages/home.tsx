@@ -230,7 +230,7 @@ export default function Home() {
                     {/* Faint full-width background photo */}
                     {backgroundPhoto && (
                       <div 
-                        className="absolute inset-0 bg-cover bg-center opacity-25"
+                        className="absolute inset-0 bg-cover bg-center opacity-40"
                         style={{ 
                           backgroundImage: `url(${backgroundPhoto})`,
                         }}
