@@ -227,23 +227,17 @@ export default function Home() {
                   data-testid={`link-category-${category.id}`}
                 >
                   <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all relative overflow-hidden bg-blue-900 dark:bg-blue-950 border-blue-800">
-                    {/* Vignette photo on right 1/3 */}
+                    {/* Faint full-width background photo */}
                     {backgroundPhoto && (
                       <div 
-                        className="absolute right-0 top-0 bottom-0 w-1/3 bg-cover bg-center"
+                        className="absolute inset-0 bg-cover bg-center opacity-30"
                         style={{ 
                           backgroundImage: `url(${backgroundPhoto})`,
                         }}
-                      >
-                        {/* Gradient fade from dark blue to transparent (left to right) */}
-                        <div 
-                          className="absolute inset-0"
-                          style={{
-                            background: 'linear-gradient(to right, rgb(30 58 138) 0%, rgb(30 58 138 / 0.7) 30%, transparent 100%)'
-                          }}
-                        />
-                      </div>
+                      />
                     )}
+                    {/* Dark overlay for text readability */}
+                    <div className="absolute inset-0 bg-blue-900/50" />
                     <div className="p-6 flex items-center gap-4 relative z-10">
                       <div className="text-white/90 flex-shrink-0">
                         <Icon className="w-14 h-14" strokeWidth={1.5} />
