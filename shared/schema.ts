@@ -59,7 +59,8 @@ export type FamilyMember = typeof familyMembers.$inferSelect;
 
 // Person categories for memory aid
 export type PersonCategory = 
-  | "husband" 
+  | "husband"
+  | "wife"
   | "children" 
   | "grandchildren" 
   | "daughters_in_law"

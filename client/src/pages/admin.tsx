@@ -18,6 +18,7 @@ import type { Person, PersonCategory, PersonListItem, QuizResult } from "@shared
 
 const categoryLabels: Record<PersonCategory, string> = {
   husband: "Husband",
+  wife: "Wife",
   children: "Children",
   grandchildren: "Grandchildren",
   daughters_in_law: "Daughters in Law",
@@ -28,6 +29,7 @@ const categoryLabels: Record<PersonCategory, string> = {
 
 const categoryOrder: PersonCategory[] = [
   "husband",
+  "wife",
   "children",
   "grandchildren",
   "daughters_in_law",
