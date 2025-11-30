@@ -60,6 +60,13 @@ const categories: CategoryCard[] = [
     color: "text-pink-600",
   },
   {
+    id: "sons_in_law",
+    label: "Sons in Law",
+    description: "",
+    icon: HeartHandshake,
+    color: "text-cyan-600",
+  },
+  {
     id: "other",
     label: "Friends & Neighbors",
     description: "",

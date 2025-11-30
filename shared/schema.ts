@@ -63,6 +63,7 @@ export type PersonCategory =
   | "children" 
   | "grandchildren" 
   | "daughters_in_law"
+  | "sons_in_law"
   | "caregivers"
   | "other";
 
