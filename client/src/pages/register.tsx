@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { UserPlus, ArrowLeft } from "lucide-react";
 
 export default function Register() {
-  const { familySlug, isFamilyScoped, tenantUrl } = useFamilySlug();
+  const { familySlug, tenantUrl } = useFamilySlug();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,9 +25,15 @@ export default function Register() {
   const adminPath = tenantUrl("/admin");
   const loginPath = tenantUrl("/login");
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated - use effect to avoid setState during render
+  useEffect(() => {
+    if (authenticated) {
+      setLocation(adminPath);
+    }
+  }, [authenticated, adminPath, setLocation]);
+
+  // Show nothing while redirecting
   if (authenticated) {
-    setLocation(adminPath);
     return null;
   }
 
