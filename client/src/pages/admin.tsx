@@ -967,53 +967,51 @@ export default function Admin() {
 
   return (
     <div className="min-h-screen bg-background pb-8">
-      <header className="bg-card border-b border-card-border px-6 py-4 sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto flex items-center gap-4">
+      <header className="bg-card border-b border-card-border px-3 py-3 sticky top-0 z-10">
+        <div className="max-w-4xl mx-auto flex items-center gap-2">
           <Button
             variant="ghost"
-            className="flex-shrink-0 h-auto py-2 px-3 flex flex-col items-center gap-1 text-primary"
+            size="icon"
+            className="flex-shrink-0 text-primary"
             onClick={() => window.open("/", "_blank")}
             data-testid="button-home"
           >
-            <Home className="w-10 h-10" strokeWidth={2} />
-            <span className="text-xs font-bold">Home</span>
+            <Home className="w-6 h-6" strokeWidth={2} />
           </Button>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-foreground">
-              Admin - Edit People
-            </h1>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl font-bold text-foreground">Admin</h1>
             {member && (
-              <p className="text-sm text-muted-foreground">
-                Signed in as {member.name}
+              <p className="text-xs text-muted-foreground truncate">
+                {member.name}
               </p>
             )}
           </div>
           <Button
             variant="ghost"
-            className="flex-shrink-0 h-auto py-2 px-3 flex flex-col items-center gap-1 text-muted-foreground"
+            size="icon"
+            className="flex-shrink-0 text-muted-foreground"
             onClick={() => setShowCategorySettings(true)}
             data-testid="button-category-settings"
           >
-            <Settings className="w-8 h-8" strokeWidth={2} />
-            <span className="text-xs">Categories</span>
+            <Settings className="w-6 h-6" strokeWidth={2} />
           </Button>
           <Button
             variant="ghost"
-            className="flex-shrink-0 h-auto py-2 px-3 flex flex-col items-center gap-1 text-muted-foreground"
+            size="icon"
+            className="flex-shrink-0 text-muted-foreground"
             onClick={() => setShowWelcomeMessageEditor(true)}
             data-testid="button-edit-welcome-message"
           >
-            <Pencil className="w-8 h-8" strokeWidth={2} />
-            <span className="text-xs">Welcome</span>
+            <Pencil className="w-6 h-6" strokeWidth={2} />
           </Button>
           <Button
             variant="ghost"
-            className="flex-shrink-0 h-auto py-2 px-3 flex flex-col items-center gap-1 text-muted-foreground"
+            size="icon"
+            className="flex-shrink-0 text-muted-foreground"
             onClick={handleLogout}
             data-testid="button-logout"
           >
-            <LogOut className="w-8 h-8" strokeWidth={2} />
-            <span className="text-xs">Logout</span>
+            <LogOut className="w-6 h-6" strokeWidth={2} />
           </Button>
         </div>
       </header>
