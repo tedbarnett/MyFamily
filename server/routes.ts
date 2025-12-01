@@ -797,7 +797,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If we're deleting the primary photo, set a new primary or clear it
       const updates: Partial<Person> = { photos: updatedPhotos };
       if (currentPerson.photoData === photoData) {
-        updates.photoData = updatedPhotos.length > 0 ? updatedPhotos[0] : null;
+        const newPrimary = updatedPhotos.length > 0 ? updatedPhotos[0] : null;
+        updates.photoData = newPrimary;
+        updates.thumbnailData = newPrimary ? await generateThumbnail(newPrimary) : null;
       }
 
       const person = await storage.updatePerson(id, updates);
