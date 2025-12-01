@@ -21,9 +21,10 @@ A multi-tenant web application designed to help seniors identify and remember fa
 - Full name display (when different from display name)
 - Birthdays page showing upcoming celebrations with countdown
 - Everyone page for viewing all family members
-- Photo Album with swipe navigation
+- Photo Album with swipe navigation (starts with grandchildren for engagement)
 - Memory Quiz with score tracking over time (chart at bottom of admin page)
 - PWA support with custom Apple Touch Icon for iOS home screen installation
+- Category buttons show person counts in subtitles
 - **Customizable categories** - Families can rename categories and hide unused ones via Admin settings
 - **Unified Partners category** - Combines daughters-in-law, sons-in-law, and partners with spouse linking
 - **Welcome message** - Customizable message on home page with markdown support (bold, italic, links), defaults to "We love you, [seniorName]!"
@@ -108,6 +109,7 @@ families table:
 - joinCode (8-char code for family member authentication)
 - createdAt, updatedAt (timestamps)
 - categorySettings (JSONB for custom category labels and visibility)
+- welcomeMessage (text, nullable - custom welcome message with markdown support)
 
 quiz_results table:
 - id (UUID primary key)

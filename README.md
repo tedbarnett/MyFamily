@@ -28,12 +28,13 @@ The app supports multiple families, each with their own unique URL:
 
 When you open the app, you'll see category buttons with photos and special feature buttons:
 
-- **Category Buttons**: Dark buttons showing a preview photo of someone in that group - tap to see everyone
-- **Birthdays**: Shows upcoming birthdays with photos, names, and countdown to their special day
+- **Category Buttons**: Dark buttons showing a preview photo of someone in that group, with a count of how many people are in each category - tap to see everyone
 - **Everyone**: View all family members in one scrollable list
+- **Birthdays**: Shows upcoming birthdays with photos, names, and countdown to their special day
 - **Memory Quiz**: A fun 5-question game to practice remembering family members
-- **Photo Album**: Swipe through photos of everyone
+- **Photo Album**: Swipe through photos of everyone (starts with grandchildren for maximum engagement)
 - **Search**: Type any name, relationship, or location to find someone
+- **Welcome Message**: A personalized message from the family appears at the bottom of the screen
 
 ### Viewing a Category
 
@@ -111,6 +112,20 @@ The admin page lets family members edit information and upload photos. To access
 2. Rename any category to something more meaningful for your family
 3. Hide categories you don't need (the people are preserved, just not shown)
 4. Changes apply throughout the app
+
+### Welcome Message
+
+You can customize the welcome message that appears at the bottom of the home page:
+
+1. Tap the **"Welcome Message"** button at the top of the admin page
+2. Write your personalized message (up to 1000 characters)
+3. Use simple formatting:
+   - `**text**` for **bold**
+   - `*text*` for *italic*
+   - `[text](url)` for clickable links
+4. Tap **"Save Message"** to apply
+
+If left empty, the default message "We love you, [Name]!" will display.
 
 ### Adding a New Person
 
@@ -215,7 +230,13 @@ npx tsx scripts/import-family-data.ts family-export.json --clear
 
 ## Version
 
-**Version 1.1** - November 30, 2025
+**Version 1.2** - December 1, 2025
+
+### Recent Updates (v1.2)
+- **Welcome Message**: Customizable message at the bottom of the home page with markdown support
+- **Photo Album Improvements**: Album now starts with grandchildren photos for better engagement
+- **Category Counts**: Each category button now shows how many people are in that group
+- **UI Refinements**: Reorganized home page with Everyone button above Birthdays for easier access
 
 ---
 
