@@ -1024,9 +1024,9 @@ export default function Admin() {
           const isHidden = isCategoryHidden(category);
 
           return (
-            <div key={category} className={`mb-8 ${isHidden ? 'opacity-50' : ''}`}>
+            <div key={category} className="mb-8">
               <div className="flex items-center gap-2 mb-4 border-b border-border pb-2">
-                <h2 className={`text-xl font-bold ${isHidden ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
+                <h2 className="text-xl font-bold text-foreground">
                   {getCategoryLabel(category)}
                 </h2>
                 {isHidden && (
