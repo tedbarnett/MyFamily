@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Home, Camera, Loader2, Save, X, Pencil, Plus, Trash2, BrainCircuit, Mic, Square, Images, Check, LogOut, Settings, Eye, EyeOff, BarChart3, GripVertical } from "lucide-react";
@@ -225,6 +226,7 @@ export default function Admin() {
   const addPhotoInputRef = useRef<HTMLInputElement>(null);
   const [showCategorySettings, setShowCategorySettings] = useState(false);
   const [categorySettingsForm, setCategorySettingsForm] = useState<CategorySettings>({});
+  const [showEmptyCategoryAlert, setShowEmptyCategoryAlert] = useState(false);
   const [showWelcomeMessageEditor, setShowWelcomeMessageEditor] = useState(false);
   const [welcomeMessageForm, setWelcomeMessageForm] = useState("");
   const [selectedGrandchildren, setSelectedGrandchildren] = useState<string[]>([]);
@@ -1629,7 +1631,14 @@ export default function Admin() {
                     <div className="flex items-center gap-2 pt-6">
                       <Switch
                         checked={!categorySettingsForm[category]?.hidden}
-                        onCheckedChange={(checked) => updateCategorySetting(category, 'hidden', !checked)}
+                        onCheckedChange={(checked) => {
+                          // If trying to make an empty category visible, show alert instead
+                          if (checked && isEmpty) {
+                            setShowEmptyCategoryAlert(true);
+                            return;
+                          }
+                          updateCategorySetting(category, 'hidden', !checked);
+                        }}
                         data-testid={`switch-category-visible-${category}`}
                       />
                       <span className="text-sm text-muted-foreground">
@@ -1731,6 +1740,27 @@ export default function Admin() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Empty Category Alert */}
+      <AlertDialog open={showEmptyCategoryAlert} onOpenChange={setShowEmptyCategoryAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Empty categories are kept hidden</AlertDialogTitle>
+            <AlertDialogDescription>
+              Add people to this category first before making it visible on the home page.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction 
+              onClick={() => setShowEmptyCategoryAlert(false)}
+              data-testid="button-close-empty-category-alert"
+            >
+              <X className="w-4 h-4 mr-2" />
+              Close
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
