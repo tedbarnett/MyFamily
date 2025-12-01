@@ -1266,7 +1266,7 @@ export default function Admin() {
                 value={addForm.summary || ""}
                 onChange={(e) => setAddForm({ ...addForm, summary: e.target.value })}
                 rows={3}
-                placeholder="Brief description about this person"
+                placeholder="Brief description of this person"
                 data-testid="input-add-summary"
               />
             </div>
