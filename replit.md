@@ -1,6 +1,6 @@
 # "My Family" - Memory Aid App
 
-## Version: 1.2 (December 1, 2025)
+## Version: 1.3 (December 1, 2025)
 
 ## Overview
 
@@ -28,7 +28,10 @@ A multi-tenant web application designed to help seniors identify and remember fa
 - **Customizable categories** - Families can rename categories and hide unused ones via Admin settings
 - **Unified Partners category** - Combines daughters-in-law, sons-in-law, and partners with spouse linking
 - **Welcome message** - Customizable message on home page with markdown support (bold, italic, links), defaults to "We love you, [seniorName]!"
+- **Drag-and-drop photo reordering** - Drag photos in Admin edit dialog to reorder; leftmost becomes primary photo
+- **Dynamic app icons** - Favicon and apple-touch-icon dynamically generated from husband/wife photo for personalized PWA experience
 - No login required for seniors; family members authenticate with join codes for admin access
+- All mutation routes (create/update/delete people, photos, voice notes) require authentication
 
 ## User Preferences
 

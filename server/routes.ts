@@ -12,6 +12,16 @@ function requireAuth(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
+// Helper to verify a person belongs to the authenticated user's family
+// Returns the person if authorized, null otherwise
+async function getAuthorizedPerson(personId: string, familyId: string): Promise<Person | null> {
+  const person = await storage.getPersonById(personId);
+  if (!person) return null;
+  // Verify the person belongs to the authenticated family
+  if (person.familyId !== familyId) return null;
+  return person;
+}
+
 // Middleware to get family context from URL or session
 async function familyContext(req: Request, res: Response, next: NextFunction) {
   const slug = req.params.familySlug;
@@ -607,7 +617,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update person photo (sets as primary and adds to photos array)
-  app.post("/api/person/:id/photo", async (req, res) => {
+  app.post("/api/person/:id/photo", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const { photoData } = req.body;
@@ -616,8 +626,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Photo data required" });
       }
 
-      // Get current person to access existing photos
-      const currentPerson = await storage.getPersonById(id);
+      // Get current person and verify family ownership
+      const currentPerson = await getAuthorizedPerson(id, req.session.familyId!);
       if (!currentPerson) {
         return res.status(404).json({ error: "Person not found" });
       }
@@ -645,7 +655,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Add a photo to person's gallery (without changing primary)
-  app.post("/api/person/:id/photos/add", async (req, res) => {
+  app.post("/api/person/:id/photos/add", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const { photoData } = req.body;
@@ -654,7 +664,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Photo data required" });
       }
 
-      const currentPerson = await storage.getPersonById(id);
+      // Get current person and verify family ownership
+      const currentPerson = await getAuthorizedPerson(id, req.session.familyId!);
       if (!currentPerson) {
         return res.status(404).json({ error: "Person not found" });
       }
@@ -684,13 +695,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Set a photo as the primary/active photo
-  app.post("/api/person/:id/photos/set-primary", async (req, res) => {
+  app.post("/api/person/:id/photos/set-primary", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const { photoData } = req.body;
 
       if (!photoData) {
         return res.status(400).json({ error: "Photo data required" });
+      }
+
+      // Verify family ownership before updating
+      const currentPerson = await getAuthorizedPerson(id, req.session.familyId!);
+      if (!currentPerson) {
+        return res.status(404).json({ error: "Person not found" });
       }
 
       // Generate thumbnail for the new primary photo
@@ -710,7 +727,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Reorder photos - leftmost becomes primary
   // Security: Only allows reordering of EXISTING photos, not adding new ones
-  app.post("/api/person/:id/photos/reorder", async (req, res) => {
+  app.post("/api/person/:id/photos/reorder", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const { photos } = req.body;
@@ -719,7 +736,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Photos array required" });
       }
 
-      const currentPerson = await storage.getPersonById(id);
+      // Get current person and verify family ownership
+      const currentPerson = await getAuthorizedPerson(id, req.session.familyId!);
       if (!currentPerson) {
         return res.status(404).json({ error: "Person not found" });
       }
@@ -758,7 +776,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete a photo from person's gallery
-  app.delete("/api/person/:id/photos", async (req, res) => {
+  app.delete("/api/person/:id/photos", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const { photoData } = req.body;
@@ -767,7 +785,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Photo data required" });
       }
 
-      const currentPerson = await storage.getPersonById(id);
+      // Get current person and verify family ownership
+      const currentPerson = await getAuthorizedPerson(id, req.session.familyId!);
       if (!currentPerson) {
         return res.status(404).json({ error: "Person not found" });
       }
@@ -790,13 +809,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update person voice note
-  app.post("/api/person/:id/voice-note", async (req, res) => {
+  app.post("/api/person/:id/voice-note", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const { voiceNoteData } = req.body;
 
       if (!voiceNoteData) {
         return res.status(400).json({ error: "Voice note data required" });
+      }
+
+      // Verify family ownership before updating
+      const currentPerson = await getAuthorizedPerson(id, req.session.familyId!);
+      if (!currentPerson) {
+        return res.status(404).json({ error: "Person not found" });
       }
 
       const person = await storage.updatePerson(id, { voiceNoteData });
@@ -812,13 +837,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create new person
-  app.post("/api/person", async (req, res) => {
+  app.post("/api/person", requireAuth, async (req, res) => {
     try {
       const personData = req.body;
 
       if (!personData.name || !personData.category || !personData.relationship) {
         return res.status(400).json({ error: "Name, category, and relationship are required" });
       }
+
+      // Enforce the authenticated family ID (prevent cross-tenant creation)
+      personData.familyId = req.session.familyId;
 
       const person = await storage.createPerson(personData);
       res.status(201).json(person);
@@ -829,13 +857,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update person data
-  app.patch("/api/person/:id", async (req, res) => {
+  app.patch("/api/person/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const updates: Partial<Person> = req.body;
 
-      // Remove id from updates if present
+      // Remove id and familyId from updates (prevent cross-tenant migration)
       delete (updates as any).id;
+      delete (updates as any).familyId;
+
+      // Verify family ownership before updating
+      const currentPerson = await getAuthorizedPerson(id, req.session.familyId!);
+      if (!currentPerson) {
+        return res.status(404).json({ error: "Person not found" });
+      }
 
       const person = await storage.updatePerson(id, updates);
       if (!person) {
@@ -850,9 +885,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete person
-  app.delete("/api/person/:id", async (req, res) => {
+  app.delete("/api/person/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
+
+      // Verify family ownership before deleting
+      const currentPerson = await getAuthorizedPerson(id, req.session.familyId!);
+      if (!currentPerson) {
+        return res.status(404).json({ error: "Person not found" });
+      }
+
       const deleted = await storage.deletePerson(id);
 
       if (!deleted) {
