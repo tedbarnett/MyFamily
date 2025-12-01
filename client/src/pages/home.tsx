@@ -333,7 +333,7 @@ export default function Home() {
                       Photo Album
                     </h2>
                     <p className="text-lg text-muted-foreground">
-                      Swipe through everyone
+                      {staticData?.totalPeople ? `${staticData.totalPeople} people` : "View all"}
                     </p>
                   </div>
                 </div>
