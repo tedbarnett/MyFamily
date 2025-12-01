@@ -1,4 +1,4 @@
-# Design Guidelines: Judy's Family Memory Aid App
+# Design Guidelines: My Family Memory Aid App
 
 ## Design Approach
 **System**: Apple HIG + Material Design principles, heavily customized for senior accessibility
