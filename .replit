@@ -104,4 +104,4 @@ integrations = ["javascript_mem_db:1.0.0", "javascript_database:1.0.0", "javascr
 [userenv]
 
 [userenv.shared]
-SEED_SECRET = "seed-prod-2024-secret"
+SEED_SECRET = "myfamily-seed-2025"
