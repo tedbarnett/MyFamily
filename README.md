@@ -1,12 +1,20 @@
 # "My Family" - Memory Aid App
 
-A mobile-friendly web application designed to help seniors identify and remember family members, friends, and caregivers through photos and simple navigation.
+A mobile-friendly web application designed to help seniors identify and remember family members, friends, and caregivers with photos and simple navigation.
 
-![Home Page](attached_assets/homepage_screenshot.png)
+<img src="attached_assets/images/MyFamily_homescreen.png" height="600"/>
 
 ## About This App
 
-This app was created for seniors who want an easy way to look up and remember the people in their lives. The design prioritizes:
+```
+I built this app for my 89-year old mother Judy. I would like to continue to improve it as a public/open source project. 
+
+Feedback appreciated.  I'm happy to help anyone trying to set this up for their own family.
+
+- Ted Barnett
+```
+
+The design prioritizes:
 
 - **Extra-large text** that's easy to read
 - **Big touch buttons** that are easy to tap
@@ -212,13 +220,16 @@ npx tsx scripts/import-family-data.ts family-export.json --clear
 
 ### Creating Your Own Seed File
 
+**Tip**: The easiest way to set up your data is to use the Admin page each family member manually.
+
+If you want to copy from another family (unlikely), then...
+
 1. Copy `scripts/seed-template.json` to a new file
 2. Customize it with your family information
 3. Generate UUIDs for each person and family (use uuidgenerator.net)
 4. For photos, encode them as base64 data URIs
 5. Import: `npx tsx scripts/import-family-data.ts your-seed.json --clear`
 
-**Tip**: The easiest way to set up your data is to use the admin page to add everyone, then export it as a backup.
 
 ## Technical Notes
 
@@ -226,7 +237,7 @@ npx tsx scripts/import-family-data.ts family-export.json --clear
 - All data is stored in a secure PostgreSQL database
 - Photos are stored directly in the database
 - Progressive Web App (PWA) support for home screen installation
-- No login required for senior users (family members use join codes for admin access)
+- **No login required** for senior users (family members use join codes for admin access)
 
 ## Version
 
@@ -240,4 +251,4 @@ npx tsx scripts/import-family-data.ts family-export.json --clear
 
 ---
 
-*Built with love for families everywhere*
+

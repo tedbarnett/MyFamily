@@ -1,6 +1,31 @@
 # "My Family" - Memory Aid App
 
-## Version: 1.3 (December 1, 2025)
+## Version: 1.0 (December 1, 2025)
+
+A mobile-friendly web application designed to help seniors identify and remember family members, friends, and caregivers with photos and simple navigation.
+
+<img src="attached_assets/images/MyFamily_homescreen.png" height="400"/>
+
+## About This App
+
+```
+I built this app for my 89-year old mother Judy. I would like to continue to improve it as a public/open source project. 
+
+Feedback appreciated.  I'm happy to help anyone trying to set this up for their own family.
+
+- Ted Barnett
+```
+
+The design prioritizes:
+
+- **Extra-large text** that's easy to read
+- **Big touch buttons** that are easy to tap
+- **High contrast colors** for visibility
+- **Simple navigation** with one action per screen
+- **Photos with names** for easy recognition
+- **No login required** for the senior user
+
+
 
 ## Overview
 
