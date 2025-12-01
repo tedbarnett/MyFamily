@@ -1045,7 +1045,15 @@ export default function Admin() {
                         <div className="relative flex-shrink-0">
                           <Avatar
                             className="w-16 h-16 cursor-pointer border-2 border-border hover:border-primary transition-colors"
-                            onClick={() => handlePhotoClick(person.id)}
+                            onClick={() => {
+                              // If person has a photo, open edit dialog to manage photos
+                              // Otherwise, open file picker to add first photo
+                              if (person.thumbnailData) {
+                                handleEditClick(person.id);
+                              } else {
+                                handlePhotoClick(person.id);
+                              }
+                            }}
                             data-testid={`avatar-edit-${person.id}`}
                           >
                             <AvatarImage src={photoSrc} alt={person.name} />
@@ -1054,7 +1062,11 @@ export default function Admin() {
                             </AvatarFallback>
                           </Avatar>
                           <div className="absolute -bottom-1 -right-1 bg-primary rounded-full p-1">
-                            <Camera className="w-3 h-3 text-primary-foreground" />
+                            {person.thumbnailData ? (
+                              <Images className="w-3 h-3 text-primary-foreground" />
+                            ) : (
+                              <Camera className="w-3 h-3 text-primary-foreground" />
+                            )}
                           </div>
                         </div>
                         <Button
