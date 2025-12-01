@@ -8,13 +8,8 @@ A mobile-friendly web application designed to help seniors identify and remember
 
 ## About This App
 
-```
-I built this app for my 89-year old mother Judy. I would like to continue to improve it as a public/open source project. 
+"I built this app for my 89-year old mother Judy. I would like to continue to improve it as a public/open source project. All feedback appreciated, and I'm happy to help anyone trying to set this up for their own family."  [Ted Barnett]
 
-Feedback appreciated.  I'm happy to help anyone trying to set this up for their own family.
-
-- Ted Barnett
-```
 
 The design prioritizes:
 
