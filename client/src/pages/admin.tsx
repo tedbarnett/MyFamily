@@ -230,6 +230,7 @@ export default function Admin() {
   const [showWelcomeMessageEditor, setShowWelcomeMessageEditor] = useState(false);
   const [welcomeMessageForm, setWelcomeMessageForm] = useState("");
   const [selectedGrandchildren, setSelectedGrandchildren] = useState<string[]>([]);
+  const [selectedParentIds, setSelectedParentIds] = useState<string[]>([]);
   
   // Compute tenant-aware URLs - preserve the URL structure the user is in
   const loginPath = tenantUrl("/login");
@@ -715,8 +716,14 @@ export default function Admin() {
         } else {
           setSelectedGrandchildren([]);
         }
+        setSelectedParentIds([]);
+      } else if (person.category === "grandchildren") {
+        // For grandchildren, load their parent IDs
+        setSelectedParentIds(person.parentIds || []);
+        setSelectedGrandchildren([]);
       } else {
         setSelectedGrandchildren([]);
+        setSelectedParentIds([]);
       }
     } catch (error) {
       toast({
@@ -730,10 +737,16 @@ export default function Admin() {
   const handleSave = async () => {
     if (!editingPerson) return;
     
+    // Build updates including parentIds for grandchildren
+    const updates: Partial<Person> = { ...editForm };
+    if (editingPerson.category === "grandchildren") {
+      updates.parentIds = selectedParentIds;
+    }
+    
     // Save person data
     updateMutation.mutate({
       id: editingPerson.id,
-      updates: editForm,
+      updates,
     });
     
     // If editing a child, also save grandchildren links
@@ -1474,6 +1487,53 @@ export default function Admin() {
                             </AvatarFallback>
                           </Avatar>
                           <span className="text-sm font-medium">{grandchild.name}</span>
+                        </label>
+                      ))
+                  )}
+                </div>
+              </div>
+            )}
+            {editingPerson?.category === "grandchildren" && (
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">
+                  Parent
+                </label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Select which adult child is {editingPerson.name}'s parent
+                </p>
+                <div className="space-y-2 max-h-48 overflow-y-auto border rounded-md p-3">
+                  {allPeople.filter(p => p.category === "children").length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No children (adults) added yet</p>
+                  ) : (
+                    allPeople
+                      .filter(p => p.category === "children")
+                      .map((child) => (
+                        <label
+                          key={child.id}
+                          className="flex items-center gap-3 p-2 rounded-md hover:bg-muted cursor-pointer"
+                          data-testid={`checkbox-parent-${child.id}`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedParentIds.includes(child.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedParentIds([...selectedParentIds, child.id]);
+                              } else {
+                                setSelectedParentIds(selectedParentIds.filter(id => id !== child.id));
+                              }
+                            }}
+                            className="w-5 h-5 rounded border-gray-300"
+                          />
+                          <Avatar className="w-8 h-8">
+                            {child.thumbnailData && (
+                              <AvatarImage src={child.thumbnailData} alt={child.name} />
+                            )}
+                            <AvatarFallback className="text-xs">
+                              {getInitials(child.name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm font-medium">{child.name}</span>
                         </label>
                       ))
                   )}

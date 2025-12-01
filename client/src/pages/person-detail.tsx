@@ -114,6 +114,14 @@ export default function PersonDetail() {
     );
   }, [person, allPeople]);
 
+  // Find parents for people in the "grandchildren" category
+  const linkedParents = useMemo(() => {
+    if (!person || person.category !== "grandchildren" || !person.parentIds) return [];
+    return allPeople.filter(
+      p => p.category === "children" && person.parentIds?.includes(p.id)
+    );
+  }, [person, allPeople]);
+
   // Reset photo index when person changes
   useEffect(() => {
     setCurrentPhotoIndex(0);
@@ -567,6 +575,50 @@ export default function PersonDetail() {
                     <p className="text-lg text-foreground break-words leading-relaxed">
                       {person.summary}
                     </p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Linked parents for grandchildren */}
+          {linkedParents.length > 0 && (
+            <Card>
+              <div className="p-6 space-y-4">
+                <div className="flex items-start gap-4">
+                  <Users className="w-8 h-8 text-primary flex-shrink-0 mt-1" />
+                  <div className="flex-1">
+                    <h3 className="text-xl font-semibold text-foreground mb-3">
+                      {linkedParents.length === 1 ? "Parent" : "Parents"}
+                    </h3>
+                    <div className="space-y-3">
+                      {linkedParents.map((parent) => (
+                        <Link
+                          key={parent.id}
+                          href={tenantUrl(`/person/${parent.id}`)}
+                          data-testid={`link-parent-${parent.id}`}
+                        >
+                          <div className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted cursor-pointer">
+                            <Avatar className="w-14 h-14 flex-shrink-0">
+                              {parent.photoData && (
+                                <AvatarImage src={parent.photoData} alt={parent.name} />
+                              )}
+                              <AvatarFallback className="text-lg">
+                                {getInitials(parent.name)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="text-lg font-semibold text-foreground">
+                                {parent.name}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {parent.relationship}
+                              </p>
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
