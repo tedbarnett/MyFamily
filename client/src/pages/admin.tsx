@@ -276,11 +276,25 @@ export default function Admin() {
   }, [authLoading, authenticated, setLocation, loginPath]);
 
   // Initialize form when settings change or dialog opens
+  // Empty categories are automatically set to hidden
   useEffect(() => {
     if (showCategorySettings) {
-      setCategorySettingsForm(categorySettings);
+      const formWithEmptyHidden: CategorySettings = { ...categorySettings };
+      
+      // For each category, if it's empty (no people), set it to hidden
+      categoryOrder.forEach((category) => {
+        const peopleInCategory = allPeople.filter(p => p.category === category);
+        if (peopleInCategory.length === 0) {
+          formWithEmptyHidden[category] = {
+            ...formWithEmptyHidden[category],
+            hidden: true,
+          };
+        }
+      });
+      
+      setCategorySettingsForm(formWithEmptyHidden);
     }
-  }, [showCategorySettings, categorySettings]);
+  }, [showCategorySettings, categorySettings, allPeople]);
 
   // Initialize welcome message form when dialog opens
   useEffect(() => {
@@ -1588,33 +1602,44 @@ export default function Admin() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            {categoryOrder.map((category) => (
-              <div key={category} className="space-y-2 pb-4 border-b border-border last:border-0">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex-1">
-                    <label className="text-sm font-medium text-muted-foreground mb-1 block">
-                      {categoryLabels[category]}
-                    </label>
-                    <Input
-                      value={categorySettingsForm[category]?.label || ''}
-                      onChange={(e) => updateCategorySetting(category, 'label', e.target.value)}
-                      placeholder={categoryLabels[category]}
-                      data-testid={`input-category-label-${category}`}
-                    />
-                  </div>
-                  <div className="flex items-center gap-2 pt-6">
-                    <Switch
-                      checked={!categorySettingsForm[category]?.hidden}
-                      onCheckedChange={(checked) => updateCategorySetting(category, 'hidden', !checked)}
-                      data-testid={`switch-category-visible-${category}`}
-                    />
-                    <span className="text-sm text-muted-foreground">
-                      {categorySettingsForm[category]?.hidden ? 'Hidden' : 'Visible'}
-                    </span>
+            {categoryOrder.map((category) => {
+              const peopleCount = allPeople.filter(p => p.category === category).length;
+              const isEmpty = peopleCount === 0;
+              
+              return (
+                <div key={category} className="space-y-2 pb-4 border-b border-border last:border-0">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1">
+                      <label className="text-sm font-medium text-muted-foreground mb-1 block">
+                        {categoryLabels[category]}
+                        {isEmpty && (
+                          <span className="ml-2 text-xs text-muted-foreground/60">(empty)</span>
+                        )}
+                        {!isEmpty && (
+                          <span className="ml-2 text-xs text-muted-foreground/60">({peopleCount})</span>
+                        )}
+                      </label>
+                      <Input
+                        value={categorySettingsForm[category]?.label || ''}
+                        onChange={(e) => updateCategorySetting(category, 'label', e.target.value)}
+                        placeholder={categoryLabels[category]}
+                        data-testid={`input-category-label-${category}`}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 pt-6">
+                      <Switch
+                        checked={!categorySettingsForm[category]?.hidden}
+                        onCheckedChange={(checked) => updateCategorySetting(category, 'hidden', !checked)}
+                        data-testid={`switch-category-visible-${category}`}
+                      />
+                      <span className="text-sm text-muted-foreground">
+                        {categorySettingsForm[category]?.hidden ? 'Hidden' : 'Visible'}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <div className="flex gap-3 justify-end">
             <Button
