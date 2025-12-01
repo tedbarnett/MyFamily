@@ -32,6 +32,7 @@ export interface StaticHomeData {
 export interface IStorage {
   // Family management
   createFamily(family: InsertFamily & { password?: string }): Promise<Family>;
+  getAllFamilies(): Promise<Family[]>;
   getFamilyById(id: string): Promise<Family | undefined>;
   getFamilyBySlug(slug: string): Promise<Family | undefined>;
   updateFamily(id: string, updates: Partial<Family>): Promise<Family | undefined>;
@@ -104,6 +105,10 @@ export class CachedDatabaseStorage implements IStorage {
     }).returning();
     
     return created;
+  }
+
+  async getAllFamilies(): Promise<Family[]> {
+    return await db.select().from(families);
   }
 
   async getFamilyById(id: string): Promise<Family | undefined> {
