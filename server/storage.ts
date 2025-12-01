@@ -310,9 +310,23 @@ export class CachedDatabaseStorage implements IStorage {
 
   async getPeopleByCategory(category: PersonCategory, familyId?: string): Promise<Person[]> {
     const allPeople = await this.loadPeopleCache();
-    return allPeople
-      .filter(p => p.category === category && (!familyId || p.familyId === familyId))
-      .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    const filtered = allPeople
+      .filter(p => p.category === category && (!familyId || p.familyId === familyId));
+    
+    // Sort grandchildren, children, and partners by age descending (oldest first)
+    const ageSortedCategories = ['grandchildren', 'children', 'partners'];
+    if (ageSortedCategories.includes(category)) {
+      return filtered.sort((a, b) => {
+        // Calculate ages from birthdate - older people (earlier birth dates) come first
+        const ageA = a.born ? new Date(a.born).getTime() : Infinity;
+        const ageB = b.born ? new Date(b.born).getTime() : Infinity;
+        // Earlier birth date = older = should come first (ascending by birth date = descending by age)
+        return ageA - ageB;
+      });
+    }
+    
+    // Default sort by sortOrder for other categories
+    return filtered.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
   }
 
   async getPersonById(id: string): Promise<Person | undefined> {

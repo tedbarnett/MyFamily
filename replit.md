@@ -29,6 +29,7 @@ A multi-tenant web application designed to help seniors identify and remember fa
 - **Unified Partners category** - Combines daughters-in-law, sons-in-law, and partners with spouse linking
 - **Welcome message** - Customizable message on home page with markdown support (bold, italic, phone/SMS/FaceTime/email links), hidden when blank
 - **Grandchildren linking** - Admin can link grandchildren to their parents in the children category; linked grandchildren appear on person detail page
+- **Age-based sorting** - Grandchildren, children, and partners are sorted by age (oldest first); other categories use manual sort order
 - **Drag-and-drop photo reordering** - Drag photos in Admin edit dialog to reorder; leftmost becomes primary photo
 - **Dynamic app icons** - Favicon and apple-touch-icon dynamically generated from husband/wife photo for personalized PWA experience
 - No login required for seniors; family members authenticate with join codes for admin access
