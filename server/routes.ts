@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import type { PersonCategory, Person } from "@shared/schema";
 import { generateThumbnail } from "./thumbnail";
+import { detectFacePosition } from "./services/face-detection";
 
 // Middleware to check if user is authenticated for a specific family
 function requireAuth(req: Request, res: Response, next: NextFunction) {
@@ -693,6 +694,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate thumbnail for the new primary photo
       const thumbnailData = await generateThumbnail(photoData);
 
+      // Auto-detect face position for optimal cropping on category buttons
+      // Always set eyeCenterY - use detected value or default to 0.7
+      let eyeCenterY = "0.70"; // Default for photos without clear faces
+      try {
+        const faceResult = await detectFacePosition(photoData);
+        if (faceResult.faceDetected && faceResult.confidence > 0.3) {
+          eyeCenterY = faceResult.eyeCenterY.toFixed(2);
+          console.log(`Face detected for person ${id}: eyeCenterY=${eyeCenterY}, confidence=${faceResult.confidence}`);
+        } else {
+          console.log(`No confident face detected for person ${id}, using default eyeCenterY=0.70`);
+        }
+      } catch (faceError) {
+        console.log(`Face detection error for person ${id}, using default eyeCenterY=0.70:`, faceError);
+      }
+
       // Add to photos array if not already there
       const currentPhotos = currentPerson.photos || [];
       const updatedPhotos = currentPhotos.includes(photoData) 
@@ -702,7 +718,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const person = await storage.updatePerson(id, { 
         photoData,
         thumbnailData,
-        photos: updatedPhotos 
+        photos: updatedPhotos,
+        eyeCenterY
       });
 
       res.json(person);
@@ -737,11 +754,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const updatedPhotos = [...currentPhotos, photoData];
       
-      // If this is the first photo, also set it as primary and generate thumbnail
+      // If this is the first photo, also set it as primary, generate thumbnail, and detect face
       const updates: Partial<Person> = { photos: updatedPhotos };
       if (!currentPerson.photoData) {
         updates.photoData = photoData;
         updates.thumbnailData = await generateThumbnail(photoData);
+        
+        // Auto-detect face position for the new primary photo
+        // Always set eyeCenterY - use detected value or default to 0.7
+        updates.eyeCenterY = "0.70"; // Default for photos without clear faces
+        try {
+          const faceResult = await detectFacePosition(photoData);
+          if (faceResult.faceDetected && faceResult.confidence > 0.3) {
+            updates.eyeCenterY = faceResult.eyeCenterY.toFixed(2);
+            console.log(`Face detected for person ${id}: eyeCenterY=${updates.eyeCenterY}, confidence=${faceResult.confidence}`);
+          } else {
+            console.log(`No confident face detected for person ${id}, using default eyeCenterY=0.70`);
+          }
+        } catch (faceError) {
+          console.log(`Face detection error for person ${id}, using default eyeCenterY=0.70:`, faceError);
+        }
       }
 
       const person = await storage.updatePerson(id, updates);
@@ -771,7 +803,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate thumbnail for the new primary photo
       const thumbnailData = await generateThumbnail(photoData);
 
-      const person = await storage.updatePerson(id, { photoData, thumbnailData });
+      // Auto-detect face position for optimal cropping on category buttons
+      // Always set eyeCenterY - use detected value or default to 0.7
+      let eyeCenterY = "0.70"; // Default for photos without clear faces
+      try {
+        const faceResult = await detectFacePosition(photoData);
+        if (faceResult.faceDetected && faceResult.confidence > 0.3) {
+          eyeCenterY = faceResult.eyeCenterY.toFixed(2);
+          console.log(`Face detected for person ${id}: eyeCenterY=${eyeCenterY}, confidence=${faceResult.confidence}`);
+        } else {
+          console.log(`No confident face detected for person ${id}, using default eyeCenterY=0.70`);
+        }
+      } catch (faceError) {
+        console.log(`Face detection error for person ${id}, using default eyeCenterY=0.70:`, faceError);
+      }
+
+      const person = await storage.updatePerson(id, { 
+        photoData, 
+        thumbnailData,
+        eyeCenterY
+      });
       if (!person) {
         return res.status(404).json({ error: "Person not found" });
       }

@@ -32,7 +32,7 @@ A multi-tenant web application designed to help seniors identify and remember fa
 - **Age-based sorting** - Grandchildren, children, and partners are sorted by age (oldest first); other categories use manual sort order
 - **Drag-and-drop photo reordering** - Drag photos in Admin edit dialog to reorder; leftmost becomes primary photo
 - **Dynamic app icons** - Favicon and apple-touch-icon dynamically generated from husband/wife photo for personalized PWA experience
-- **Eye level positioning** - Adjustable eye-level slider in admin for each person; controls vertical photo positioning on category buttons so faces aren't cropped awkwardly
+- **AI-powered eye level positioning** - Gemini AI automatically detects face position when photos are uploaded; controls vertical photo positioning on category buttons so faces aren't cropped awkwardly (default: 0.7 if no face detected)
 - No login required for seniors; family members authenticate with join codes for admin access
 - All mutation routes (create/update/delete people, photos, voice notes) require authentication
 - **Strict multi-tenant security** - All read endpoints require valid familyId from session or X-Family-Slug header; no cross-family data leakage
