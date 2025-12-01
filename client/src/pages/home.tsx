@@ -111,6 +111,14 @@ export default function Home() {
     enabled: submittedSearch.length > 0,
   });
 
+  // Fetch all people for fallback when search finds nothing
+  const { data: allPeople = [] } = useQuery<Person[]>({
+    queryKey: ["/api/people-list"],
+    enabled: submittedSearch.length > 0 && searchResults.length === 0 && !isLoading,
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
+
   // Use pre-computed static data - cache indefinitely since it only changes on data edits
   const { data: staticData, isPending: isStaticDataLoading } = useQuery<StaticHomeData>({
     queryKey: ["/api/static/home"],
@@ -417,16 +425,18 @@ export default function Home() {
               <div className="text-center text-xl text-muted-foreground py-8">
                 Searching...
               </div>
-            ) : searchResults.length === 0 ? (
-              <div className="text-center text-xl text-muted-foreground py-8">
-                No one found matching "{submittedSearch}"
-              </div>
             ) : (
               <div className="space-y-4">
-                <p className="text-lg text-muted-foreground mb-4">
-                  Found {searchResults.length} {searchResults.length === 1 ? "person" : "people"}
-                </p>
-                {searchResults.map((person) => (
+                {searchResults.length === 0 ? (
+                  <p className="text-xl text-muted-foreground mb-4" data-testid="text-search-fallback">
+                    Maybe one of these...
+                  </p>
+                ) : (
+                  <p className="text-lg text-muted-foreground mb-4">
+                    Found {searchResults.length} {searchResults.length === 1 ? "person" : "people"}
+                  </p>
+                )}
+                {(searchResults.length > 0 ? searchResults : allPeople).map((person) => (
                   <Link
                     key={person.id}
                     href={tenantUrl(`/person/${person.id}`)}
