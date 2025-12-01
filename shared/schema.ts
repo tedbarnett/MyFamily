@@ -15,6 +15,7 @@ export const families = pgTable("families", {
   passwordHash: text("password_hash"), // Optional password for family admin access
   joinCode: text("join_code").unique(), // Code for inviting new family members
   categorySettings: text("category_settings"), // JSON: custom labels and visibility per category
+  welcomeMessage: text("welcome_message"), // Custom welcome message (markdown, up to 1000 chars)
   createdAt: timestamp("created_at").notNull().defaultNow(),
   isActive: boolean("is_active").notNull().default(true),
 });

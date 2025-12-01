@@ -58,6 +58,8 @@ export default function Admin() {
   const addPhotoInputRef = useRef<HTMLInputElement>(null);
   const [showCategorySettings, setShowCategorySettings] = useState(false);
   const [categorySettingsForm, setCategorySettingsForm] = useState<CategorySettings>({});
+  const [showWelcomeMessageEditor, setShowWelcomeMessageEditor] = useState(false);
+  const [welcomeMessageForm, setWelcomeMessageForm] = useState("");
   
   // Compute tenant-aware URLs - preserve the URL structure the user is in
   const loginPath = tenantUrl("/login");
@@ -113,12 +115,28 @@ export default function Admin() {
     queryKey: ["/api/analytics"],
   });
 
+  // Fetch welcome info
+  interface WelcomeInfo {
+    seniorName: string | null;
+    welcomeMessage: string | null;
+  }
+  const { data: welcomeInfo } = useQuery<WelcomeInfo>({
+    queryKey: ["/api/welcome-info"],
+  });
+
   // Initialize form when settings change or dialog opens
   useEffect(() => {
     if (showCategorySettings) {
       setCategorySettingsForm(categorySettings);
     }
   }, [showCategorySettings, categorySettings]);
+
+  // Initialize welcome message form when dialog opens
+  useEffect(() => {
+    if (showWelcomeMessageEditor) {
+      setWelcomeMessageForm(welcomeInfo?.welcomeMessage || "");
+    }
+  }, [showWelcomeMessageEditor, welcomeInfo]);
 
   // Get display label for a category (custom or default)
   const getCategoryLabel = (category: PersonCategory): string => {
@@ -364,6 +382,32 @@ export default function Admin() {
 
   const handleSaveCategorySettings = () => {
     categorySettingsMutation.mutate(categorySettingsForm);
+  };
+
+  const welcomeMessageMutation = useMutation({
+    mutationFn: async (welcomeMessage: string) => {
+      const response = await apiRequest("PUT", "/api/welcome-message", { welcomeMessage });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/welcome-info"] });
+      toast({
+        title: "Saved",
+        description: "Welcome message updated successfully.",
+      });
+      setShowWelcomeMessageEditor(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save welcome message.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSaveWelcomeMessage = () => {
+    welcomeMessageMutation.mutate(welcomeMessageForm);
   };
 
   const updateCategorySetting = (category: PersonCategory, field: 'label' | 'hidden', value: string | boolean) => {
@@ -653,8 +697,8 @@ export default function Admin() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-6">
-        {/* Category Settings Button */}
-        <div className="flex justify-end mb-4">
+        {/* Settings Buttons */}
+        <div className="flex justify-end gap-2 mb-4 flex-wrap">
           <Button
             variant="outline"
             size="sm"
@@ -663,6 +707,15 @@ export default function Admin() {
           >
             <Settings className="w-4 h-4 mr-2" />
             Customize Categories
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowWelcomeMessageEditor(true)}
+            data-testid="button-edit-welcome-message"
+          >
+            <Pencil className="w-4 h-4 mr-2" />
+            Welcome Message
           </Button>
         </div>
 
@@ -1300,6 +1353,67 @@ export default function Admin() {
                 <Save className="w-4 h-4 mr-2" />
               )}
               Save Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Welcome Message Editor Dialog */}
+      <Dialog open={showWelcomeMessageEditor} onOpenChange={setShowWelcomeMessageEditor}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl">Welcome Message</DialogTitle>
+            <DialogDescription>
+              This message appears at the bottom of the home page. You can use simple formatting:
+              **bold**, *italic*, and [link text](url).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                Message (up to 1000 characters)
+              </label>
+              <Textarea
+                value={welcomeMessageForm}
+                onChange={(e) => setWelcomeMessageForm(e.target.value.slice(0, 1000))}
+                placeholder={`We love you, ${welcomeInfo?.seniorName || 'Mom'}!`}
+                rows={6}
+                className="resize-none"
+                data-testid="input-welcome-message"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                {welcomeMessageForm.length}/1000 characters
+              </p>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              <p className="font-medium mb-1">Formatting tips:</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li>**text** for <strong>bold</strong></li>
+                <li>*text* for <em>italic</em></li>
+                <li>[text](url) for links</li>
+                <li>Leave empty for default: "We love you, {welcomeInfo?.seniorName || 'Name'}!"</li>
+              </ul>
+            </div>
+          </div>
+          <div className="flex gap-3 justify-end">
+            <Button
+              variant="outline"
+              onClick={() => setShowWelcomeMessageEditor(false)}
+              data-testid="button-cancel-welcome-message"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveWelcomeMessage}
+              disabled={welcomeMessageMutation.isPending}
+              data-testid="button-save-welcome-message"
+            >
+              {welcomeMessageMutation.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4 mr-2" />
+              )}
+              Save Message
             </Button>
           </div>
         </DialogContent>

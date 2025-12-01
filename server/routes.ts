@@ -214,6 +214,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get welcome message and senior name for home page
+  app.get("/api/welcome-info", async (req, res) => {
+    try {
+      // Get family from session or default demo family
+      let family;
+      if (req.session.familyId) {
+        family = await storage.getFamilyById(req.session.familyId);
+      } else {
+        // Fall back to demo-family for non-authenticated users
+        family = await storage.getFamilyBySlug("demo-family");
+      }
+      
+      if (!family) {
+        return res.json({ seniorName: null, welcomeMessage: null });
+      }
+      
+      res.json({
+        seniorName: family.seniorName,
+        welcomeMessage: family.welcomeMessage || null,
+      });
+    } catch (error) {
+      console.error("Error fetching welcome info:", error);
+      res.status(500).json({ error: "Failed to fetch welcome info" });
+    }
+  });
+
+  // Update welcome message (requires auth)
+  app.put("/api/welcome-message", requireAuth, async (req, res) => {
+    try {
+      const familyId = req.session.familyId;
+      if (!familyId) {
+        return res.status(401).json({ error: "No family in session" });
+      }
+      
+      const { welcomeMessage } = req.body;
+      
+      // Validate message length (max 1000 characters)
+      if (welcomeMessage && welcomeMessage.length > 1000) {
+        return res.status(400).json({ error: "Welcome message must be 1000 characters or less" });
+      }
+      
+      const updated = await storage.updateFamily(familyId, {
+        welcomeMessage: welcomeMessage || null,
+      });
+      
+      if (!updated) {
+        return res.status(404).json({ error: "Family not found" });
+      }
+      
+      res.json({ welcomeMessage: updated.welcomeMessage });
+    } catch (error) {
+      console.error("Error updating welcome message:", error);
+      res.status(500).json({ error: "Failed to update welcome message" });
+    }
+  });
+
   // Login as family member
   app.post("/api/auth/login", async (req, res) => {
     try {

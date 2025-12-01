@@ -125,6 +125,17 @@ export default function Home() {
     gcTime: Infinity,
   });
 
+  // Fetch welcome info (senior name and welcome message)
+  interface WelcomeInfo {
+    seniorName: string | null;
+    welcomeMessage: string | null;
+  }
+  const { data: welcomeInfo } = useQuery<WelcomeInfo>({
+    queryKey: ["/api/welcome-info"],
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
+
   // Get custom label for a category (or default if not customized)
   const getCategoryLabel = (categoryId: PersonCategory, defaultLabel: string): string => {
     return categorySettings[categoryId]?.label || defaultLabel;
@@ -257,27 +268,6 @@ export default function Home() {
             })}
 
             <Link
-              href={tenantUrl("/birthdays")}
-              data-testid="link-birthdays"
-            >
-              <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all">
-                <div className="p-6 flex items-center gap-4">
-                  <div className="text-pink-600 flex-shrink-0">
-                    <Cake className="w-14 h-14" strokeWidth={1.5} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h2 className="text-2xl font-bold text-foreground mb-1">
-                      Birthdays
-                    </h2>
-                    <p className="text-lg text-muted-foreground">
-                      Upcoming celebrations
-                    </p>
-                  </div>
-                </div>
-              </Card>
-            </Link>
-
-            <Link
               href={tenantUrl("/everyone")}
               data-testid="link-everyone"
             >
@@ -292,6 +282,27 @@ export default function Home() {
                     </h2>
                     <p className="text-lg text-muted-foreground">
                       {staticData?.totalPeople ? `${staticData.totalPeople} people` : "View all"}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            </Link>
+
+            <Link
+              href={tenantUrl("/birthdays")}
+              data-testid="link-birthdays"
+            >
+              <Card className="hover-elevate active-elevate-2 cursor-pointer transition-all">
+                <div className="p-6 flex items-center gap-4">
+                  <div className="text-pink-600 flex-shrink-0">
+                    <Cake className="w-14 h-14" strokeWidth={1.5} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-2xl font-bold text-foreground mb-1">
+                      Birthdays
+                    </h2>
+                    <p className="text-lg text-muted-foreground">
+                      Upcoming celebrations
                     </p>
                   </div>
                 </div>
@@ -373,6 +384,28 @@ export default function Home() {
                 <Search className="w-8 h-8 mr-3" />
                 Search
               </Button>
+            </div>
+
+            {/* Welcome message at the bottom */}
+            <div className="mt-8 text-center" data-testid="welcome-message-section">
+              {welcomeInfo?.welcomeMessage ? (
+                <div 
+                  className="prose prose-lg dark:prose-invert max-w-none text-foreground"
+                  dangerouslySetInnerHTML={{ 
+                    __html: welcomeInfo.welcomeMessage
+                      .replace(/\n/g, '<br />')
+                      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                      .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" class="text-primary underline" target="_blank" rel="noopener noreferrer">$1</a>')
+                  }}
+                />
+              ) : (
+                <p className="text-2xl text-muted-foreground font-medium">
+                  {welcomeInfo?.seniorName 
+                    ? `We love you, ${welcomeInfo.seniorName}!` 
+                    : "We love you!"}
+                </p>
+              )}
             </div>
 
           </div>
