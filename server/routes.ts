@@ -35,6 +35,27 @@ async function familyContext(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
+// Secure helper to resolve familyId from session or X-Family-Slug header
+// Returns familyId if valid, null otherwise - NEVER defaults to demo-family
+async function resolveFamilyId(req: Request): Promise<string | null> {
+  // First priority: authenticated session
+  if (req.session.isAuthenticated && req.session.familyId) {
+    return req.session.familyId;
+  }
+  
+  // Second priority: X-Family-Slug header (for unauthenticated senior users)
+  const slugHeader = req.headers["x-family-slug"];
+  if (slugHeader && typeof slugHeader === "string") {
+    const family = await storage.getFamilyBySlug(slugHeader);
+    if (family && family.isActive) {
+      return family.id;
+    }
+  }
+  
+  // No valid family context - return null (caller should handle this)
+  return null;
+}
+
 // Parse birth date string and compute current age (defensive - never throws)
 function computeAgeFromBorn(born: string | null | undefined): number | null {
   if (!born) return null;
@@ -170,17 +191,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get category settings for a family (public - needed for display)
   app.get("/api/category-settings", async (req, res) => {
     try {
-      // Get family from session or default demo family
-      let family;
-      if (req.session.familyId) {
-        family = await storage.getFamilyById(req.session.familyId);
-      } else {
-        // Fall back to demo-family for non-authenticated users
-        family = await storage.getFamilyBySlug("demo-family");
+      const familyId = await resolveFamilyId(req);
+      if (!familyId) {
+        return res.status(404).json({ error: "Family not found" });
       }
       
+      const family = await storage.getFamilyById(familyId);
       if (!family) {
-        return res.json({}); // Return empty settings if no family
+        return res.status(404).json({ error: "Family not found" });
       }
       
       const settings = family.categorySettings ? JSON.parse(family.categorySettings) : {};
@@ -227,17 +245,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get welcome message and senior name for home page
   app.get("/api/welcome-info", async (req, res) => {
     try {
-      // Get family from session or default demo family
-      let family;
-      if (req.session.familyId) {
-        family = await storage.getFamilyById(req.session.familyId);
-      } else {
-        // Fall back to demo-family for non-authenticated users
-        family = await storage.getFamilyBySlug("demo-family");
+      const familyId = await resolveFamilyId(req);
+      if (!familyId) {
+        return res.status(404).json({ error: "Family not found" });
       }
       
+      const family = await storage.getFamilyById(familyId);
       if (!family) {
-        return res.json({ seniorName: null, welcomeMessage: null });
+        return res.status(404).json({ error: "Family not found" });
       }
       
       res.json({
@@ -402,14 +417,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Debug endpoint to check database and cache status
   app.get("/api/debug/status", async (req, res) => {
     try {
-      const staticData = await storage.getStaticHomeData();
+      const familyId = await resolveFamilyId(req);
+      if (!familyId) {
+        return res.status(404).json({ error: "Family not found" });
+      }
+      
+      const staticData = await storage.getStaticHomeData(familyId);
       const peopleCount = staticData.totalPeople;
       
       // Try to get first person to check if data is accessible
       let samplePerson = null;
       let error = null;
       try {
-        const people = await storage.getAllPeople();
+        const people = await storage.getAllPeople(familyId);
         if (people.length > 0) {
           samplePerson = {
             id: people[0].id,
@@ -443,7 +463,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get static home page data (cached, instant)
   app.get("/api/static/home", async (req, res) => {
     try {
-      const staticData = await storage.getStaticHomeData();
+      const familyId = await resolveFamilyId(req);
+      if (!familyId) {
+        return res.status(404).json({ error: "Family not found" });
+      }
+      const staticData = await storage.getStaticHomeData(familyId);
       res.json(staticData);
     } catch (error) {
       console.error("Error fetching static home data:", error);
@@ -454,7 +478,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get lightweight navigation data (just id, name, category - no photos, instant)
   app.get("/api/people-nav", async (req, res) => {
     try {
-      const people = await storage.getAllPeople();
+      const familyId = await resolveFamilyId(req);
+      if (!familyId) {
+        return res.status(404).json({ error: "Family not found" });
+      }
+      const people = await storage.getAllPeople(familyId);
       // Return minimal data for navigation - no photos, no heavy data
       const navData = people.map(p => ({
         id: p.id,
@@ -471,7 +499,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get lightweight data for birthdays (uses thumbnails for fast loading)
   app.get("/api/birthdays", async (req, res) => {
     try {
-      const people = await storage.getAllPeople();
+      const familyId = await resolveFamilyId(req);
+      if (!familyId) {
+        return res.status(404).json({ error: "Family not found" });
+      }
+      const people = await storage.getAllPeople(familyId);
       // Return people with birth dates, minimal data for birthday display
       const birthdayData = people
         .filter(p => p.born && !p.passed)
@@ -493,7 +525,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get lightweight data for quiz (uses thumbnails for fast loading)
   app.get("/api/quiz-people", async (req, res) => {
     try {
-      const people = await storage.getAllPeople();
+      const familyId = await resolveFamilyId(req);
+      if (!familyId) {
+        return res.status(404).json({ error: "Family not found" });
+      }
+      const people = await storage.getAllPeople(familyId);
       // Return minimal data needed for quiz - use thumbnails instead of full photos
       const quizData = people.map(p => ({
         id: p.id,
@@ -512,7 +548,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get lightweight data for everyone list (uses thumbnails for fast loading)
   app.get("/api/people-list", async (req, res) => {
     try {
-      const people = await storage.getAllPeople();
+      const familyId = await resolveFamilyId(req);
+      if (!familyId) {
+        return res.status(404).json({ error: "Family not found" });
+      }
+      const people = await storage.getAllPeople(familyId);
       // Compute ages on the fly
       const listData = people.map(p => {
         const person = withComputedAge(p);
@@ -539,7 +579,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all people
   app.get("/api/people", async (req, res) => {
     try {
-      const people = await storage.getAllPeople();
+      const familyId = await resolveFamilyId(req);
+      if (!familyId) {
+        return res.status(404).json({ error: "Family not found" });
+      }
+      const people = await storage.getAllPeople(familyId);
       
       // Safely compute ages - if transformation fails, return raw data
       let result = people;
@@ -564,6 +608,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get people by category
   app.get("/api/people/:category", async (req, res) => {
     try {
+      const familyId = await resolveFamilyId(req);
+      if (!familyId) {
+        return res.status(404).json({ error: "Family not found" });
+      }
       const category = req.params.category as PersonCategory;
       const validCategories = ["husband", "wife", "children", "grandchildren", "partners", "other", "caregivers"];
       
@@ -571,7 +619,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid category" });
       }
 
-      const people = await storage.getPeopleByCategory(category);
+      const people = await storage.getPeopleByCategory(category, familyId);
       // Compute ages on-the-fly without database writes (fast)
       const peopleWithAges = people.map(withComputedAge);
       res.json(peopleWithAges);
@@ -581,13 +629,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get person by ID
+  // Get person by ID - verify belongs to resolved family
   app.get("/api/person/:id", async (req, res) => {
     try {
+      const familyId = await resolveFamilyId(req);
+      if (!familyId) {
+        return res.status(404).json({ error: "Family not found" });
+      }
+      
       const { id } = req.params;
       const person = await storage.getPersonById(id);
 
-      if (!person) {
+      if (!person || person.familyId !== familyId) {
         return res.status(404).json({ error: "Person not found" });
       }
 
@@ -603,12 +656,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Search people
   app.get("/api/search/:query", async (req, res) => {
     try {
+      const familyId = await resolveFamilyId(req);
+      if (!familyId) {
+        return res.status(404).json({ error: "Family not found" });
+      }
+      
       const query = req.params.query;
       if (!query || query.trim().length === 0) {
         return res.json([]);
       }
 
-      const results = await storage.searchPeople(query);
+      const results = await storage.searchPeople(query, familyId);
       res.json(results);
     } catch (error) {
       console.error("Error searching people:", error);
@@ -1022,13 +1080,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Save quiz result
   app.post("/api/quiz-result", async (req, res) => {
     try {
+      const familyId = await resolveFamilyId(req);
+      if (!familyId) {
+        return res.status(404).json({ error: "Family not found" });
+      }
+      
       const { score, totalQuestions } = req.body;
 
       if (typeof score !== "number" || typeof totalQuestions !== "number") {
         return res.status(400).json({ error: "Score and totalQuestions are required" });
       }
 
-      const result = await storage.saveQuizResult({ score, totalQuestions });
+      const result = await storage.saveQuizResult({ score, totalQuestions, familyId });
       res.status(201).json(result);
     } catch (error) {
       console.error("Error saving quiz result:", error);
@@ -1039,7 +1102,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get quiz results history
   app.get("/api/quiz-results", async (req, res) => {
     try {
-      const results = await storage.getQuizResults();
+      const familyId = await resolveFamilyId(req);
+      if (!familyId) {
+        return res.status(404).json({ error: "Family not found" });
+      }
+      
+      const results = await storage.getQuizResults(familyId);
       res.json(results);
     } catch (error) {
       console.error("Error fetching quiz results:", error);
