@@ -708,6 +708,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Reorder photos - leftmost becomes primary
+  // Security: Only allows reordering of EXISTING photos, not adding new ones
+  app.post("/api/person/:id/photos/reorder", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { photos } = req.body;
+
+      if (!Array.isArray(photos)) {
+        return res.status(400).json({ error: "Photos array required" });
+      }
+
+      const currentPerson = await storage.getPersonById(id);
+      if (!currentPerson) {
+        return res.status(404).json({ error: "Person not found" });
+      }
+
+      // Build the set of existing photos (primary + gallery)
+      const existingPhotos = new Set<string>();
+      if (currentPerson.photoData) existingPhotos.add(currentPerson.photoData);
+      if (currentPerson.photos) {
+        currentPerson.photos.forEach(p => existingPhotos.add(p));
+      }
+
+      // Validate that all requested photos exist in the current person's photos
+      // This prevents injection of arbitrary photo data
+      const validatedPhotos = photos.filter(p => existingPhotos.has(p));
+      
+      // Must have at least one valid photo (can't make photos disappear)
+      if (validatedPhotos.length === 0 && existingPhotos.size > 0) {
+        return res.status(400).json({ error: "Invalid photo data" });
+      }
+
+      // The leftmost photo (index 0) becomes the primary
+      const newPrimary = validatedPhotos[0] || null;
+      const thumbnailData = newPrimary ? await generateThumbnail(newPrimary) : null;
+
+      const person = await storage.updatePerson(id, { 
+        photos: validatedPhotos,
+        photoData: newPrimary,
+        thumbnailData,
+      });
+
+      res.json(person);
+    } catch (error) {
+      console.error("Error reordering photos:", error);
+      res.status(500).json({ error: "Failed to reorder photos" });
+    }
+  });
+
   // Delete a photo from person's gallery
   app.delete("/api/person/:id/photos", async (req, res) => {
     try {
@@ -928,6 +977,136 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error fetching analytics:", error);
       res.status(500).json({ error: "Failed to fetch analytics" });
     }
+  });
+
+  // ============================================================================
+  // DYNAMIC APP ICONS - Generate from husband or wife photo
+  // ============================================================================
+
+  // Cache for generated icons (avoid regenerating on every request)
+  let iconCache: { favicon: Buffer | null; appleTouchIcon: Buffer | null; lastUpdated: number } = {
+    favicon: null,
+    appleTouchIcon: null,
+    lastUpdated: 0,
+  };
+
+  // Helper to find the icon source person (husband first, then wife)
+  async function getIconSourcePhoto(): Promise<string | null> {
+    try {
+      // Get people from the demo family (default) or could be extended to support family-specific icons
+      const allPeople = await storage.getAllPeople();
+      
+      // Try to find husband first, then wife
+      const husband = allPeople.find(p => p.category === "husband");
+      const wife = allPeople.find(p => p.category === "wife");
+      
+      const iconPerson = husband || wife;
+      if (!iconPerson) return null;
+      
+      // Use the primary photo (leftmost/first in array)
+      return iconPerson.thumbnailData || iconPerson.photoData || null;
+    } catch (error) {
+      console.error("Error finding icon source:", error);
+      return null;
+    }
+  }
+
+  // Generate favicon (32x32 PNG)
+  app.get("/favicon.png", async (req, res) => {
+    try {
+      const CACHE_TTL = 60 * 60 * 1000; // 1 hour cache
+      const now = Date.now();
+      
+      // Check cache
+      if (iconCache.favicon && (now - iconCache.lastUpdated) < CACHE_TTL) {
+        res.set("Content-Type", "image/png");
+        res.set("Cache-Control", "public, max-age=3600");
+        return res.send(iconCache.favicon);
+      }
+      
+      const photoData = await getIconSourcePhoto();
+      if (!photoData) {
+        // Serve a default/fallback - return 404 to use browser default
+        return res.status(404).send("No icon available");
+      }
+      
+      // Extract base64 data
+      const base64Match = photoData.match(/^data:image\/([a-zA-Z+]+);base64,(.+)$/);
+      if (!base64Match) {
+        return res.status(404).send("Invalid image data");
+      }
+      
+      const imageBuffer = Buffer.from(base64Match[2], "base64");
+      
+      // Generate 32x32 favicon
+      const sharp = (await import("sharp")).default;
+      const faviconBuffer = await sharp(imageBuffer)
+        .resize(32, 32, { fit: "cover", position: "centre" })
+        .png()
+        .toBuffer();
+      
+      // Update cache
+      iconCache.favicon = faviconBuffer;
+      iconCache.lastUpdated = now;
+      
+      res.set("Content-Type", "image/png");
+      res.set("Cache-Control", "public, max-age=3600");
+      res.send(faviconBuffer);
+    } catch (error) {
+      console.error("Error generating favicon:", error);
+      res.status(500).send("Failed to generate favicon");
+    }
+  });
+
+  // Generate Apple Touch Icon (180x180 PNG)
+  app.get("/apple-touch-icon.png", async (req, res) => {
+    try {
+      const CACHE_TTL = 60 * 60 * 1000; // 1 hour cache
+      const now = Date.now();
+      
+      // Check cache
+      if (iconCache.appleTouchIcon && (now - iconCache.lastUpdated) < CACHE_TTL) {
+        res.set("Content-Type", "image/png");
+        res.set("Cache-Control", "public, max-age=3600");
+        return res.send(iconCache.appleTouchIcon);
+      }
+      
+      const photoData = await getIconSourcePhoto();
+      if (!photoData) {
+        return res.status(404).send("No icon available");
+      }
+      
+      const base64Match = photoData.match(/^data:image\/([a-zA-Z+]+);base64,(.+)$/);
+      if (!base64Match) {
+        return res.status(404).send("Invalid image data");
+      }
+      
+      const imageBuffer = Buffer.from(base64Match[2], "base64");
+      
+      // Generate 180x180 Apple Touch Icon
+      const sharp = (await import("sharp")).default;
+      const iconBuffer = await sharp(imageBuffer)
+        .resize(180, 180, { fit: "cover", position: "centre" })
+        .png()
+        .toBuffer();
+      
+      // Update cache
+      iconCache.appleTouchIcon = iconBuffer;
+      iconCache.lastUpdated = now;
+      
+      res.set("Content-Type", "image/png");
+      res.set("Cache-Control", "public, max-age=3600");
+      res.send(iconBuffer);
+    } catch (error) {
+      console.error("Error generating apple touch icon:", error);
+      res.status(500).send("Failed to generate icon");
+    }
+  });
+
+  // Endpoint to invalidate icon cache (called when photos are reordered)
+  app.post("/api/invalidate-icon-cache", (req, res) => {
+    iconCache = { favicon: null, appleTouchIcon: null, lastUpdated: 0 };
+    res.json({ success: true });
   });
 
   // Prime the cache on startup so the first user request is instant

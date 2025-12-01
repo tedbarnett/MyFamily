@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Home, Camera, Loader2, Save, X, Pencil, Plus, Trash2, BrainCircuit, Mic, Square, Images, Check, LogOut, Settings, Eye, EyeOff, BarChart3 } from "lucide-react";
+import { Home, Camera, Loader2, Save, X, Pencil, Plus, Trash2, BrainCircuit, Mic, Square, Images, Check, LogOut, Settings, Eye, EyeOff, BarChart3, GripVertical } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { PhotoCropper } from "@/components/photo-cropper";
@@ -37,6 +37,158 @@ const categoryOrder: PersonCategory[] = [
   "other",
   "caregivers",
 ];
+
+interface DraggablePhotoGalleryProps {
+  person: Person;
+  onReorder: (photos: string[]) => void;
+  onDelete: (photo: string) => void;
+  onAddPhoto: () => void;
+  isReordering: boolean;
+}
+
+function DraggablePhotoGallery({ person, onReorder, onDelete, onAddPhoto, isReordering }: DraggablePhotoGalleryProps) {
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  // Build consolidated photo list: primary first, then others (no duplicates)
+  const photos: string[] = [];
+  if (person.photoData) photos.push(person.photoData);
+  if (person.photos) {
+    person.photos.forEach(p => {
+      if (!photos.includes(p)) photos.push(p);
+    });
+  }
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', index.toString());
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (draggedIndex !== null && index !== draggedIndex) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    // Reorder the array
+    const newPhotos = [...photos];
+    const [draggedItem] = newPhotos.splice(draggedIndex, 1);
+    newPhotos.splice(dropIndex, 0, draggedItem);
+
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+    onReorder(newPhotos);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  if (photos.length === 0) {
+    return (
+      <div className="flex flex-wrap gap-2">
+        <p className="text-sm text-muted-foreground">No photos yet</p>
+        <Button
+          variant="outline"
+          className="w-20 h-20 border-dashed flex flex-col items-center justify-center gap-1"
+          onClick={onAddPhoto}
+          data-testid="button-add-photo"
+        >
+          <Plus className="w-5 h-5" />
+          <span className="text-xs">Add</span>
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="flex flex-wrap gap-2">
+        {photos.map((photo, index) => (
+          <div
+            key={`photo-${index}`}
+            draggable={photos.length > 1}
+            onDragStart={(e) => handleDragStart(e, index)}
+            onDragOver={(e) => handleDragOver(e, index)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, index)}
+            onDragEnd={handleDragEnd}
+            className={`relative group ${
+              draggedIndex === index ? 'opacity-50' : ''
+            } ${
+              dragOverIndex === index ? 'ring-2 ring-primary ring-offset-2' : ''
+            } ${photos.length > 1 ? 'cursor-grab active:cursor-grabbing' : ''}`}
+            data-testid={`photo-container-${index}`}
+          >
+            <img
+              src={photo}
+              alt={`Photo ${index + 1}`}
+              className="w-20 h-20 object-cover rounded-md border border-border"
+              data-testid={`photo-thumbnail-${index}`}
+            />
+            {index === 0 && (
+              <div className="absolute top-1 left-1 bg-primary rounded-full p-0.5" title="Main photo">
+                <Check className="w-3 h-3 text-primary-foreground" />
+              </div>
+            )}
+            {photos.length > 1 && (
+              <div className="absolute bottom-1 left-1 bg-background/80 rounded p-0.5" title="Drag to reorder">
+                <GripVertical className="w-3 h-3 text-muted-foreground" />
+              </div>
+            )}
+            <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button
+                size="icon"
+                variant="destructive"
+                className="h-6 w-6"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(photo);
+                }}
+                data-testid={`button-delete-photo-${index}`}
+              >
+                <X className="w-3 h-3" />
+              </Button>
+            </div>
+          </div>
+        ))}
+        <Button
+          variant="outline"
+          className="w-20 h-20 border-dashed flex flex-col items-center justify-center gap-1"
+          onClick={onAddPhoto}
+          data-testid="button-add-photo"
+        >
+          <Plus className="w-5 h-5" />
+          <span className="text-xs">Add</span>
+        </Button>
+      </div>
+      <p className="text-xs text-muted-foreground mt-2">
+        {photos.length > 1 
+          ? "Drag photos to reorder. The leftmost photo is the main one."
+          : "Tap a photo on the detail page to cycle through. Add more photos to enable reordering."}
+      </p>
+      {isReordering && (
+        <p className="text-xs text-primary mt-1">Saving new order...</p>
+      )}
+    </>
+  );
+}
 
 export default function Admin() {
   const { familySlug, isFamilyScoped, tenantUrl } = useFamilySlug();
@@ -240,9 +392,17 @@ export default function Admin() {
       const response = await apiRequest("DELETE", `/api/person/${id}/photos`, { photoData });
       return response.json();
     },
-    onSuccess: (updatedPerson: Person) => {
+    onSuccess: async (updatedPerson: Person) => {
       queryClient.invalidateQueries({ queryKey: ["/api/people-list"] });
       queryClient.invalidateQueries({ queryKey: ["/api/static/home"] });
+      // Invalidate server-side icon cache if this is husband or wife
+      if (updatedPerson.category === "husband" || updatedPerson.category === "wife") {
+        try {
+          await apiRequest("POST", "/api/invalidate-icon-cache", {});
+        } catch (e) {
+          console.error("Failed to invalidate icon cache:", e);
+        }
+      }
       // Update the editing person state so the dialog shows the change
       if (editingPerson && editingPerson.id === updatedPerson.id) {
         setEditingPerson(updatedPerson);
@@ -266,9 +426,17 @@ export default function Admin() {
       const response = await apiRequest("POST", `/api/person/${id}/photos/set-primary`, { photoData });
       return response.json();
     },
-    onSuccess: (updatedPerson: Person) => {
+    onSuccess: async (updatedPerson: Person) => {
       queryClient.invalidateQueries({ queryKey: ["/api/people-list"] });
       queryClient.invalidateQueries({ queryKey: ["/api/static/home"] });
+      // Invalidate server-side icon cache if this is husband or wife
+      if (updatedPerson.category === "husband" || updatedPerson.category === "wife") {
+        try {
+          await apiRequest("POST", "/api/invalidate-icon-cache", {});
+        } catch (e) {
+          console.error("Failed to invalidate icon cache:", e);
+        }
+      }
       // Update the editing person state so the dialog shows the change
       if (editingPerson && editingPerson.id === updatedPerson.id) {
         setEditingPerson(updatedPerson);
@@ -282,6 +450,40 @@ export default function Admin() {
       toast({
         title: "Error",
         description: error.message || "Failed to set primary photo.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const reorderPhotosMutation = useMutation({
+    mutationFn: async ({ id, photos }: { id: string; photos: string[] }) => {
+      const response = await apiRequest("POST", `/api/person/${id}/photos/reorder`, { photos });
+      return response.json();
+    },
+    onSuccess: async (updatedPerson: Person) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/people-list"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/static/home"] });
+      // Invalidate server-side icon cache if this is husband or wife (their photo is the app icon)
+      if (updatedPerson.category === "husband" || updatedPerson.category === "wife") {
+        try {
+          await apiRequest("POST", "/api/invalidate-icon-cache", {});
+        } catch (e) {
+          console.error("Failed to invalidate icon cache:", e);
+        }
+      }
+      // Update the editing person state so the dialog shows the change
+      if (editingPerson && editingPerson.id === updatedPerson.id) {
+        setEditingPerson(updatedPerson);
+      }
+      toast({
+        title: "Photos Reordered",
+        description: "The first photo is now the main photo.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to reorder photos.",
         variant: "destructive",
       });
     },
@@ -1020,70 +1222,13 @@ export default function Admin() {
                   <Images className="w-4 h-4 text-primary" />
                   <label className="text-sm font-medium text-foreground">Photos</label>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {(() => {
-                    const photos: string[] = [];
-                    if (editingPerson.photoData) photos.push(editingPerson.photoData);
-                    if (editingPerson.photos) {
-                      editingPerson.photos.forEach(p => {
-                        if (!photos.includes(p)) photos.push(p);
-                      });
-                    }
-                    return photos.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No photos yet</p>
-                    ) : (
-                      photos.map((photo, index) => (
-                        <div key={index} className="relative group">
-                          <img
-                            src={photo}
-                            alt={`Photo ${index + 1}`}
-                            className="w-20 h-20 object-cover rounded-md border border-border"
-                            data-testid={`photo-thumbnail-${index}`}
-                          />
-                          {photo === editingPerson.photoData && (
-                            <div className="absolute top-1 left-1 bg-primary rounded-full p-0.5">
-                              <Check className="w-3 h-3 text-primary-foreground" />
-                            </div>
-                          )}
-                          <div className="absolute top-1 right-1 flex gap-1">
-                            {photo !== editingPerson.photoData && (
-                              <Button
-                                size="icon"
-                                variant="secondary"
-                                className="h-6 w-6"
-                                onClick={() => setPrimaryMutation.mutate({ id: editingPerson.id, photoData: photo })}
-                                data-testid={`button-set-primary-${index}`}
-                              >
-                                <Check className="w-3 h-3" />
-                              </Button>
-                            )}
-                            <Button
-                              size="icon"
-                              variant="destructive"
-                              className="h-6 w-6"
-                              onClick={() => deletePhotoMutation.mutate({ id: editingPerson.id, photoData: photo })}
-                              data-testid={`button-delete-photo-${index}`}
-                            >
-                              <X className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))
-                    );
-                  })()}
-                  <Button
-                    variant="outline"
-                    className="w-20 h-20 border-dashed flex flex-col items-center justify-center gap-1"
-                    onClick={() => handleAddPhotoClick(editingPerson.id)}
-                    data-testid="button-add-photo"
-                  >
-                    <Plus className="w-5 h-5" />
-                    <span className="text-xs">Add</span>
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Tap a photo on the detail page to cycle through. The checkmark shows the main photo.
-                </p>
+                <DraggablePhotoGallery
+                  person={editingPerson}
+                  onReorder={(photos) => reorderPhotosMutation.mutate({ id: editingPerson.id, photos })}
+                  onDelete={(photo) => deletePhotoMutation.mutate({ id: editingPerson.id, photoData: photo })}
+                  onAddPhoto={() => handleAddPhotoClick(editingPerson.id)}
+                  isReordering={reorderPhotosMutation.isPending}
+                />
               </div>
             )}
             <div>
