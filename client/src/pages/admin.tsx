@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import { Home, Camera, Loader2, Save, X, Pencil, Plus, Trash2, BrainCircuit, Mic, Square, Images, Check, LogOut, Settings, Eye, EyeOff, BarChart3, GripVertical } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -705,6 +706,7 @@ export default function Admin() {
         email: person.email || "",
         summary: person.summary || "",
         spouseId: person.spouseId || "",
+        eyeCenterY: person.eyeCenterY || "",
       });
       
       // For children category, load their linked grandchildren via optimized endpoint
@@ -1348,6 +1350,39 @@ export default function Admin() {
                   isReordering={reorderPhotosMutation.isPending}
                   isDeleting={deletePhotoMutation.isPending}
                 />
+                
+                {editingPerson.photoData && (
+                  <div className="mt-4">
+                    <label className="text-sm font-medium text-foreground mb-2 block">
+                      Eye Level Position (for category buttons)
+                    </label>
+                    <div className="flex items-center gap-4">
+                      <div 
+                        className="w-16 h-16 rounded-md bg-cover flex-shrink-0 border relative"
+                        style={{ 
+                          backgroundImage: `url(${editingPerson.thumbnailData || editingPerson.photoData})`,
+                          backgroundPositionX: 'center',
+                          backgroundPositionY: `${((parseFloat(editForm.eyeCenterY || "0.33") || 0.33) * 100).toFixed(0)}%`,
+                        }}
+                      >
+                        <div className="absolute left-0 right-0 h-0.5 bg-red-500" style={{ top: `${((parseFloat(editForm.eyeCenterY || "0.33") || 0.33) * 100).toFixed(0)}%` }} />
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <Slider
+                          value={[parseFloat(editForm.eyeCenterY || "0.33") * 100]}
+                          min={0}
+                          max={100}
+                          step={1}
+                          onValueChange={([value]) => setEditForm({ ...editForm, eyeCenterY: (value / 100).toFixed(2) })}
+                          data-testid="slider-eye-level"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Adjust to position eyes in category button preview
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             <div>

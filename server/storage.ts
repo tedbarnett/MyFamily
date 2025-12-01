@@ -10,11 +10,16 @@ import { db } from "./db";
 import { eq, desc, and, gte, sql, count } from "drizzle-orm";
 import bcrypt from "bcrypt";
 
+export interface BackgroundPhoto {
+  photo: string;           // Base64 photo data
+  eyeCenterY?: number;     // Normalized eye position (0=top, 1=bottom) - undefined means default (0.33)
+}
+
 export interface CategoryStaticData {
   id: PersonCategory;
   count: number;
   description: string; // Dynamic description based on database (e.g., "John" for husband, "3 Sons" for children)
-  backgroundPhotos: string[]; // All available photos for randomization
+  backgroundPhotos: BackgroundPhoto[]; // Photos with eye level positioning
   singlePersonId: string | null;
 }
 
@@ -39,22 +44,22 @@ export interface IStorage {
   authenticateMember(email: string, password: string, familyId: string): Promise<FamilyMember | undefined>;
   getFamilyMembers(familyId: string): Promise<FamilyMember[]>;
   
-  // People management (now family-scoped)
-  getAllPeople(familyId?: string): Promise<Person[]>;
-  getPeopleByCategory(category: PersonCategory, familyId?: string): Promise<Person[]>;
+  // People management (family-scoped - familyId required for security)
+  getAllPeople(familyId: string): Promise<Person[]>;
+  getPeopleByCategory(category: PersonCategory, familyId: string): Promise<Person[]>;
   getPersonById(id: string): Promise<Person | undefined>;
   createPerson(person: InsertPerson): Promise<Person>;
   updatePerson(id: string, updates: Partial<Person>): Promise<Person | undefined>;
   deletePerson(id: string): Promise<boolean>;
-  searchPeople(query: string, familyId?: string): Promise<Person[]>;
+  searchPeople(query: string, familyId: string): Promise<Person[]>;
   recordVisit(id: string, visitDate: string): Promise<Person | undefined>;
   
-  // Quiz results (now family-scoped)
+  // Quiz results (family-scoped - familyId required for security)
   saveQuizResult(result: InsertQuizResult): Promise<QuizResult>;
-  getQuizResults(familyId?: string): Promise<QuizResult[]>;
+  getQuizResults(familyId: string): Promise<QuizResult[]>;
   
-  // Static data (now family-scoped)
-  getStaticHomeData(familyId?: string): Promise<StaticHomeData>;
+  // Static data (family-scoped - familyId required for security)
+  getStaticHomeData(familyId: string): Promise<StaticHomeData>;
   
   // Analytics
   recordPageView(pageView: InsertPageView): Promise<PageView>;
@@ -235,9 +240,13 @@ export class CachedDatabaseStorage implements IStorage {
       const peopleWithPhotos = categoryPeople.filter(p => p.thumbnailData || p.photoData);
       
       // Use thumbnails for faster loading (much smaller than full photos)
-      const backgroundPhotos = peopleWithPhotos
-        .map(p => p.thumbnailData || p.photoData)
-        .filter((photo): photo is string => photo !== null);
+      // Include eyeCenterY for proper background positioning
+      const backgroundPhotos: BackgroundPhoto[] = peopleWithPhotos
+        .map(p => ({
+          photo: p.thumbnailData || p.photoData!,
+          eyeCenterY: p.eyeCenterY ? parseFloat(p.eyeCenterY) : undefined,
+        }))
+        .filter((bp): bp is BackgroundPhoto => bp.photo !== null);
       
       // Generate dynamic description based on category and people
       const description = this.generateCategoryDescription(categoryId, categoryPeople);
@@ -278,20 +287,17 @@ export class CachedDatabaseStorage implements IStorage {
   // STATIC DATA
   // ============================================================================
 
-  async getStaticHomeData(familyId?: string): Promise<StaticHomeData> {
-    const cacheKey = familyId || '__all__';
-    
-    if (this.staticHomeDataCache.has(cacheKey)) {
-      return this.staticHomeDataCache.get(cacheKey)!;
+  async getStaticHomeData(familyId: string): Promise<StaticHomeData> {
+    // familyId is required for security - no '__all__' fallback
+    if (this.staticHomeDataCache.has(familyId)) {
+      return this.staticHomeDataCache.get(familyId)!;
     }
     
     const allPeople = await this.loadPeopleCache();
-    const filteredPeople = familyId 
-      ? allPeople.filter(p => p.familyId === familyId)
-      : allPeople;
+    const filteredPeople = allPeople.filter(p => p.familyId === familyId);
     
     const staticData = this.generateStaticDataForFamily(filteredPeople);
-    this.staticHomeDataCache.set(cacheKey, staticData);
+    this.staticHomeDataCache.set(familyId, staticData);
     
     return staticData;
   }
@@ -300,18 +306,17 @@ export class CachedDatabaseStorage implements IStorage {
   // PEOPLE CRUD OPERATIONS
   // ============================================================================
 
-  async getAllPeople(familyId?: string): Promise<Person[]> {
+  async getAllPeople(familyId: string): Promise<Person[]> {
+    // familyId is required for security
     const allPeople = await this.loadPeopleCache();
-    if (familyId) {
-      return allPeople.filter(p => p.familyId === familyId);
-    }
-    return allPeople;
+    return allPeople.filter(p => p.familyId === familyId);
   }
 
-  async getPeopleByCategory(category: PersonCategory, familyId?: string): Promise<Person[]> {
+  async getPeopleByCategory(category: PersonCategory, familyId: string): Promise<Person[]> {
+    // familyId is required for security
     const allPeople = await this.loadPeopleCache();
     const filtered = allPeople
-      .filter(p => p.category === category && (!familyId || p.familyId === familyId));
+      .filter(p => p.category === category && p.familyId === familyId);
     
     // Sort grandchildren, children, and partners by age descending (oldest first)
     const ageSortedCategories = ['grandchildren', 'children', 'partners'];
@@ -361,12 +366,13 @@ export class CachedDatabaseStorage implements IStorage {
     return result.length > 0;
   }
 
-  async searchPeople(query: string, familyId?: string): Promise<Person[]> {
+  async searchPeople(query: string, familyId: string): Promise<Person[]> {
+    // familyId is required for security
     const allPeople = await this.loadPeopleCache();
     const searchTerm = query.toLowerCase();
     
     return allPeople.filter(p => 
-      (!familyId || p.familyId === familyId) &&
+      p.familyId === familyId &&
       (p.name.toLowerCase().includes(searchTerm) ||
       (p.relationship && p.relationship.toLowerCase().includes(searchTerm)) ||
       (p.location && p.location.toLowerCase().includes(searchTerm)) ||
@@ -397,24 +403,13 @@ export class CachedDatabaseStorage implements IStorage {
     return created;
   }
 
-  async getQuizResults(familyId?: string): Promise<QuizResult[]> {
-    if (familyId) {
-      return db
-        .select()
-        .from(quizResults)
-        .where(eq(quizResults.familyId, familyId))
-        .orderBy(desc(quizResults.completedAt));
-    }
-    
-    if (this.quizCache !== null) {
-      return this.quizCache;
-    }
-    
-    this.quizCache = await db
+  async getQuizResults(familyId: string): Promise<QuizResult[]> {
+    // familyId is required for security - no global cache fallback
+    return db
       .select()
       .from(quizResults)
+      .where(eq(quizResults.familyId, familyId))
       .orderBy(desc(quizResults.completedAt));
-    return this.quizCache;
   }
 
   // ============================================================================

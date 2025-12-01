@@ -10,11 +10,16 @@ import { useQuery } from "@tanstack/react-query";
 import { useFamilySlug } from "@/lib/use-family-slug";
 import type { PersonCategory, Person, CategorySettings } from "@shared/schema";
 
+interface BackgroundPhoto {
+  photo: string;
+  eyeCenterY?: number;  // Normalized eye position (0=top, 1=bottom)
+}
+
 interface StaticCategoryData {
   id: PersonCategory;
   count: number;
   description: string;
-  backgroundPhotos: string[];
+  backgroundPhotos: BackgroundPhoto[];
   singlePersonId: string | null;
 }
 
@@ -212,7 +217,7 @@ export default function Home() {
   }, []);
 
   // Pick a random photo from the available photos for a category
-  const getRandomPhoto = (categoryId: PersonCategory): string | null => {
+  const getRandomPhoto = (categoryId: PersonCategory): BackgroundPhoto | null => {
     const categoryData = getCategoryData(categoryId);
     if (!categoryData || categoryData.backgroundPhotos.length === 0) return null;
     
@@ -300,9 +305,11 @@ export default function Home() {
                     {/* Faint full-width background photo */}
                     {backgroundPhoto && (
                       <div 
-                        className="absolute inset-0 bg-cover bg-center opacity-75"
+                        className="absolute inset-0 bg-cover opacity-75"
                         style={{ 
-                          backgroundImage: `url(${backgroundPhoto})`,
+                          backgroundImage: `url(${backgroundPhoto.photo})`,
+                          backgroundPositionX: 'center',
+                          backgroundPositionY: `${((backgroundPhoto.eyeCenterY ?? 0.33) * 100).toFixed(0)}%`,
                         }}
                       />
                     )}

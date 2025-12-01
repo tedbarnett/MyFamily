@@ -1,4 +1,6 @@
 import { useLocation } from "wouter";
+import { useEffect } from "react";
+import { setCurrentFamilySlug } from "./family-context";
 
 /**
  * Hook to reliably detect the family slug from the URL path.
@@ -59,6 +61,12 @@ export function useFamilySlug() {
   // If first segment is not a known route and path is not empty, assume it's a family slug
   const isFamilyScoped = !isEmpty && !isNonFamilyRoute;
   const familySlug = isFamilyScoped ? firstSegment : "demo-family";
+  
+  // Set the global family context for API requests
+  // This ensures the X-Family-Slug header is sent with every request
+  useEffect(() => {
+    setCurrentFamilySlug(familySlug);
+  }, [familySlug]);
   
   // Helper function to create tenant-aware URLs
   const basePath = isFamilyScoped ? `/${familySlug}` : "";
