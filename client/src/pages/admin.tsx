@@ -190,6 +190,11 @@ function DraggablePhotoGallery({ person, onReorder, onDelete, onAddPhoto, isReor
   );
 }
 
+interface WelcomeInfo {
+  seniorName: string | null;
+  welcomeMessage: string | null;
+}
+
 export default function Admin() {
   const { familySlug, isFamilyScoped, tenantUrl } = useFamilySlug();
   const { toast } = useToast();
@@ -217,6 +222,36 @@ export default function Admin() {
   const loginPath = tenantUrl("/login");
   const homePath = tenantUrl("/").replace(/\/$/, "") || "/";
 
+  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
+  // Use lightweight endpoint with thumbnails for fast loading
+  const { data: allPeople = [], isLoading } = useQuery<PersonListItem[]>({
+    queryKey: ["/api/people-list"],
+    enabled: authenticated,
+  });
+
+  const { data: quizResults = [] } = useQuery<QuizResult[]>({
+    queryKey: ["/api/quiz-results"],
+    enabled: authenticated,
+  });
+
+  // Fetch category settings
+  const { data: categorySettings = {} } = useQuery<CategorySettings>({
+    queryKey: ["/api/category-settings"],
+    enabled: authenticated,
+  });
+
+  // Fetch analytics data
+  const { data: analytics } = useQuery<AnalyticsSummary>({
+    queryKey: ["/api/analytics"],
+    enabled: authenticated,
+  });
+
+  // Fetch welcome info
+  const { data: welcomeInfo } = useQuery<WelcomeInfo>({
+    queryKey: ["/api/welcome-info"],
+    enabled: authenticated,
+  });
+
   // Scroll to top when page opens
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -228,53 +263,6 @@ export default function Admin() {
       setLocation(loginPath);
     }
   }, [authLoading, authenticated, setLocation, loginPath]);
-
-  const handleLogout = async () => {
-    await logout();
-    setLocation(homePath);
-  };
-
-  // Show loading state while checking auth
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  // Don't render admin content if not authenticated
-  if (!authenticated) {
-    return null;
-  }
-
-  // Use lightweight endpoint with thumbnails for fast loading
-  const { data: allPeople = [], isLoading } = useQuery<PersonListItem[]>({
-    queryKey: ["/api/people-list"],
-  });
-
-  const { data: quizResults = [] } = useQuery<QuizResult[]>({
-    queryKey: ["/api/quiz-results"],
-  });
-
-  // Fetch category settings
-  const { data: categorySettings = {} } = useQuery<CategorySettings>({
-    queryKey: ["/api/category-settings"],
-  });
-
-  // Fetch analytics data
-  const { data: analytics } = useQuery<AnalyticsSummary>({
-    queryKey: ["/api/analytics"],
-  });
-
-  // Fetch welcome info
-  interface WelcomeInfo {
-    seniorName: string | null;
-    welcomeMessage: string | null;
-  }
-  const { data: welcomeInfo } = useQuery<WelcomeInfo>({
-    queryKey: ["/api/welcome-info"],
-  });
 
   // Initialize form when settings change or dialog opens
   useEffect(() => {
@@ -289,6 +277,11 @@ export default function Admin() {
       setWelcomeMessageForm(welcomeInfo?.welcomeMessage || "");
     }
   }, [showWelcomeMessageEditor, welcomeInfo]);
+
+  const handleLogout = async () => {
+    await logout();
+    setLocation(homePath);
+  };
 
   // Get display label for a category (custom or default)
   const getCategoryLabel = (category: PersonCategory): string => {
@@ -854,6 +847,20 @@ export default function Admin() {
       startRecording(personId);
     }
   };
+
+  // Show loading state while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // Don't render admin content if not authenticated
+  if (!authenticated) {
+    return null;
+  }
 
   if (isLoading) {
     return (
