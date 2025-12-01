@@ -1580,7 +1580,7 @@ export default function Admin() {
                 <li>**text** for <strong>bold</strong></li>
                 <li>*text* for <em>italic</em></li>
                 <li>[text](url) for links</li>
-                <li>Leave empty for default: "We love you, {welcomeInfo?.seniorName || 'Name'}!"</li>
+                <li>Leave empty to hide the welcome message</li>
               </ul>
               <p className="font-medium mt-3 mb-1">Special iPhone links:</p>
               <ul className="list-disc list-inside space-y-1 text-xs">

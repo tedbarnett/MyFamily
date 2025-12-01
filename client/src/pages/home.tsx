@@ -394,9 +394,9 @@ export default function Home() {
               </Button>
             </div>
 
-            {/* Welcome message at the bottom */}
-            <div className="mt-8 text-center" data-testid="welcome-message-section">
-              {welcomeInfo?.welcomeMessage ? (
+            {/* Welcome message at the bottom - only shown if set */}
+            {welcomeInfo?.welcomeMessage && (
+              <div className="mt-8 text-center" data-testid="welcome-message-section">
                 <div 
                   className="prose prose-lg dark:prose-invert max-w-none text-foreground"
                   dangerouslySetInnerHTML={{ 
@@ -407,14 +407,8 @@ export default function Home() {
                       .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" class="text-primary underline" target="_blank" rel="noopener noreferrer">$1</a>')
                   }}
                 />
-              ) : (
-                <p className="text-2xl text-muted-foreground font-medium">
-                  {welcomeInfo?.seniorName 
-                    ? `We love you, ${welcomeInfo.seniorName}!` 
-                    : "We love you!"}
-                </p>
-              )}
-            </div>
+              </div>
+            )}
 
           </div>
         )}
