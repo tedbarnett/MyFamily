@@ -991,6 +991,24 @@ export default function Admin() {
           <Button
             variant="ghost"
             className="flex-shrink-0 h-auto py-2 px-3 flex flex-col items-center gap-1 text-muted-foreground"
+            onClick={() => setShowCategorySettings(true)}
+            data-testid="button-category-settings"
+          >
+            <Settings className="w-8 h-8" strokeWidth={2} />
+            <span className="text-xs">Categories</span>
+          </Button>
+          <Button
+            variant="ghost"
+            className="flex-shrink-0 h-auto py-2 px-3 flex flex-col items-center gap-1 text-muted-foreground"
+            onClick={() => setShowWelcomeMessageEditor(true)}
+            data-testid="button-edit-welcome-message"
+          >
+            <Pencil className="w-8 h-8" strokeWidth={2} />
+            <span className="text-xs">Welcome</span>
+          </Button>
+          <Button
+            variant="ghost"
+            className="flex-shrink-0 h-auto py-2 px-3 flex flex-col items-center gap-1 text-muted-foreground"
             onClick={handleLogout}
             data-testid="button-logout"
           >
@@ -1001,28 +1019,6 @@ export default function Admin() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-6">
-        {/* Settings Buttons */}
-        <div className="flex justify-end gap-2 mb-4 flex-wrap">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowCategorySettings(true)}
-            data-testid="button-category-settings"
-          >
-            <Settings className="w-4 h-4 mr-2" />
-            Customize Categories
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowWelcomeMessageEditor(true)}
-            data-testid="button-edit-welcome-message"
-          >
-            <Pencil className="w-4 h-4 mr-2" />
-            Welcome Message
-          </Button>
-        </div>
-
         {categoryOrder.map((category) => {
           const people = getPeopleByCategory(category);
           const isHidden = isCategoryHidden(category);
