@@ -1361,6 +1361,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ success: true });
   });
 
+  // One-time seed endpoint to copy dev data to production
+  // Protected by SEED_SECRET environment variable
+  app.post("/api/seed-production", async (req, res) => {
+    try {
+      const { secret } = req.body;
+      const expectedSecret = process.env.SEED_SECRET;
+      
+      if (!expectedSecret) {
+        return res.status(500).json({ error: "SEED_SECRET not configured" });
+      }
+      
+      if (secret !== expectedSecret) {
+        return res.status(401).json({ error: "Invalid secret" });
+      }
+      
+      // Read the seed data file
+      const fs = await import("fs/promises");
+      const path = await import("path");
+      
+      const seedPath = path.join(process.cwd(), "seed-data.json");
+      
+      try {
+        await fs.access(seedPath);
+      } catch {
+        return res.status(404).json({ error: "seed-data.json not found" });
+      }
+      
+      const seedContent = await fs.readFile(seedPath, "utf-8");
+      const seedData = JSON.parse(seedContent);
+      
+      // Check if production already has data
+      const existingFamilies = await storage.getAllFamilies();
+      if (existingFamilies.length > 0) {
+        return res.status(400).json({ 
+          error: "Production database already has data. Clear it first or skip seeding.",
+          existingFamilies: existingFamilies.length
+        });
+      }
+      
+      // Import the data
+      let familiesCreated = 0;
+      let peopleCreated = 0;
+      
+      // Create families
+      for (const family of seedData.families || []) {
+        await storage.createFamily({
+          slug: family.slug,
+          name: family.name,
+          joinCode: family.joinCode || "changeme",
+          isActive: family.isActive !== false,
+          categorySettings: family.categorySettings || {},
+          welcomeMessage: family.welcomeMessage || null,
+        });
+        familiesCreated++;
+      }
+      
+      // Create people
+      for (const person of seedData.people || []) {
+        await storage.createPerson({
+          ...person,
+          id: person.id, // Preserve original IDs for relationships
+        });
+        peopleCreated++;
+      }
+      
+      // Refresh the cache
+      await storage.getStaticHomeData();
+      
+      res.json({ 
+        success: true, 
+        familiesCreated, 
+        peopleCreated,
+        message: "Production database seeded successfully!" 
+      });
+      
+    } catch (error) {
+      console.error("Seed error:", error);
+      res.status(500).json({ error: "Failed to seed database", details: String(error) });
+    }
+  });
+
   // Prime the cache on startup so the first user request is instant
   console.log("Priming cache on server startup...");
   await storage.getStaticHomeData();
