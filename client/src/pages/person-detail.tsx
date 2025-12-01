@@ -4,7 +4,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Loader2, MapPin, Calendar, Briefcase, ChevronLeft, ChevronRight, Volume2, User, Users } from "lucide-react";
+import { ArrowLeft, Loader2, MapPin, Calendar, Briefcase, ChevronLeft, ChevronRight, Volume2, User, Users, MessageSquare, Mail } from "lucide-react";
 import type { Person, PersonCategory } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useFamilySlug } from "@/lib/use-family-slug";
@@ -79,6 +79,13 @@ export default function PersonDetail() {
   const { data: allPeople = [] } = useQuery<Person[]>({
     queryKey: ["/api/people"],
   });
+
+  // Fetch senior name for email subject
+  type WelcomeInfo = { seniorName: string | null; welcomeMessage: string | null };
+  const { data: welcomeInfo } = useQuery<WelcomeInfo>({
+    queryKey: ["/api/welcome-info"],
+  });
+  const seniorName = welcomeInfo?.seniorName || "Mom";
 
   // Build array of all photos for this person
   const allPhotos = useMemo(() => {
@@ -605,6 +612,40 @@ export default function PersonDetail() {
                       ))}
                     </div>
                   </div>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Contact actions - Text and Email */}
+          {(person.phone || person.email) && (
+            <Card>
+              <div className="p-6 space-y-4">
+                <div className="flex flex-col gap-4">
+                  {person.phone && (
+                    <a 
+                      href={`sms:${person.phone}`}
+                      className="flex items-center gap-4 p-4 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors"
+                      data-testid="link-text-person"
+                    >
+                      <MessageSquare className="w-8 h-8 text-primary flex-shrink-0" />
+                      <span className="text-xl font-semibold text-primary">
+                        Text {person.name}
+                      </span>
+                    </a>
+                  )}
+                  {person.email && (
+                    <a 
+                      href={`mailto:${person.email}?subject=${encodeURIComponent(`Hello from ${seniorName}`)}`}
+                      className="flex items-center gap-4 p-4 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors"
+                      data-testid="link-email-person"
+                    >
+                      <Mail className="w-8 h-8 text-primary flex-shrink-0" />
+                      <span className="text-xl font-semibold text-primary">
+                        Email {person.name}
+                      </span>
+                    </a>
+                  )}
                 </div>
               </div>
             </Card>
