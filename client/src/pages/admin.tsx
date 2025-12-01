@@ -1582,6 +1582,12 @@ export default function Admin() {
                 <li>[text](url) for links</li>
                 <li>Leave empty for default: "We love you, {welcomeInfo?.seniorName || 'Name'}!"</li>
               </ul>
+              <p className="font-medium mt-3 mb-1">Special iPhone links:</p>
+              <ul className="list-disc list-inside space-y-1 text-xs">
+                <li>[Text Sarah](sms:+15551234567)</li>
+                <li>[FaceTime Jenny](facetime:+15551234567)</li>
+                <li>[Email the family](mailto:family@gmail.com?subject=Hi%20Mom)</li>
+              </ul>
             </div>
           </div>
           <div className="flex gap-3 justify-end">
