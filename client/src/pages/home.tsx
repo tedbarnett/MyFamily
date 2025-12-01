@@ -144,6 +144,48 @@ export default function Home() {
     gcTime: Infinity,
   });
 
+  // Fetch birthday data to check for today's birthdays
+  interface BirthdayPerson {
+    id: string;
+    name: string;
+    born: string;
+  }
+  const { data: birthdayPeople = [] } = useQuery<BirthdayPerson[]>({
+    queryKey: ["/api/birthdays"],
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
+
+  // Find people with birthdays today
+  const todaysBirthdays = useMemo(() => {
+    const today = new Date();
+    const todayMonth = today.getMonth();
+    const todayDay = today.getDate();
+    
+    return birthdayPeople.filter(person => {
+      if (!person.born) return false;
+      const birthDate = new Date(person.born);
+      return birthDate.getMonth() === todayMonth && birthDate.getDate() === todayDay;
+    }).map(person => {
+      const birthDate = new Date(person.born);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      // Adjust if birthday hasn't occurred yet this year
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      return { name: person.name, age };
+    });
+  }, [birthdayPeople]);
+
+  // Format age with proper suffix (1st, 2nd, 3rd, 4th, etc.)
+  const getOrdinalSuffix = (n: number): string => {
+    const s = ["th", "st", "nd", "rd"];
+    const v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  };
+
   // Get custom label for a category (or default if not customized)
   const getCategoryLabel = (categoryId: PersonCategory, defaultLabel: string): string => {
     return categorySettings[categoryId]?.label || defaultLabel;
@@ -203,6 +245,15 @@ export default function Home() {
           <br />
           {getTodayParts().dateStr}
         </h1>
+        {todaysBirthdays.length > 0 && (
+          <div className="text-center mt-2">
+            {todaysBirthdays.map((birthday, index) => (
+              <p key={index} className="text-3xl font-bold text-red-600" data-testid={`text-birthday-${index}`}>
+                {birthday.name}'s {getOrdinalSuffix(birthday.age)} birthday!
+              </p>
+            ))}
+          </div>
+        )}
       </header>
 
       <main className="flex-1 max-w-2xl mx-auto px-4 py-8 w-full">
