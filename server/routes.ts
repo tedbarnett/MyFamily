@@ -908,6 +908,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get grandchildren linked to a parent (for admin edit dialog)
+  app.get("/api/person/:id/linked-grandchildren", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Verify family ownership
+      const parentPerson = await getAuthorizedPerson(id, req.session.familyId!);
+      if (!parentPerson) {
+        return res.status(404).json({ error: "Person not found" });
+      }
+      
+      // Get all grandchildren in this family and filter by parentIds
+      const allPeople = await storage.getAllPeople();
+      const linkedGrandchildIds = allPeople
+        .filter((p: Person) => 
+          p.familyId === req.session.familyId && 
+          p.category === "grandchildren" && 
+          p.parentIds?.includes(id)
+        )
+        .map((p: Person) => p.id);
+      
+      res.json({ grandchildrenIds: linkedGrandchildIds });
+    } catch (error) {
+      console.error("Error fetching linked grandchildren:", error);
+      res.status(500).json({ error: "Failed to fetch linked grandchildren" });
+    }
+  });
+
+  // Sync grandchildren links for a child (update parentIds on grandchildren)
+  app.post("/api/person/:id/grandchildren", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { grandchildrenIds } = req.body;
+
+      if (!Array.isArray(grandchildrenIds)) {
+        return res.status(400).json({ error: "grandchildrenIds must be an array" });
+      }
+
+      // Verify family ownership of the parent (child category person)
+      const parentPerson = await getAuthorizedPerson(id, req.session.familyId!);
+      if (!parentPerson) {
+        return res.status(404).json({ error: "Person not found" });
+      }
+
+      // Verify parent is in the children category
+      if (parentPerson.category !== "children") {
+        return res.status(400).json({ error: "Person must be in children category" });
+      }
+
+      // Get all grandchildren in this family
+      const allPeople = await storage.getAllPeople();
+      const familyGrandchildren = allPeople.filter(
+        (p: Person) => p.familyId === req.session.familyId && p.category === "grandchildren"
+      );
+
+      // Verify all requested grandchildren belong to this family
+      const validGrandchildIds = familyGrandchildren.map((gc: Person) => gc.id);
+      for (const gcId of grandchildrenIds) {
+        if (!validGrandchildIds.includes(gcId)) {
+          return res.status(400).json({ error: `Grandchild ${gcId} not found in family` });
+        }
+      }
+
+      // Update each grandchild's parentIds
+      for (const grandchild of familyGrandchildren) {
+        const currentParentIds = grandchild.parentIds || [];
+        const shouldBeLinked = grandchildrenIds.includes(grandchild.id);
+        const isCurrentlyLinked = currentParentIds.includes(id);
+
+        if (shouldBeLinked && !isCurrentlyLinked) {
+          // Add parent link
+          await storage.updatePerson(grandchild.id, {
+            parentIds: [...currentParentIds, id]
+          });
+        } else if (!shouldBeLinked && isCurrentlyLinked) {
+          // Remove parent link
+          await storage.updatePerson(grandchild.id, {
+            parentIds: currentParentIds.filter((pid: string) => pid !== id)
+          });
+        }
+      }
+
+      res.json({ success: true, linkedCount: grandchildrenIds.length });
+    } catch (error) {
+      console.error("Error syncing grandchildren:", error);
+      res.status(500).json({ error: "Failed to sync grandchildren" });
+    }
+  });
+
   // Record visit
   app.post("/api/person/:id/visit", async (req, res) => {
     try {

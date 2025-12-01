@@ -3,7 +3,8 @@ import { useRoute, Link, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, MapPin, Calendar, Briefcase, ChevronLeft, ChevronRight, Volume2, User } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ArrowLeft, Loader2, MapPin, Calendar, Briefcase, ChevronLeft, ChevronRight, Volume2, User, Users } from "lucide-react";
 import type { Person, PersonCategory } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useFamilySlug } from "@/lib/use-family-slug";
@@ -97,6 +98,14 @@ export default function PersonDetail() {
     }
     return photos;
   }, [person]);
+
+  // Find linked grandchildren for people in the "children" category
+  const linkedGrandchildren = useMemo(() => {
+    if (!person || person.category !== "children") return [];
+    return allPeople.filter(
+      p => p.category === "grandchildren" && p.parentIds?.includes(person.id)
+    );
+  }, [person, allPeople]);
 
   // Reset photo index when person changes
   useEffect(() => {
@@ -551,6 +560,50 @@ export default function PersonDetail() {
                     <p className="text-lg text-foreground break-words leading-relaxed">
                       {person.summary}
                     </p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Linked grandchildren for people in the children category */}
+          {linkedGrandchildren.length > 0 && (
+            <Card>
+              <div className="p-6 space-y-4">
+                <div className="flex items-start gap-4">
+                  <Users className="w-8 h-8 text-primary flex-shrink-0 mt-1" />
+                  <div className="flex-1">
+                    <h3 className="text-xl font-semibold text-foreground mb-3">
+                      {person.name}'s Children
+                    </h3>
+                    <div className="space-y-3">
+                      {linkedGrandchildren.map((grandchild) => (
+                        <Link
+                          key={grandchild.id}
+                          href={tenantUrl(`/person/${grandchild.id}`)}
+                          data-testid={`link-grandchild-${grandchild.id}`}
+                        >
+                          <div className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted cursor-pointer">
+                            <Avatar className="w-14 h-14 flex-shrink-0">
+                              {grandchild.photoData && (
+                                <AvatarImage src={grandchild.photoData} alt={grandchild.name} />
+                              )}
+                              <AvatarFallback className="text-lg">
+                                {getInitials(grandchild.name)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="text-lg font-semibold text-foreground">
+                                {grandchild.name}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {grandchild.relationship}
+                              </p>
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>

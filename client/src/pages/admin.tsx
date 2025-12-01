@@ -227,6 +227,7 @@ export default function Admin() {
   const [categorySettingsForm, setCategorySettingsForm] = useState<CategorySettings>({});
   const [showWelcomeMessageEditor, setShowWelcomeMessageEditor] = useState(false);
   const [welcomeMessageForm, setWelcomeMessageForm] = useState("");
+  const [selectedGrandchildren, setSelectedGrandchildren] = useState<string[]>([]);
   
   // Compute tenant-aware URLs - preserve the URL structure the user is in
   const loginPath = tenantUrl("/login");
@@ -562,6 +563,27 @@ export default function Admin() {
     },
   });
 
+  const grandchildrenMutation = useMutation({
+    mutationFn: async ({ id, grandchildrenIds }: { id: string; grandchildrenIds: string[] }) => {
+      const response = await apiRequest("POST", `/api/person/${id}/grandchildren`, { grandchildrenIds });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/people-list"] });
+      toast({
+        title: "Grandchildren Updated",
+        description: "Grandchildren links have been saved.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update grandchildren.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const categorySettingsMutation = useMutation({
     mutationFn: async (settings: CategorySettings) => {
       const response = await apiRequest("PUT", "/api/category-settings", settings);
@@ -623,7 +645,8 @@ export default function Admin() {
     addPhotoMutation.isPending ||
     deletePhotoMutation.isPending ||
     reorderPhotosMutation.isPending ||
-    voiceNoteMutation.isPending;
+    voiceNoteMutation.isPending ||
+    grandchildrenMutation.isPending;
 
   const updateCategorySetting = (category: PersonCategory, field: 'label' | 'hidden', value: string | boolean) => {
     setCategorySettingsForm(prev => ({
@@ -666,6 +689,19 @@ export default function Admin() {
         summary: person.summary || "",
         spouseId: person.spouseId || "",
       });
+      
+      // For children category, load their linked grandchildren via optimized endpoint
+      if (person.category === "children") {
+        const gcResponse = await fetch(`/api/person/${personId}/linked-grandchildren`);
+        if (gcResponse.ok) {
+          const data = await gcResponse.json();
+          setSelectedGrandchildren(data.grandchildrenIds || []);
+        } else {
+          setSelectedGrandchildren([]);
+        }
+      } else {
+        setSelectedGrandchildren([]);
+      }
     } catch (error) {
       toast({
         title: "Error",
@@ -675,12 +711,22 @@ export default function Admin() {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!editingPerson) return;
+    
+    // Save person data
     updateMutation.mutate({
       id: editingPerson.id,
       updates: editForm,
     });
+    
+    // If editing a child, also save grandchildren links
+    if (editingPerson.category === "children") {
+      grandchildrenMutation.mutate({
+        id: editingPerson.id,
+        grandchildrenIds: selectedGrandchildren,
+      });
+    }
   };
 
   const handleAddClick = (category: PersonCategory) => {
@@ -1371,6 +1417,53 @@ export default function Admin() {
                 </Select>
               </div>
             )}
+            {editingPerson?.category === "children" && (
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">
+                  Their Children (Grandchildren)
+                </label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Select which grandchildren belong to {editingPerson.name}
+                </p>
+                <div className="space-y-2 max-h-48 overflow-y-auto border rounded-md p-3">
+                  {allPeople.filter(p => p.category === "grandchildren").length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No grandchildren added yet</p>
+                  ) : (
+                    allPeople
+                      .filter(p => p.category === "grandchildren")
+                      .map((grandchild) => (
+                        <label
+                          key={grandchild.id}
+                          className="flex items-center gap-3 p-2 rounded-md hover:bg-muted cursor-pointer"
+                          data-testid={`checkbox-grandchild-${grandchild.id}`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedGrandchildren.includes(grandchild.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedGrandchildren([...selectedGrandchildren, grandchild.id]);
+                              } else {
+                                setSelectedGrandchildren(selectedGrandchildren.filter(id => id !== grandchild.id));
+                              }
+                            }}
+                            className="w-5 h-5 rounded border-gray-300"
+                          />
+                          <Avatar className="w-8 h-8">
+                            {grandchild.thumbnailData && (
+                              <AvatarImage src={grandchild.thumbnailData} alt={grandchild.name} />
+                            )}
+                            <AvatarFallback className="text-xs">
+                              {getInitials(grandchild.name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm font-medium">{grandchild.name}</span>
+                        </label>
+                      ))
+                  )}
+                </div>
+              </div>
+            )}
           </div>
           <div className="border-t border-border pt-4 mt-4">
             <Button
@@ -1403,10 +1496,10 @@ export default function Admin() {
             </Button>
             <Button
               onClick={handleSave}
-              disabled={updateMutation.isPending}
+              disabled={updateMutation.isPending || grandchildrenMutation.isPending}
               data-testid="button-save-edit"
             >
-              {updateMutation.isPending ? (
+              {(updateMutation.isPending || grandchildrenMutation.isPending) ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : (
                 <Save className="w-4 h-4 mr-2" />
