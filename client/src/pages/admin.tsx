@@ -44,11 +44,13 @@ interface DraggablePhotoGalleryProps {
   onDelete: (photo: string) => void;
   onAddPhoto: () => void;
   isReordering: boolean;
+  isDeleting: boolean;
 }
 
-function DraggablePhotoGallery({ person, onReorder, onDelete, onAddPhoto, isReordering }: DraggablePhotoGalleryProps) {
+function DraggablePhotoGallery({ person, onReorder, onDelete, onAddPhoto, isReordering, isDeleting }: DraggablePhotoGalleryProps) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [deletingPhoto, setDeletingPhoto] = useState<string | null>(null);
 
   // Build consolidated photo list: primary first, then others (no duplicates)
   const photos: string[] = [];
@@ -142,6 +144,12 @@ function DraggablePhotoGallery({ person, onReorder, onDelete, onAddPhoto, isReor
               className="w-20 h-20 object-cover rounded-md border border-border"
               data-testid={`photo-thumbnail-${index}`}
             />
+            {/* Loading overlay for deleting */}
+            {isDeleting && deletingPhoto === photo && (
+              <div className="absolute inset-0 bg-background/80 rounded-md flex items-center justify-center">
+                <Loader2 className="w-5 h-5 animate-spin text-primary" />
+              </div>
+            )}
             {index === 0 && (
               <div className="absolute top-1 left-1 bg-primary rounded-full p-0.5" title="Main photo">
                 <Check className="w-3 h-3 text-primary-foreground" />
@@ -159,8 +167,10 @@ function DraggablePhotoGallery({ person, onReorder, onDelete, onAddPhoto, isReor
                 className="h-6 w-6"
                 onClick={(e) => {
                   e.stopPropagation();
+                  setDeletingPhoto(photo);
                   onDelete(photo);
                 }}
+                disabled={isDeleting}
                 data-testid={`button-delete-photo-${index}`}
               >
                 <X className="w-3 h-3" />
@@ -604,6 +614,16 @@ export default function Admin() {
   const handleSaveWelcomeMessage = () => {
     welcomeMessageMutation.mutate(welcomeMessageForm);
   };
+
+  // Track if any dialog operation is in progress
+  const isDialogBusy = 
+    updateMutation.isPending ||
+    deleteMutation.isPending ||
+    photoMutation.isPending ||
+    addPhotoMutation.isPending ||
+    deletePhotoMutation.isPending ||
+    reorderPhotosMutation.isPending ||
+    voiceNoteMutation.isPending;
 
   const updateCategorySetting = (category: PersonCategory, field: 'label' | 'hidden', value: string | boolean) => {
     setCategorySettingsForm(prev => ({
@@ -1212,13 +1232,21 @@ export default function Admin() {
       )}
 
       <Dialog open={!!editingPerson} onOpenChange={(open) => {
-        if (!open) {
+        if (!open && !isDialogBusy) {
           setEditingPerson(null);
           setSelectedPersonId(null);
           setIsAddingPhoto(false);
         }
       }}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          {isDialogBusy && (
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 rounded-lg">
+              <div className="flex flex-col items-center gap-3">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <p className="text-sm font-medium text-foreground">Please wait...</p>
+              </div>
+            </div>
+          )}
           <DialogHeader>
             <DialogTitle className="text-xl">Edit {editingPerson?.name}</DialogTitle>
           </DialogHeader>
@@ -1235,6 +1263,7 @@ export default function Admin() {
                   onDelete={(photo) => deletePhotoMutation.mutate({ id: editingPerson.id, photoData: photo })}
                   onAddPhoto={() => handleAddPhotoClick(editingPerson.id)}
                   isReordering={reorderPhotosMutation.isPending}
+                  isDeleting={deletePhotoMutation.isPending}
                 />
               </div>
             )}
@@ -1388,8 +1417,16 @@ export default function Admin() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!addingToCategory} onOpenChange={(open) => !open && setAddingToCategory(null)}>
+      <Dialog open={!!addingToCategory} onOpenChange={(open) => !open && !createMutation.isPending && setAddingToCategory(null)}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          {createMutation.isPending && (
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 rounded-lg">
+              <div className="flex flex-col items-center gap-3">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <p className="text-sm font-medium text-foreground">Adding person...</p>
+              </div>
+            </div>
+          )}
           <DialogHeader>
             <DialogTitle className="text-xl">Add New Person to {addingToCategory && getCategoryLabel(addingToCategory)}</DialogTitle>
           </DialogHeader>
