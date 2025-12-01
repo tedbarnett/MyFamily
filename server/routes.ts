@@ -153,15 +153,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       req.session.familyId = family.id;
       req.session.isAuthenticated = true;
 
-      res.status(201).json({
-        family: { 
-          id: family.id, 
-          slug: family.slug, 
-          name: family.name, 
-          seniorName: family.seniorName,
-          joinCode: family.joinCode,
-        },
-        member: { id: member.id, name: member.name, email: member.email, role: member.role },
+      // Explicitly save session before responding to prevent race condition
+      req.session.save((err) => {
+        if (err) {
+          console.error("Error saving session:", err);
+          return res.status(500).json({ error: "Failed to create session" });
+        }
+        res.status(201).json({
+          family: { 
+            id: family.id, 
+            slug: family.slug, 
+            name: family.name, 
+            seniorName: family.seniorName,
+            joinCode: family.joinCode,
+          },
+          member: { id: member.id, name: member.name, email: member.email, role: member.role },
+        });
       });
     } catch (error) {
       console.error("Error creating family:", error);
@@ -319,9 +326,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       req.session.familyId = family.id;
       req.session.isAuthenticated = true;
 
-      res.json({
-        member: { id: member.id, name: member.name, email: member.email, role: member.role },
-        family: { id: family.id, slug: family.slug, name: family.name },
+      // Explicitly save session before responding to prevent race condition
+      req.session.save((err) => {
+        if (err) {
+          console.error("Error saving session:", err);
+          return res.status(500).json({ error: "Failed to create session" });
+        }
+        res.json({
+          member: { id: member.id, name: member.name, email: member.email, role: member.role },
+          family: { id: family.id, slug: family.slug, name: family.name },
+        });
       });
     } catch (error) {
       console.error("Error logging in:", error);
@@ -367,8 +381,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       req.session.familyId = family.id;
       req.session.isAuthenticated = true;
 
-      res.status(201).json({
-        member: { id: member.id, name: member.name, email: member.email, role: member.role },
+      // Explicitly save session before responding to prevent race condition
+      req.session.save((err) => {
+        if (err) {
+          console.error("Error saving session:", err);
+          return res.status(500).json({ error: "Failed to create session" });
+        }
+        res.status(201).json({
+          member: { id: member.id, name: member.name, email: member.email, role: member.role },
+        });
       });
     } catch (error) {
       console.error("Error registering member:", error);
