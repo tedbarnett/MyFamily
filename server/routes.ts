@@ -1363,9 +1363,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // One-time seed endpoint to copy dev data to production
   // Protected by SEED_SECRET environment variable
+  // Use force: true to clear existing data first
   app.post("/api/seed-production", async (req, res) => {
     try {
-      const { secret } = req.body;
+      const { secret, force } = req.body;
       const expectedSecret = process.env.SEED_SECRET;
       
       if (!expectedSecret) {
@@ -1394,10 +1395,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if production already has data
       const existingFamilies = await storage.getAllFamilies();
       if (existingFamilies.length > 0) {
-        return res.status(400).json({ 
-          error: "Production database already has data. Clear it first or skip seeding.",
-          existingFamilies: existingFamilies.length
-        });
+        if (force === true) {
+          // Clear all existing data first
+          console.log("Force flag set - clearing existing data...");
+          await storage.clearAllData();
+          console.log("Existing data cleared.");
+        } else {
+          return res.status(400).json({ 
+            error: "Production database already has data. Use force: true to clear and reseed.",
+            existingFamilies: existingFamilies.length
+          });
+        }
       }
       
       // Import the data

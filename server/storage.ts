@@ -37,6 +37,7 @@ export interface IStorage {
   getFamilyBySlug(slug: string): Promise<Family | undefined>;
   updateFamily(id: string, updates: Partial<Family>): Promise<Family | undefined>;
   verifyFamilyPassword(familyId: string, password: string): Promise<boolean>;
+  clearAllData(): Promise<void>;
   
   // Family member management
   createFamilyMember(member: Omit<InsertFamilyMember, 'passwordHash'> & { password: string }): Promise<FamilyMember>;
@@ -134,6 +135,18 @@ export class CachedDatabaseStorage implements IStorage {
     const family = await this.getFamilyById(familyId);
     if (!family || !family.passwordHash) return false;
     return bcrypt.compare(password, family.passwordHash);
+  }
+
+  async clearAllData(): Promise<void> {
+    // Clear in order due to foreign key constraints
+    await db.delete(quizResults);
+    await db.delete(people);
+    await db.delete(familyMembers);
+    await db.delete(families);
+    // Clear caches
+    this.peopleCache = null;
+    this.quizCache = null;
+    this.staticHomeDataCache.clear();
   }
 
   // ============================================================================
