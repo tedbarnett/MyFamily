@@ -1,6 +1,6 @@
 # "My Family" - Memory Aid App
 
-## Version: 1.1 (November 30, 2025)
+## Version: 1.2 (December 1, 2025)
 
 ## Overview
 
@@ -26,6 +26,7 @@ A multi-tenant web application designed to help seniors identify and remember fa
 - PWA support with custom Apple Touch Icon for iOS home screen installation
 - **Customizable categories** - Families can rename categories and hide unused ones via Admin settings
 - **Unified Partners category** - Combines daughters-in-law, sons-in-law, and partners with spouse linking
+- **Welcome message** - Customizable message on home page with markdown support (bold, italic, links), defaults to "We love you, [seniorName]!"
 - No login required for seniors; family members authenticate with join codes for admin access
 
 ## User Preferences
@@ -76,6 +77,8 @@ Preferred communication style: Simple, everyday language.
 - `PUT /api/person/:id/photo` - Update person's primary photo
 - `POST /api/person/:id/photos` - Add additional photo
 - `DELETE /api/person/:id/photos` - Remove a photo
+- `GET /api/welcome-info` - Get senior name and welcome message
+- `PUT /api/welcome-message` - Update welcome message (requires auth)
 
 **Data Storage Strategy**: 
 - PostgreSQL database with Drizzle ORM (`server/storage.ts`)
